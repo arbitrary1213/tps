@@ -9,9 +9,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY package*.json ./
 COPY tsconfig.json ./
 COPY prisma ./prisma/
+COPY src ./src/
 
 RUN npm ci && \
     npx prisma generate && \
+    npm install typescript --save-dev && \
     npm run build
 
 FROM node:20-slim
