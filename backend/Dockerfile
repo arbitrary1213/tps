@@ -1,4 +1,4 @@
-FROM node:18-slim AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ RUN npm ci && \
     npx prisma generate && \
     npm run build
 
-FROM node:18-slim
+FROM node:20-slim
 
 WORKDIR /app
 
