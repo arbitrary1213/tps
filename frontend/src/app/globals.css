@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary: #C41E3A;
+    --color-primary-dark: #8B0000;
+    --color-bg: #F5F0E6;
+    --color-card: #FFFFFF;
+    --color-border: #E8E0D0;
+    --color-text: #1A1A1A;
+    --color-text-secondary: #5D4E37;
+  }
+
+  body {
+    @apply bg-[#F5F0E6] text-[#1A1A1A] font-sans antialiased;
+  }
+}
+
+@layer components {
+  /* 按钮样式 */
+  .btn-primary {
+    @apply bg-vermilion text-white px-8 py-3 rounded text-sm font-medium tracking-wider transition-all hover:bg-vermilion-dark shadow-classic;
+  }
+
+  .btn-secondary {
+    @apply bg-transparent text-vermilion border border-vermilion px-8 py-3 rounded text-sm font-medium tracking-wider transition-all hover:bg-vermilion-light;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-tea px-4 py-2 text-sm transition-all hover:text-ink;
+  }
+
+  /* 卡片样式 */
+  .card {
+    @apply bg-white rounded-lg shadow-classic border border-[#E8E0D0] p-6;
+  }
+
+  /* 表单样式 */
+  .input {
+    @apply w-full h-11 px-4 border border-[#E8E0D0] rounded bg-white focus:outline-none focus:border-vermilion transition-colors;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-tea mb-2 tracking-wide;
+  }
+
+  /* 表格样式 */
+  .table-header {
+    @apply bg-[#F5F0E6] text-tea text-sm font-medium border-b border-[#E8E0D0];
+  }
+
+  .table-row {
+    @apply border-b border-[#F5F0E6] hover:bg-[#F5F0E6]/50 transition-colors;
+  }
+
+  /* 状态标签 */
+  .badge {
+    @apply inline-flex items-center px-3 py-0.5 rounded text-xs font-medium tracking-wide;
+  }
+
+  .badge-success {
+    @apply bg-bamboo/10 text-bamboo border border-bamboo/20;
+  }
+
+  .badge-warning {
+    @apply bg-gold-pale text-tea border border-gold/30;
+  }
+
+  .badge-danger {
+    @apply bg-vermilion-light text-vermilion-dark border border-vermilion/20;
+  }
+
+  .badge-info {
+    @apply bg-paper-dark text-tea border border-[#E8E0D0];
+  }
+
+  .badge-gray {
+    @apply bg-paper-dark text-tea border border-[#E8E0D0];
+  }
+
+  /* 分隔线 */
+  .divider {
+    @apply border-t border-[#E8E0D0] my-4;
+  }
+
+  /* 国风边框装饰 */
+  .border-classic {
+    border: 1px solid #E8E0D0;
+  }
+
+  .border-double {
+    border: 3px double #E8E0D0;
+  }
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-paper-dark;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-tea/30 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-tea/50;
+}
+
+/* 国风字体强调 */
+.text-classic {
+  font-family: 'Noto Serif SC', 'SimSun', serif;
+  letter-spacing: 0.15em;
+}
+
+/* 页面标题样式 */
+.page-title {
+  @apply text-xl font-medium text-ink tracking-wide border-b border-[#E8E0D0] pb-3 mb-6;
+}
+
+/* ========== Mobile Overflow Fix ========== */
+html {
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
+}
+/* Mobile-safe table scrolling */
+.table-scroll-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile-safe form grids */
+@media (max-width: 640px) {
+  .form-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Modal content scrollable on mobile */
+@media (max-width: 640px) {
+  .modal-content {
+    max-height: 85vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ========== Mobile Layout Fix ========== */
+@media (max-width: 640px) {
+  /* Ensure table cells don't shrink too much on mobile */
+  td, th {
+    white-space: nowrap !important;
+  }
+}

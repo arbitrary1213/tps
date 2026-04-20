@@ -1,0 +1,652 @@
+// 仙顶寺智慧管理系统 - 数据库模型
+// 共 25 张表
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// 系统表
+// ============================================
+
+/// 用户表
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  name      String?
+  email     String?  @unique
+  phone     String?
+  role      String   @default("OPERATOR") // ADMIN / OPERATOR / VIEWER
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联
+  approvedRegistrations RegistrationRequest[] @relation("ApprovedBy")
+  operationLogs          OperationLog[]
+  donations               Donation[]
+
+  @@map("users")
+}
+
+/// 系统设置
+model SystemSettings {
+  id           String   @id @default("system")
+  templeName   String   @default("仙顶寺")
+  templeAddress String?
+  templePhone   String?
+  templeEmail   String?
+  templeLogo   String?  // base64
+  landingLogo  String?  // base64
+  landingBg    String?  // 背景图URL
+  wechatQrcode String?  // 微信公众号二维码
+  wechatAppId  String?  // 微信公众号AppID
+  wechatAppSecret String? // 微信公众号AppSecret
+  wechatToken  String?  // 微信公众号Token
+  wechatEncodingAESKey String? // 微信公众号EncodingAESKey
+  dedicationTypes String? @default("冤亲债主,堕胎婴灵,历代宗亲,无缘殊胜,生日超度,忌日超度,新建地基主,地基主") // 超度类型预设
+  updatedAt    DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+/// 微信公众号账号
+model WechatAccount {
+  id           String   @id @default(cuid())
+  name         String   // 账号名称
+  appId        String   @unique
+  appSecret    String
+  token        String?
+  encodingKey  String?  // EncodingAESKey
+  type         String   @default("SUB") // MAIN / SUB
+  status       String   @default("ACTIVE") // ACTIVE / INACTIVE
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // 关联
+  registrationTasks RegistrationTask[]
+
+  @@map("wechat_accounts")
+}
+
+// ============================================
+// 核心枢纽表
+// ============================================
+
+/// 登记任务定义
+model RegistrationTask {
+  id          String   @id @default(cuid())
+  name        String   // 任务名称
+  taskType    String   // VOLUNTEER / PLAQUE / RITUAL / LAMPOFFERING / ACCOMMODATION / DINING
+  description String?
+  enabled     Boolean  @default(false)
+  formConfig  Json?    // 表单字段配置
+  sort        Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联
+  wechatAccountId String?
+  wechatAccount   WechatAccount? @relation(fields: [wechatAccountId], references: [id])
+  registrationRequests RegistrationRequest[]
+
+  @@map("registration_tasks")
+}
+
+/// 登记请求池（统一入口）
+model RegistrationRequest {
+  id             String   @id @default(cuid())
+  taskId         String
+  taskType       String
+  status         String   @default("PENDING") // PENDING / APPROVED / REJECTED
+  submitterName  String
+  submitterPhone String
+  formData       Json     // 提交的表单数据
+  rejectReason   String?  // 拒绝原因
+  approvedById    String?
+  approvedAt      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // 关联
+  task      RegistrationTask @relation(fields: [taskId], references: [id])
+  approvedBy User?          @relation("ApprovedBy", fields: [approvedById], references: [id])
+
+  @@index([taskId])
+  @@index([taskType, status])
+  @@index([status])
+  @@index([createdAt])
+  @@map("registration_requests")
+}
+
+// ============================================
+// 人员管理表
+// ============================================
+
+/// 僧众档案
+model Monk {
+  id             String   @id @default(cuid())
+  dharmaName     String   // 法号
+  name           String?  // 俗名 (前端用name)
+  gender         String?  // 男 / 女
+  birthDate      DateTime?
+  origin         String?  // 籍贯 (前端用origin)
+  ordinationDate DateTime? // 剃度日期
+  ordinationType String?  // 剃度/受戒
+  rank           Int      @default(0) // 戒腊年数
+  position       String?  // 职务
+  hallId         String?
+  phone          String?
+  idCard         String?
+  photo          String?  // base64
+  status         String   @default("ACTIVE") // ACTIVE / LEAVE / LEFT
+  remarks        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("monks")
+}
+
+/// 义工档案
+model Volunteer {
+  id               String   @id @default(cuid())
+  name             String
+  dharmaName       String?
+  gender           String?
+  birthDate        DateTime?
+  photo            String?
+  ethnicity        String?
+  education        String?
+  phone            String   @unique
+  address         String?
+  emergencyContact String?
+  emergencyPhone   String?
+  currentOccupation String?
+  previousOccupation String?
+  healthStatus     String?
+  hasInfectiousDisease String?
+  diseaseHistory   String?
+  hasAllergy       String?
+  allergyHistory   String?
+  hasSpecialNeeds  String?
+  specialNeedsDetail String?
+  firstContactBuddhism String?
+  hasTakenRefuge   String?
+  refugeTime       DateTime?
+  preceptsHeld     String[]
+  willingToLearn   String?
+  guidanceHope     String?
+  hasVolunteerExperience String?
+  volunteerTimes   Int      @default(0)
+  lastVolunteerDate DateTime?
+  lastVolunteerLocation String?
+  lastVolunteerContent String?
+  skills           String[]
+  volunteerProjects String[]
+  serviceStartDate DateTime?
+  serviceEndDate   DateTime?
+  serviceDuration  String?
+  commitment       String?
+  signature        String?
+  totalHours      Float    @default(0)
+  rank             String   @default("一星")
+  status           String   @default("ACTIVE")
+  remarks         String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  signups VolunteerSignup[]
+
+  @@index([phone])
+  @@index([status])
+  @@index([rank])
+  @@map("volunteers")
+}
+
+/// 义工任务
+model VolunteerTask {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  taskType      String   // 殿堂清洁 / 法会协助 / 接待引导 / 斋堂帮厨 / 其他
+  location      String?
+  taskDate      DateTime?
+  startTime     String?
+  endTime       String?
+  requiredCount Int      @default(1)
+  currentCount  Int      @default(0)
+  status        String   @default("RECRUITING") // RECRUITING / FULL / IN_PROGRESS / COMPLETED
+  createdBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // 关联
+  signups VolunteerSignup[]
+
+  @@map("volunteer_tasks")
+}
+
+/// 义工报名
+model VolunteerSignup {
+  id            String    @id @default(cuid())
+  taskId        String
+  volunteerId   String?
+  volunteerName String
+  volunteerPhone String
+  status        String    @default("SIGNED_UP") // SIGNED_UP / CHECKED_IN / CHECKED_OUT / CANCELLED
+  checkInTime   DateTime?
+  checkOutTime  DateTime?
+  serviceHours  Float     @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 关联
+  task     VolunteerTask @relation(fields: [taskId], references: [id])
+  volunteer Volunteer?   @relation(fields: [volunteerId], references: [id])
+
+  @@map("volunteer_signups")
+}
+
+/// 信众档案
+model Devotee {
+  id             String    @id @default(cuid())
+  name           String
+  phone          String    @unique
+  wechat         String?
+  email          String?
+  idCard         String?
+  birthday       DateTime?
+  zodiac         String?   // 生肖
+  address        String?
+  tags           String[]  // 标签
+  level          String    @default("NORMAL") // NORMAL / VIP / SVIP
+  totalDonation  Float     @default(0)
+  firstVisitDate DateTime?
+  lastVisitDate  DateTime?
+  remarks        String?
+  createdBy      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // 关联
+
+  @@map("devotees")
+}
+
+// ============================================
+// 佛事管理表
+// ============================================
+
+/// 牌位
+model MemorialPlaque {
+  id           String   @id @default(cuid())
+  plaqueType   String   // LONGEVITY / REBIRTH / DELIVERANCE
+  holderName   String?  // 持名者（延生禄位用）
+  deceasedName String?  // 亡者姓名（往生/超度用）
+  deceasedName2 String? // 第二亡者
+  birthDate2   String? // 第二亡者生日
+  deathDate2   String? // 第二亡者忌日
+  zodiac2      String? // 第二亡者生肖
+  gender2      String? // 第二亡者性别
+  gender       String?  // 男 / 女
+  zodiac       String?  // 生肖
+  birthDate    String?  // 生日
+  birthLunar  Boolean  @default(false)
+  deathDate    String?  // 忌日
+  deathLunar   Boolean  @default(false)
+  yangShang    String?  // 阳上（供奉人）
+  phone       String?
+  address     String?
+  dedicationType String? // 超度类型
+  longevitySubtype String? // 延生禄位子类型：祈福禄位、化太岁禄位、财神禄位、文殊禄位
+  size String? // 规格：小/中/大
+  startDate   DateTime?
+  endDate     DateTime?
+  blessingText String? // 祈福祝福语
+  status      String   @default("ACTIVE") // ACTIVE / EXPIRED / CANCELLED / RENEWED
+  remarks     String?
+  templateId  String?  // 关联模板
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联
+  template PlaqueTemplate? @relation(fields: [templateId], references: [id])
+
+  @@index([plaqueType])
+  @@index([status])
+  @@index([yangShang])
+  @@index([startDate, endDate])
+  @@map("memorial_plaques")
+}
+
+/// 牌位模板
+model PlaqueTemplate {
+  id              String   @id @default(cuid())
+  name            String
+  type            String   // LONGEVITY / REBIRTH / DELIVERANCE / ALL
+  backgroundImage String?  // 底图（base64，仅设计参考，打印时不输出）
+  elements        Json     // 模板元素数组
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // 关联
+  plaques MemorialPlaque[]
+
+  @@map("plaque_templates")
+}
+
+/// 法会
+model Ritual {
+  id                       String   @id @default(cuid())
+  name                     String
+  ritualType               String   // 法会类型
+  description              String?
+  ritualDate              DateTime?
+  startTime               String?
+  endTime                 String?
+  location                String?
+  maxParticipants         Int      @default(0)
+  currentParticipants     Int      @default(0)
+  fee                     Float    @default(0)
+  registrationDeadline    DateTime?
+  allowOnlineRegistration Boolean  @default(true)
+  status                  String   @default("DRAFT") // DRAFT / PUBLISHED / UPCOMING / ONGOING / COMPLETED / CANCELLED
+  remarks                 String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  // 关联
+  participants RitualParticipant[]
+
+  @@map("rituals")
+}
+
+/// 法会参与者
+model RitualParticipant {
+  id           String    @id @default(cuid())
+  ritualId     String
+  name         String
+  phone        String
+  checkedIn    Boolean   @default(false)
+  checkInTime  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // 关联
+  ritual Ritual @relation(fields: [ritualId], references: [id], onDelete: Cascade)
+
+  @@map("ritual_participants")
+}
+
+/// 殿堂
+model Hall {
+  id          String   @id @default(cuid())
+  name        String
+  location    String?
+  description String?
+  capacity    Int      @default(0)
+  openTime    String?  // 开放时间
+  status      String   @default("OPEN") // OPEN / MAINTENANCE / CLOSED
+  images      String[] // 图片URL列表
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联
+  reservations HallReservation[]
+
+  @@map("halls")
+}
+
+/// 殿堂预约
+model HallReservation {
+  id              String    @id @default(cuid())
+  hallId         String
+  visitorName    String
+  visitorPhone   String
+  visitorCount   Int       @default(1)
+  reservationDate DateTime
+  timeSlot       String?   // 上午 / 下午 / 晚上
+  purpose        String?
+  status         String    @default("PENDING") // PENDING / APPROVED / REJECTED / COMPLETED
+  checkIn        Boolean   @default(false)
+  operator       String?
+  remarks        String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // 关联
+  hall Hall @relation(fields: [hallId], references: [id])
+
+  @@map("hall_reservations")
+}
+
+/// 供灯祈福
+model LampOffering {
+  id            String   @id @default(cuid())
+  name          String   // 供灯者姓名 (前端用name)
+  phone         String   // 供灯者电话 (前端用phone)
+  lampType      String   // 长明灯 / 酥油灯 / 莲花灯 / 香烛灯
+  location      String?  // 殿堂位置
+  duration      Int      @default(7) // 天数
+  blessingName  String?  // 祈福对象
+  blessingType  String?  // 祈福类型
+  blessingContent String? // 祈福语 (前端用blessings)
+  amount        Float    @default(0) // 金额 (前端用amount)
+  startDate     DateTime
+  endDate       DateTime
+  status        String   @default("ACTIVE") // ACTIVE / EXPIRED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([lampType])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("lamp_offerings")
+}
+
+// ============================================
+// 财务管理表
+// ============================================
+
+/// 功德记录
+model Donation {
+  id            String   @id @default(cuid())
+  devoteeId     String?
+  donorName     String
+  donorPhone    String?
+  type          String   // 香火钱 / 建庙功德 / 法会功德 / 牌位供奉 / 放生 / 其他
+  amount        Float
+  paymentMethod String?  // 现金 / 微信 / 支付宝 / 银行转账
+  donationDate  DateTime @default(now())
+  receiptNumber String?  // 收据编号
+  operator      String?
+  remarks       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // 关联
+  devotee User? @relation(fields: [devoteeId], references: [id])
+
+  @@index([donorName])
+  @@index([type])
+  @@index([donationDate])
+  @@index([operator])
+  @@map("donations")
+}
+
+/// 库房物品
+model WarehouseItem {
+  id        String   @id @default(cuid())
+  name      String
+  category  String   // 香烛类 / 纸钱类 / 食品类 / 耗材类 / 法器类 / 其他
+  unit      String   @default("个")
+  stock     Int      @default(0)
+  minStock  Int      @default(0)
+  price     Float    @default(0)
+  location  String?  // 存放位置
+  supplier  String?  // 供应商
+  remarks   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联
+  inRecords  WarehouseIn[]
+  outRecords WarehouseOut[]
+
+  @@map("warehouse_items")
+}
+
+/// 入库记录
+model WarehouseIn {
+  id         String   @id @default(cuid())
+  itemId    String
+  quantity  Int
+  price     Float?
+  supplier  String?
+  operator  String?
+  inDate    DateTime @default(now())
+  remarks   String?
+  createdAt DateTime @default(now())
+
+  // 关联
+  item WarehouseItem @relation(fields: [itemId], references: [id])
+
+  @@map("warehouse_in")
+}
+
+/// 出库记录
+model WarehouseOut {
+  id         String   @id @default(cuid())
+  itemId    String
+  quantity  Int
+  purpose   String?  // 用途
+  operator  String?
+  outDate   DateTime @default(now())
+  remarks   String?
+  createdAt DateTime @default(now())
+
+  // 关联
+  item WarehouseItem @relation(fields: [itemId], references: [id])
+
+  @@map("warehouse_out")
+}
+
+// ============================================
+// 后勤管理表
+// ============================================
+
+/// 房间
+model Room {
+  id         String   @id @default(cuid())
+  roomNumber String   @unique
+  type       String   @default("SINGLE") // SINGLE / DOUBLE / MULTI (前端用type)
+  floor      String?  // 楼层 (前端用floor)
+  location   String?  // 位置
+  capacity   Int      @default(1)
+  price      Float    @default(0)
+  status     String   @default("AVAILABLE") // AVAILABLE / OCCUPIED / MAINTENANCE
+  facilities String   @default("") // 设施 (前端用string)
+  remarks    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // 关联
+  records AccommodationRecord[]
+
+  @@map("rooms")
+}
+
+/// 住宿记录
+model AccommodationRecord {
+  id                String    @id @default(cuid())
+  roomId           String
+  guestName        String
+  guestPhone       String
+  guestIdCard      String?
+  accommodationType String    // 挂单 / 住宿 / 朝山
+  checkInDate      DateTime
+  checkOutDate     DateTime?
+  deposit          Float     @default(0)
+  totalFee         Float     @default(0)
+  status           String    @default("CHECKED_IN") // CHECKED_IN / CHECKED_OUT / CANCELLED
+  operator         String?
+  remarks          String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // 关联
+  room Room @relation(fields: [roomId], references: [id])
+
+  @@map("accommodation_records")
+}
+
+/// 用餐预定
+model DiningReservation {
+  id           String    @id @default(cuid())
+  mealType     String    @default("LUNCH") // 早斋 / 午斋 / 药石 / 法会素斋 (前端用mealType)
+  date         DateTime  // 预约日期 (前端用date)
+  mealCount    Int       @default(1) // 用餐人数 (前端用mealCount)
+  contactName  String    // 联系人 (前端用contactName)
+  contactPhone String    // 联系电话 (前端用contactPhone)
+  amount       Float     @default(0)
+  paymentStatus String    @default("UNPAID") // UNPAID / PAID
+  remarks      String?
+  operator     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("dining_reservations")
+}
+
+/// 来访记录
+model VisitRecord {
+  id           String   @id @default(cuid())
+  visitorName  String
+  visitorPhone String
+  visitorType  String   @default("DEVOTEE") // 香客 / 游客 / 政府 / 媒体 / 其他
+  groupName    String?
+  groupSize    Int      @default(1)
+  visitDate    DateTime
+  visitTime    String?
+  visitPurpose String?  // 来访目的 (前端用visitPurpose)
+  visitedPerson String? // 拜访对象 (前端用visitedPerson)
+  remarks      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("visit_records")
+}
+
+// ============================================
+// 日志表
+// ============================================
+
+/// 操作日志
+model OperationLog {
+  id          String   @id @default(cuid())
+  userId     String?
+  username   String
+  action     String   // CREATE / UPDATE / DELETE / LOGIN / LOGOUT
+  targetType String?  // 表名
+  targetId   String?  // 记录ID
+  beforeValue Json?   // 变更前
+  afterValue  Json?   // 变更后
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  // 关联
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("operation_logs")
+}
