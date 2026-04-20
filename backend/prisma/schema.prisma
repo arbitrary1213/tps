@@ -274,6 +274,7 @@ model Devotee {
   updatedAt      DateTime  @updatedAt
 
   // 关联
+  plaques MemorialPlaque[]
 
   @@map("devotees")
 }
@@ -311,17 +312,23 @@ model MemorialPlaque {
   status      String   @default("ACTIVE") // ACTIVE / EXPIRED / CANCELLED / RENEWED
   remarks     String?
   templateId  String?  // 关联模板
+  devoteeId   String?  // 关联信众
+  ritualId    String?  // 关联法会
   createdBy   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // 关联
   template PlaqueTemplate? @relation(fields: [templateId], references: [id])
+  devotee   Devotee? @relation(fields: [devoteeId], references: [id])
+  ritual    Ritual? @relation(fields: [ritualId], references: [id])
 
   @@index([plaqueType])
   @@index([status])
   @@index([yangShang])
   @@index([startDate, endDate])
+  @@index([devoteeId])
+  @@index([ritualId])
   @@map("memorial_plaques")
 }
 
@@ -363,6 +370,7 @@ model Ritual {
 
   // 关联
   participants RitualParticipant[]
+  plaques MemorialPlaque[]
 
   @@map("rituals")
 }

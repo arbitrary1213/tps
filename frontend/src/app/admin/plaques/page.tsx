@@ -75,13 +75,8 @@ interface Plaque {
   endDate: string
   status: string
   remarks?: string
-  devoteeId?: string
-  ritualId?: string
-  plaqueTemplate?: string
+  templateId?: string
   createdAt: string
-  // 关联数据
-  devotee?: { id: string; name: string; phone?: string }
-  ritual?: { id: string; name: string }
 }
 
 interface Devotee { id: string; name: string; phone?: string }
@@ -107,6 +102,14 @@ export default function PlaquesPage() {
   const [devotees, setDevotees] = useState<Devotee[]>([])
   const [rituals, setRituals] = useState<Ritual[]>([])
   const [templates, setTemplates] = useState<PlaqueTemplate[]>([])
+
+  // 多选相关
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [filterDevotee, setFilterDevotee] = useState('')
+  const [filterRitual, setFilterRitual] = useState('')
+  const [batchModalOpen, setBatchModalOpen] = useState(false)
+  const [batchAction, setBatchAction] = useState<'extend' | 'cancel' | 'delete'>('extend')
+  const [batchExtendDate, setBatchExtendDate] = useState('')
 
   // 导入相关
   const [importModalOpen, setImportModalOpen] = useState(false)
@@ -146,7 +149,7 @@ export default function PlaquesPage() {
     remarks: '',
     devoteeId: '',
     ritualId: '',
-    plaqueTemplate: '',
+    templateId: '',
   })
 
   useEffect(() => {
@@ -162,6 +165,11 @@ export default function PlaquesPage() {
       loadDedicationTypes()
     }
   }, [modalOpen])
+
+  useEffect(() => {
+    loadDevotees()
+    loadRituals()
+  }, [])
 
   const loadDedicationTypes = async () => {
     try {
@@ -179,8 +187,11 @@ export default function PlaquesPage() {
       const params: any = {}
       if (filterType) params.plaqueType = filterType
       if (filterStatus) params.status = filterStatus
+      if (filterDevotee) params.devoteeId = filterDevotee
+      if (filterRitual) params.ritualId = filterRitual
       const data = await businessAPI.getPlaques(token!, params)
       setPlaques(data)
+      setSelectedIds(new Set())
     } catch (error) {
       console.error('加载失败:', error)
     } finally {
@@ -349,7 +360,7 @@ export default function PlaquesPage() {
 
   useEffect(() => {
     loadPlaques()
-  }, [filterType, filterStatus])
+  }, [filterType, filterStatus, filterDevotee, filterRitual])
 
   const filteredPlaques = plaques.filter(p => {
     const searchLower = search.toLowerCase()
@@ -437,9 +448,9 @@ export default function PlaquesPage() {
       startDate: plaque.startDate ? plaque.startDate.split('T')[0] : '',
       endDate: plaque.endDate ? plaque.endDate.split('T')[0] : '',
       remarks: plaque.remarks || '',
-      devoteeId: plaque.devoteeId || '',
-      ritualId: plaque.ritualId || '',
-      plaqueTemplate: plaque.plaqueTemplate || '',
+      devoteeId: '',
+      ritualId: '',
+      templateId: plaque.templateId || '',
     })
     setShowSecondDeceased(!!plaque.deceasedName2)
     setModalOpen(true)
@@ -468,7 +479,7 @@ export default function PlaquesPage() {
 
   const handlePreview = async (plaque: Plaque) => {
     await loadTemplates()
-    const template = templates.find(t => t.id === plaque.plaqueTemplate) || templates.find(t => t.type === plaque.plaqueType) || templates.find(t => t.type === 'ALL')
+    const template = templates.find(t => t.id === plaque.templateId) || templates.find(t => t.type === plaque.plaqueType) || templates.find(t => t.type === 'ALL')
     setPreviewPlaque(plaque)
     setPreviewTemplate(template || null)
     setPreviewModalOpen(true)
@@ -502,7 +513,7 @@ export default function PlaquesPage() {
       remarks: '',
       devoteeId: '',
       ritualId: '',
-      plaqueTemplate: '',
+      templateId: '',
     })
     setShowSecondDeceased(false)
   }
@@ -534,6 +545,35 @@ export default function PlaquesPage() {
   ]
 
   const columns = [
+    {
+      key: 'select',
+      title: <input
+        type="checkbox"
+        checked={selectedIds.size === filteredPlaques.length && filteredPlaques.length > 0}
+        onChange={(e) => {
+          if (e.target.checked) {
+            setSelectedIds(new Set(filteredPlaques.map(p => p.id)))
+          } else {
+            setSelectedIds(new Set())
+          }
+        }}
+      />,
+      render: (row: Plaque) => (
+        <input
+          type="checkbox"
+          checked={selectedIds.has(row.id)}
+          onChange={(e) => {
+            const newSet = new Set(selectedIds)
+            if (e.target.checked) {
+              newSet.add(row.id)
+            } else {
+              newSet.delete(row.id)
+            }
+            setSelectedIds(newSet)
+          }}
+        />
+      ),
+    },
     { key: 'plaqueType', title: '类型', render: (row: Plaque) => (
       <Badge variant="info">{plaqueTypeOptions.find(t => t.value === row.plaqueType)?.label || row.plaqueType}</Badge>
     )},
@@ -598,7 +638,25 @@ export default function PlaquesPage() {
             onChange={(e) => setFilterStatus(e.target.value)}
             options={[{ value: '', label: '全部状态' }, ...statusOptions]}
           />
+          <Select
+            value={filterDevotee}
+            onChange={(e) => setFilterDevotee(e.target.value)}
+            options={[{ value: '', label: '全部信众' }, ...devotees.map(d => ({ value: d.id, label: d.name }))]}
+          />
+          <Select
+            value={filterRitual}
+            onChange={(e) => setFilterRitual(e.target.value)}
+            options={[{ value: '', label: '全部法会' }, ...rituals.map(r => ({ value: r.id, label: r.name }))]}
+          />
         </div>
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-2 mb-4 p-2 bg-amber-50 rounded">
+            <span className="text-sm text-amber-800">已选择 {selectedIds.size} 项</span>
+            <Button size="sm" variant="secondary" onClick={() => { setBatchAction('extend'); setBatchExtendDate(''); setBatchModalOpen(true); }}>批量延期</Button>
+            <Button size="sm" variant="danger" onClick={() => { setBatchAction('cancel'); setBatchModalOpen(true); }}>批量作废</Button>
+            <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>取消选择</Button>
+          </div>
+        )}
         <Table
           columns={columns}
           data={filteredPlaques}
@@ -713,8 +771,8 @@ export default function PlaquesPage() {
               />
               <Select
                 label="关联牌位模板"
-                value={formData.plaqueTemplate}
-                onChange={(e) => setFormData({ ...formData, plaqueTemplate: e.target.value })}
+                value={formData.templateId}
+                onChange={(e) => setFormData({ ...formData, templateId: e.target.value })}
                 options={templateOptions}
               />
             </div>
@@ -892,8 +950,8 @@ export default function PlaquesPage() {
               />
               <Select
                 label="关联牌位模板"
-                value={formData.plaqueTemplate}
-                onChange={(e) => setFormData({ ...formData, plaqueTemplate: e.target.value })}
+                value={formData.templateId}
+                onChange={(e) => setFormData({ ...formData, templateId: e.target.value })}
                 options={templateOptions}
               />
             </div>
@@ -969,8 +1027,8 @@ export default function PlaquesPage() {
               </div>
               <Select
                 label="关联模板"
-                value={formData.plaqueTemplate}
-                onChange={(e) => setFormData({ ...formData, plaqueTemplate: e.target.value })}
+                value={formData.templateId}
+                onChange={(e) => setFormData({ ...formData, templateId: e.target.value })}
                 options={templateOptions}
               />
             </div>
@@ -1117,6 +1175,52 @@ export default function PlaquesPage() {
           <div className="flex justify-end">
             <Button variant="secondary" onClick={closeImportModal}>
               关闭
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 批量操作弹窗 */}
+      <Modal open={batchModalOpen} onClose={() => setBatchModalOpen(false)} title="批量操作" size="sm">
+        <div className="space-y-4">
+          {batchAction === 'extend' && (
+            <div>
+              <p className="text-sm text-tea mb-3">将为 {selectedIds.size} 个牌位设置新的结束日期</p>
+              <Input
+                label="新的结束日期"
+                type="date"
+                value={batchExtendDate}
+                onChange={(e) => setBatchExtendDate(e.target.value)}
+              />
+            </div>
+          )}
+          {batchAction === 'cancel' && (
+            <div>
+              <p className="text-sm text-tea mb-3">确定要作废选中的 {selectedIds.size} 个牌位吗？</p>
+            </div>
+          )}
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={() => setBatchModalOpen(false)}>取消</Button>
+            <Button
+              onClick={async () => {
+                try {
+                  for (const id of selectedIds) {
+                    if (batchAction === 'extend') {
+                      await businessAPI.updatePlaque(token!, id, { endDate: batchExtendDate, status: 'ACTIVE' })
+                    } else if (batchAction === 'cancel') {
+                      await businessAPI.updatePlaque(token!, id, { status: 'CANCELLED' })
+                    }
+                  }
+                  setBatchModalOpen(false)
+                  setSelectedIds(new Set())
+                  loadPlaques()
+                } catch (error) {
+                  console.error('批量操作失败:', error)
+                  alert('批量操作失败')
+                }
+              }}
+            >
+              确认
             </Button>
           </div>
         </div>

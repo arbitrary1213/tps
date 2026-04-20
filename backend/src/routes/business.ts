@@ -316,10 +316,12 @@ router.delete('/devotees/:id', authMiddleware, async (req: AuthRequest, res: Res
 // ============ 牌位管理 ============
 router.get('/plaques', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { plaqueType, status, keyword } = req.query
+    const { plaqueType, status, keyword, devoteeId, ritualId } = req.query
     const where: any = {}
     if (plaqueType) where.plaqueType = plaqueType
     if (status) where.status = status
+    if (devoteeId) where.devoteeId = devoteeId
+    if (ritualId) where.ritualId = ritualId
     if (keyword) {
       where.OR = [
         { holderName: { contains: keyword as string } },
