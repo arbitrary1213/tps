@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { registrationAPI } from '@/lib/api'
+import { useSearchParams } from 'next/navigation'
+import { registrationAPI, systemAPI } from '@/lib/api'
 
 const taskTypeMap: Record<string, string> = {
   VOLUNTEER: '义工报名',
@@ -63,34 +64,10 @@ const fieldDefs: Record<string, FieldDef> = {
   lastVolunteerLocation:{ type:'text', label:'义工地点' },
   lastVolunteerContent:{ type:'textarea', label:'义工内容' },
 
-  // --- 专长 & 项目 ---
-  skills:          { type: 'checkbox', label: '您的专长', options:[
-    { label:'撰稿写作',value:'撰稿写作' },{ label:'书法',value:'书法' },{ label:'摄影摄像',value:'摄影摄像' },
-    { label:'网站维护',value:'网站维护' },{ label:'翻译',value:'翻译' },{ label:'文字编辑',value:'文字编辑' },
-    { label:'活动策划',value:'活动策划' },{ label:'活动主持',value:'活动主持' },{ label:'乐器',value:'乐器' },
-    { label:'音乐舞蹈',value:'音乐舞蹈' },{ label:'医疗护理',value:'医疗护理' },{ label:'驾驶',value:'驾驶' },
-    { label:'园艺',value:'园艺' },{ label:'水电维修',value:'水电维修' },{ label:'消防安全',value:'消防安全' },
-    { label:'心理咨询',value:'心理咨询' },{ label:'导游解说',value:'导游解说' },{ label:'其他',value:'其他' },
-  ]},
-  volunteerProjects:{ type:'checkbox', label:'拟参与义工项目', options:[
-    { label:'道场清洁',value:'道场清洁' },{ label:'斋堂协助',value:'斋堂协助' },{ label:'种菜养花',value:'种菜养花' },
-    { label:'寺院导游',value:'寺院导游' },{ label:'弘法事务',value:'弘法事务' },
-    { label:'活动主持策划',value:'活动主持策划' },{ label:'慈善活动',value:'慈善活动' },
-    { label:'车辆协助',value:'车辆协助' },{ label:'秩序维安',value:'秩序维安' },
-    { label:'消防安全',value:'消防安全' },{ label:'水电维修',value:'水电维修' },
-    { label:'撰稿摄影',value:'撰稿摄影' },{ label:'文字编辑校对',value:'文字编辑校对' },{ label:'其他',value:'其他' },
-  ]},
-
-  // --- 服务时间 ---
   serviceStartDate:{ type:'date', label:'服务开始日期' },
   serviceEndDate: { type:'date', label:'服务结束日期' },
   serviceDuration:{ type:'text', label:'持续时间' },
-
-  // --- 承诺 ---
-  signature:       { type: 'text', label: '签名确认', placeholder:'请签名' },
-
-  // --- 延生禄位 ---
-  holderName:      { type: 'text', label: '姓名（持名者）' },
+  
   longevitySubtype: { type: 'select', label: '禄位类型', options:[
     { label:'普通禄位',value:'普通' },{ label:'祈福禄位',value:'祈福' },
     { label:'化太岁禄位',value:'化太岁' },{ label:'财神禄位',value:'财神' },
@@ -137,6 +114,7 @@ const fieldDefs: Record<string, FieldDef> = {
 
   // --- 法会 ---
   ritualId:        { type: 'select', label: '选择法会', options:[] }, // 动态加载
+  volunteerTaskId: { type: 'select', label: '选择义工任务', options:[] }, // 动态加载
 
   // --- 住宿 ---
   checkInDate:     { type: 'date', label: '入住日期' },
@@ -152,7 +130,8 @@ const fieldDefs: Record<string, FieldDef> = {
     { label:'早斋',value:'BREAKFAST' },{ label:'午斋',value:'LUNCH' },
     { label:'药石',value:'DINNER' },{ label:'法会素斋',value:'RITUAL' },
   ]},
-  mealCount:       { type: 'text', label: '用餐人数' },
+  mealCount:       { type:'text', label:'用餐人数' },
+  mealDate:       { type: 'date', label: '预约时间' },
   contactName:     { type: 'text', label: '联系人姓名' },
   contactPhone:    { type: 'tel', label: '联系人电话' },
 
@@ -174,17 +153,13 @@ const VOLUNTEER_GROUPS: FieldGroup[] = [
   { title: '健康状况', fields: ['healthStatus', 'hasInfectiousDisease', 'hasAllergy', 'hasSpecialNeeds'] },
   { title: '学佛经历', fields: ['firstContactBuddhism', 'hasTakenRefuge', 'refugeTime', 'preceptsHeld', 'willingToLearn', 'guidanceHope'] },
   { title: '义工经历', fields: ['hasVolunteerExperience', 'volunteerTimes', 'lastVolunteerDate', 'lastVolunteerLocation', 'lastVolunteerContent'] },
-  { title: '专长与项目', fields: ['skills', 'volunteerProjects'] },
-  { title: '服务时间', fields: ['serviceStartDate', 'serviceEndDate', 'serviceDuration'] },
+    { title: '服务时间', fields: ['serviceStartDate', 'serviceEndDate', 'serviceDuration'] },
   { title: '本人承诺', fields: ['signature'] },
 ]
 
 // ============================================================
 // API 返回类型
 // ============================================================
-interface FormConfig {
-  fields: string[]
-}
 
 interface Task {
   id: string
@@ -192,7 +167,7 @@ interface Task {
   taskType: string
   description: string
   enabled?: boolean
-  formConfig: FormConfig
+  formConfig: string[]
 }
 
 interface Ritual {
@@ -210,22 +185,41 @@ interface Room {
   status: string
 }
 
+interface VolunteerTask {
+  id: string
+  name: string
+  taskType: string
+  location?: string
+  taskDate?: string
+  startTime?: string
+  endTime?: string
+  status: string
+}
+
 // ============================================================
 // 主组件
 // ============================================================
 export default function RegisterPage() {
+  const searchParams = useSearchParams()
+  const taskIdFromUrl = searchParams.get('taskId')
+  const taskTypeFromUrl = searchParams.get('taskType')
+
   const [tasks, setTasks] = useState<Task[]>([])
   const [activeTask, setActiveTask] = useState<Task | null>(null)
-  const [plaqueType, setPlaqueType] = useState<'LONGEVITY' | 'REBIRTH' | 'DELIVERANCE'>('LONGEVITY')
+  const [plaqueType, setPlaqueType] = useState<'LONGEVITY' | 'DELIVERANCE'>('LONGEVITY')
   const [formData, setFormData] = useState<Record<string, any>>({})
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [rituals, setRituals] = useState<Ritual[]>([])
   const [availableRooms, setAvailableRooms] = useState<Room[]>([])
+  const [volunteerTasks, setVolunteerTasks] = useState<VolunteerTask[]>([])
+  const [isPlaqueMode, setIsPlaqueMode] = useState(false)
+  const [settings, setSettings] = useState<any>(null)
   const formRef = useRef<HTMLFormElement>(null)
 
   useEffect(() => {
     loadTasks()
+    loadSettings()
   }, [])
 
   // 切换任务时加载 rituals（法会列表）
@@ -236,21 +230,56 @@ export default function RegisterPage() {
     if (activeTask?.taskType === 'ACCOMMODATION') {
       loadAvailableRooms()
     }
+    if (activeTask?.taskType === 'VOLUNTEER') {
+      loadVolunteerTasks()
+    }
   }, [activeTask])
 
   const loadTasks = async () => {
     try {
       const data = await registrationAPI.getTasks()
-      // 过滤 enabled 的任务
       const enabledTasks = (Array.isArray(data) ? data : []).filter((t: Task) => t.enabled !== false)
       setTasks(enabledTasks)
+
+      if (taskIdFromUrl) {
+        const task = enabledTasks.find(t => t.id === taskIdFromUrl)
+        if (task) {
+          setActiveTask(task)
+          setFormData({})
+          return
+        }
+      }
+
+      if (taskTypeFromUrl === 'PLAQUE') {
+        setIsPlaqueMode(true)
+        setActiveTask({
+          id: 'PLAQUE',
+          name: '牌位登记',
+          taskType: 'PLAQUE',
+          description: '延生禄位、往生莲位、超度牌位',
+          formConfig: ['holderName', 'longevitySubtype', 'size', 'gender', 'birthDate', 'birthLunar', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'blessingText', 'startDate', 'dedicationType'],
+        })
+        setFormData({})
+        return
+      }
+
       if (enabledTasks.length > 0 && !activeTask) {
         setActiveTask(enabledTasks[0])
-        // 根据 tasks[0] 的 fields 初始化 formData
         setFormData({})
       }
     } catch (error) {
       console.error('加载任务失败:', error)
+    }
+  }
+
+  const loadSettings = async () => {
+    try {
+      const data = await systemAPI.getSettings()
+      if (data) {
+        setSettings(data)
+      }
+    } catch (error) {
+      console.error('加载设置失败:', error)
     }
   }
 
@@ -265,8 +294,8 @@ export default function RegisterPage() {
   // Build flat tabs list (PLAQUE becomes single "牌位登记" tab)
   const tabs = tasks.map(task => ({
     task,
-    label: ['LONGEVITY','REBIRTH','DELIVERANCE'].includes(task.taskType) ? '在线登记' : task.name,
-    key: ['LONGEVITY','REBIRTH','DELIVERANCE'].includes(task.taskType) ? 'PLAQUE' : `${task.taskType}-${task.id}`,
+    label: ['LONGEVITY','REBIRTH','DELIVERANCE','PLAQUE'].includes(task.taskType) ? '牌位登记' : task.name,
+    key: ['LONGEVITY','REBIRTH','DELIVERANCE','PLAQUE'].includes(task.taskType) ? 'PLAQUE' : `${task.taskType}-${task.id}`,
   }))
   // Deduplicate by key to avoid double rendering PLAQUE
   const uniqueTabs = tabs.reduce((acc: typeof tabs, tab) => {
@@ -294,6 +323,24 @@ export default function RegisterPage() {
     }
   }
 
+  const loadVolunteerTasks = async () => {
+    try {
+      const res = await fetch('/api/volunteer-tasks')
+      if (res.ok) {
+        const data = await res.json()
+        const taskList: VolunteerTask[] = data.data || []
+        const recruitingTasks = taskList.filter(t => t.status === 'RECRUITING' || t.status === 'IN_PROGRESS')
+        setVolunteerTasks(recruitingTasks)
+        fieldDefs.volunteerTaskId.options = recruitingTasks.map(t => ({
+          label: `${t.name} - ${t.location || '待定'} (${t.taskDate ? new Date(t.taskDate).toLocaleDateString('zh-CN') : '待定'})`,
+          value: t.id
+        }))
+      }
+    } catch (error) {
+      console.error('加载义工任务列表失败:', error)
+    }
+  }
+
   const loadAvailableRooms = async () => {
     try {
       const res = await fetch('/api/rooms/available')
@@ -317,8 +364,19 @@ export default function RegisterPage() {
     setFormData({})
     setSubmitted(false)
     // Reset plaque type when switching away from PLAQUE tab
-    if (!['LONGEVITY','REBIRTH','DELIVERANCE'].includes(task.taskType)) {
+    if (!['LONGEVITY','DELIVERANCE','PLAQUE'].includes(task.taskType)) {
       setPlaqueType('LONGEVITY')
+      setIsPlaqueMode(false)
+    }
+    // PLAQUE type tasks enter plaque mode directly
+    if (task.taskType === 'PLAQUE') {
+      setIsPlaqueMode(true)
+      setPlaqueType('LONGEVITY')
+    }
+    // REBIRTH tasks now use DELIVERANCE plaque type
+    if (task.taskType === 'REBIRTH') {
+      setPlaqueType('DELIVERANCE')
+      setIsPlaqueMode(true)
     }
   }
 
@@ -328,8 +386,23 @@ export default function RegisterPage() {
 
     setSubmitting(true)
     try {
+      let taskId = activeTask.id
+      let taskType = activeTask.taskType
+
+      // PLAQUE 类型的任务直接使用 activeTask
+      if (isPlaqueMode && activeTask.taskType !== 'PLAQUE') {
+        const plaqueTask = tasks.find(t => t.taskType === plaqueType)
+        if (!plaqueTask) {
+          alert('未找到对应的登记任务')
+          setSubmitting(false)
+          return
+        }
+        taskId = plaqueTask.id
+        taskType = plaqueType
+      }
+
       // 只提交当前 formConfig.fields 中包含的字段
-      const fieldsToSubmit = activeTask.formConfig?.fields || []
+      const fieldsToSubmit = activeTask.formConfig || []
       const filteredData: Record<string, any> = {}
       for (const key of fieldsToSubmit) {
         if (formData[key] !== undefined && formData[key] !== '') {
@@ -337,10 +410,24 @@ export default function RegisterPage() {
         }
       }
 
+      if (isPlaqueMode) {
+        filteredData.plaqueType = plaqueType
+      }
+
+      const getSubmitterName = () => {
+        if (taskType === 'LONGEVITY' || taskType === 'LAMP') return formData.blessingName || formData.holderName || ''
+        if (taskType === 'DELIVERANCE') return formData.yangShang || ''
+        if (taskType === 'DINING') return formData.contactName || ''
+        return formData.name || ''
+      }
+      const getSubmitterPhone = () => {
+        if (taskType === 'DINING') return formData.contactPhone || ''
+        return formData.phone || ''
+      }
       await registrationAPI.submitRequest({
-        taskId: activeTask.id,
-        submitterName: formData.name || formData.blessingName || '',
-        submitterPhone: formData.phone || '',
+        taskId,
+        submitterName: getSubmitterName(),
+        submitterPhone: getSubmitterPhone(),
         formData: filteredData,
       })
       setSubmitted(true)
@@ -359,8 +446,15 @@ export default function RegisterPage() {
     const def = fieldDefs[fieldKey]
     if (!def) return null
 
-    const { type, label, options, placeholder, hint } = def
+    let { type, label, options, placeholder, hint } = def
     const value = formData[fieldKey] ?? ''
+
+    // 动态超度类型选项
+    let fieldOptions = options || []
+    if (fieldKey === 'dedicationType' && settings?.dedicationTypes) {
+      fieldOptions = settings.dedicationTypes.split(',').map((t: string) => ({ label: t, value: t }))
+      fieldOptions.push({ label: '自定义', value: 'custom' })
+    }
 
     if (type === 'select') {
       return (
@@ -375,7 +469,7 @@ export default function RegisterPage() {
             onChange={(e) => setFormData(prev => ({ ...prev, [fieldKey]: e.target.value }))}
           >
             <option value="">请选择</option>
-            {(options || []).map(opt => (
+            {fieldOptions.map(opt => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
@@ -453,12 +547,27 @@ export default function RegisterPage() {
   const renderFormByTaskType = () => {
     if (!activeTask) return null
     const { taskType, formConfig } = activeTask
-    const fields: string[] = formConfig?.fields || []
+    const fields: string[] = formConfig || []
 
     // ---- VOLUNTEER: 分组渲染 ----
     if (taskType === 'VOLUNTEER') {
       return (
         <>
+          {fields.includes('volunteerTaskId') && (
+            <div className="mb-6 p-4 bg-paper-dark rounded border border-[#E8E0D0]">
+              <h3 className="text-sm font-medium text-tea mb-3">选择义工任务</h3>
+              <select
+                className="w-full h-11 px-4 border border-[#E8E0D0] rounded bg-white focus:outline-none focus:border-vermilion text-base"
+                value={formData.volunteerTaskId || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, volunteerTaskId: e.target.value }))}
+              >
+                <option value="">请选择义工任务</option>
+                {(fieldDefs.volunteerTaskId.options || []).map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
           {VOLUNTEER_GROUPS.map(group => {
             // 只渲染 formConfig 中出现的字段
             const groupFields = group.fields.filter(f => fields.includes(f))
@@ -474,7 +583,7 @@ export default function RegisterPage() {
                     <p>1.本人承诺以上填写的所有信息内容属实。</p>
                     <p>2.本人具有相应民事行为能力，身体健康，无不良嗜好。</p>
                     <p>3.做到爱国爱教，拥护中国共产党的领导，遵守国家相关法律、法规。</p>
-                    <p>4.自愿参加显宁寺义工服务，并能遵守义工相关规则，有自利利他、慈悲喜舍的精神。</p>
+                    <p>4.自愿参加仙顶寺义工服务，并能遵守义工相关规则，有自利利他、慈悲喜舍的精神。</p>
                     <p>5.入寺后需学习佛门礼仪并遵守。</p>
                     <p>6.爱惜寺院公共财产，节约水电、随手关灯、不乱涂乱画，保持环境整洁。</p>
                     <p>7.行为端正，不随意走动，不进人他人房间，不拿别人物品。</p>
@@ -511,7 +620,7 @@ export default function RegisterPage() {
             }
 
             // 基本信息两列布局
-            const twoCol = ['基本信息', '补充信息', '学佛经历', '专长与项目', '服务时间'].includes(group.title)
+            const twoCol = ['基本信息', '补充信息', '学佛经历', '服务时间'].includes(group.title)
             return (
               <div key={group.title} className="pt-4 border-t border-[#E8E0D0]">
                 <h3 className="text-sm font-medium text-tea mb-3 tracking-wide">{group.title}</h3>
@@ -525,8 +634,8 @@ export default function RegisterPage() {
       )
     }
 
-    // ---- PLAQUE (延生 / 往生 / 超度): 合并为一个登记页 ----
-    if (['LONGEVITY','REBIRTH','DELIVERANCE'].includes(taskType)) {
+    // ---- PLAQUE (延生 / 超度): 合并为一个登记页 ----
+    if (isPlaqueMode || ['LONGEVITY','DELIVERANCE'].includes(taskType)) {
       const PLAQUE_SUBTYPES = [
         {
           value: 'LONGEVITY',
@@ -535,18 +644,13 @@ export default function RegisterPage() {
           fields: ['holderName', 'longevitySubtype', 'size', 'gender', 'birthDate', 'birthLunar', 'phone', 'address', 'blessingText', 'startDate'],
         },
         {
-          value: 'REBIRTH',
-          label: '往生莲位',
-          desc: '为亡者供奉往生莲位',
-          fields: ['deceasedName', 'size', 'gender', 'birthDate', 'birthLunar', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'startDate'],
-        },
-        {
           value: 'DELIVERANCE',
           label: '超度牌位',
           desc: '超度冤亲债主、堕胎婴灵、历代宗亲',
           fields: ['dedicationType', 'size', 'yangShang', 'phone', 'address', 'startDate'],
         },
       ]
+      const isDeliveranceWithName = plaqueType === 'DELIVERANCE' && formData.deceasedType === 'specific'
       const currentSubtype = PLAQUE_SUBTYPES.find(s => s.value === plaqueType) || PLAQUE_SUBTYPES[0]
       return (
         <div className="space-y-4">
@@ -573,18 +677,78 @@ export default function RegisterPage() {
               ))}
             </div>
           </div>
-          {currentSubtype.fields.map(f => renderField(f))}
-          {/* 往生莲位 - 第二亡者 */}
-          {plaqueType === 'REBIRTH' && !formData.showSecondDeceased && (
-            <button
-              type="button"
-              onClick={() => setFormData(prev => ({ ...prev, showSecondDeceased: true }))}
-              className="text-sm text-vermilion hover:text-vermilion-dark flex items-center gap-1"
-            >
-              <span>+</span> 增加第二亡者
-            </button>
+          {/* 超度牌位 - 子类型选择：具体亡者 / 一般超度 */}
+          {plaqueType === 'DELIVERANCE' && (
+            <div className="bg-paper-dark p-4 rounded border border-[#E8E0D0]">
+              <label className="block text-sm font-medium text-tea mb-2 tracking-wide">超度类型</label>
+              <div className="flex gap-3">
+                <label className={`flex items-center gap-2 text-sm cursor-pointer py-2 px-4 border rounded transition-all ${
+                  formData.deceasedType !== 'specific' ? 'border-vermilion bg-white text-ink font-medium' : 'border-[#E8E0D0] bg-white text-tea hover:border-vermilion/50'
+                }`}>
+                  <input
+                    type="radio"
+                    name="deceasedType"
+                    value="general"
+                    checked={formData.deceasedType !== 'specific'}
+                    onChange={() => setFormData(prev => ({ ...prev, deceasedType: 'general', deceasedName: undefined, gender: undefined, birthDate: undefined, birthLunar: undefined, deathDate: undefined, deathLunar: undefined, showSecondDeceased: undefined }))}
+                    className="sr-only"
+                  />
+                  无记名超度
+                </label>
+                <label className={`flex items-center gap-2 text-sm cursor-pointer py-2 px-4 border rounded transition-all ${
+                  formData.deceasedType === 'specific' ? 'border-vermilion bg-white text-ink font-medium' : 'border-[#E8E0D0] bg-white text-tea hover:border-vermilion/50'
+                }`}>
+                  <input
+                    type="radio"
+                    name="deceasedType"
+                    value="specific"
+                    checked={formData.deceasedType === 'specific'}
+                    onChange={() => setFormData(prev => ({ ...prev, deceasedType: 'specific', dedicationType: undefined }))}
+                    className="sr-only"
+                  />
+                  记名超度
+                </label>
+              </div>
+            </div>
           )}
-          {plaqueType === 'REBIRTH' && formData.showSecondDeceased && (
+          {/* 渲染超度牌位字段 */}
+          {plaqueType === 'DELIVERANCE' && formData.deceasedType === 'specific' && (
+            <>
+              {['deceasedName', 'gender', 'birthDate', 'birthLunar', 'deathDate', 'deathLunar'].map(f => renderField(f))}
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, showSecondDeceased: true }))}
+                className="text-sm text-vermilion hover:text-vermilion-dark flex items-center gap-1"
+              >
+                <span>+</span> 增加第二亡者
+              </button>
+            </>
+          )}
+          {plaqueType === 'DELIVERANCE' && formData.deceasedType !== 'specific' && (
+            <>
+              {renderField('dedicationType')}
+              {formData.dedicationType === 'custom' && renderField('customDedicationType')}
+            </>
+          )}
+          {plaqueType === 'DELIVERANCE' && formData.deceasedType === 'specific' && (
+            <>
+              {renderField('size')}
+              {renderField('yangShang')}
+              {renderField('phone')}
+              {renderField('address')}
+              {renderField('startDate')}
+            </>
+          )}
+          {plaqueType === 'DELIVERANCE' && formData.deceasedType !== 'specific' && (
+            <>
+              {renderField('yangShang')}
+              {renderField('phone')}
+              {renderField('address')}
+              {renderField('startDate')}
+            </>
+          )}
+          {/* 超度牌位 - 第二亡者 */}
+          {plaqueType === 'DELIVERANCE' && formData.deceasedType === 'specific' && formData.showSecondDeceased && (
             <div className="pt-4 border-t border-[#E8E0D0] space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-tea">第二亡者</p>
@@ -614,12 +778,8 @@ export default function RegisterPage() {
               </div>
             </div>
           )}
-          {/* 超度牌位 - 自定义类型输入框 */}
-          {plaqueType === 'DELIVERANCE' && formData.dedicationType === 'custom' && (
-            <div className="mt-4">
-              {renderField('customDedicationType')}
-            </div>
-          )}
+          {/* 延生禄位字段 */}
+          {plaqueType === 'LONGEVITY' && currentSubtype.fields.map(f => renderField(f))}
         </div>
       )
     }
@@ -715,35 +875,37 @@ export default function RegisterPage() {
           <Link href="/" className="text-sm sm:text-base text-tea hover:text-vermilion tracking-wide">
             返回首页
           </Link>
-          <h1 className="text-base sm:text-lg font-medium text-ink tracking-wide">在线登记</h1>
+          <h1 className="text-base sm:text-lg font-medium text-ink tracking-wide">{activeTask?.name || '在线登记'}</h1>
 
         </div>
       </header>
 
-      {/* Task Tabs */}
-      <div className="bg-white border-b border-[#E8E0D0] overflow-x-auto">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex gap-2 min-w-max">
-            {uniqueTabs.map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => handleTabChange(tab.task)}
-                className={`px-4 sm:px-5 py-2 rounded text-sm font-medium tracking-wide transition-all whitespace-nowrap ${
-                  activeTask?.id === tab.task.id
-                    ? 'bg-vermilion text-white'
-                    : 'bg-paper-dark text-tea hover:bg-paper-dark/80'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+      {/* Task Tabs - 仅在未指定任务时显示 */}
+      {!taskIdFromUrl && !isPlaqueMode && (
+        <div className="bg-white border-b border-[#E8E0D0] overflow-x-auto">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+            <div className="flex gap-2 min-w-max">
+              {uniqueTabs.map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => handleTabChange(tab.task)}
+                  className={`px-4 sm:px-5 py-2 rounded text-sm font-medium tracking-wide transition-all whitespace-nowrap ${
+                    activeTask?.id === tab.task.id
+                      ? 'bg-vermilion text-white'
+                      : 'bg-paper-dark text-tea hover:bg-paper-dark/80'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Form */}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="bg-white rounded-lg shadow-classic border border-[#E8E0D0] p-4 sm:p-8">
+        <div className="bg-white rounded-lg shadow-classic p-4 sm:p-8">
           {/* 标题 */}
           <div className="text-center mb-6 pb-4 border-b border-[#E8E0D0]">
             <h2 className="text-xl font-medium text-ink mb-2 tracking-wide">
