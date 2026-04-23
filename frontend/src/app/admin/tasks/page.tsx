@@ -7,9 +7,7 @@ import { Button, Card, CardHeader, CardTitle, Table, Badge, Modal, Input, Select
 
 const taskTypeOptions = [
   { value: 'VOLUNTEER', label: '义工报名' },
-  { value: 'LONGEVITY', label: '延生禄位' },
-  { value: 'REBIRTH', label: '往生莲位' },
-  { value: 'DELIVERANCE', label: '超度牌位' },
+  { value: 'PLAQUE', label: '牌位登记' },
   { value: 'RITUAL', label: '法会报名' },
   { value: 'LAMP', label: '供灯祈福' },
   { value: 'ACCOMMODATION', label: '住宿登记' },
@@ -18,9 +16,7 @@ const taskTypeOptions = [
 
 const defaultFormConfig = {
   VOLUNTEER: ['name', 'phone', 'skills'],
-  LONGEVITY: ['holderName', 'zodiac', 'yangShang', 'phone', 'address', 'birthDate', 'startDate'],
-  REBIRTH: ['deceasedName', 'yangShang', 'phone', 'address', 'deathDate', 'startDate'],
-  DELIVERANCE: ['deceasedName', 'yangShang', 'phone', 'address', 'startDate'],
+  PLAQUE: ['holderName', 'longevitySubtype', 'size', 'gender', 'birthDate', 'birthLunar', 'deceasedName', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'blessingText', 'startDate', 'dedicationType'],
   RITUAL: ['ritualId', 'name', 'phone'],
   LAMP: ['name', 'phone', 'lampType', 'location', 'blessingName', 'startDate', 'endDate'],
   ACCOMMODATION: ['name', 'phone', 'roomId', 'accommodationType', 'checkInDate', 'checkOutDate'],
@@ -133,9 +129,12 @@ export default function TasksPage() {
 
   const columns = [
     { key: 'name', title: '任务名称' },
-    { key: 'taskType', title: '类型', render: (row: Task) => (
-      <Badge variant="info">{taskTypeOptions.find(t => t.value === row.taskType)?.label || row.taskType}</Badge>
-    )},
+    { key: 'taskType', title: '类型', render: (row: Task) => {
+      if (row.taskType === 'PLAQUE') {
+        return <Badge variant="info">牌位登记</Badge>
+      }
+      return <Badge variant="info">{taskTypeOptions.find(t => t.value === row.taskType)?.label || row.taskType}</Badge>
+    }},
     { key: 'description', title: '描述' },
     { key: 'enabled', title: '状态', render: (row: Task) => (
       <Badge variant={row.enabled ? 'success' : 'gray'}>{row.enabled ? '已发布' : '未发布'}</Badge>
