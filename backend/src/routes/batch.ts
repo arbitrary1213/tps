@@ -1,9 +1,8 @@
 import { Router, Response } from 'express'
-import { PrismaClient } from '@prisma/client'
 import { authMiddleware, requireRole, AuthRequest } from '../middleware/auth'
+import { prisma } from '../lib/prisma'
 
 const router = Router()
-const prisma = new PrismaClient()
 
 router.post('/approve-requests', authMiddleware, requireRole('ADMIN', 'OPERATOR'), async (req: AuthRequest, res: Response) => {
   const { requestIds } = req.body as { requestIds: string[] }

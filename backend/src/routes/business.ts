@@ -1,12 +1,11 @@
 import { Router, Request, Response } from 'express'
-import { PrismaClient } from '@prisma/client'
 import { authMiddleware, AuthRequest } from '../middleware/auth'
 import bcrypt from 'bcryptjs'
 import multer from 'multer'
 import * as XLSX from 'xlsx'
+import { prisma } from '../lib/prisma'
 
 const router = Router()
-const prisma = new PrismaClient()
 
 const upload = multer({ storage: multer.memoryStorage() })
 
@@ -203,18 +202,33 @@ router.delete('/volunteer-tasks/:id', authMiddleware, async (req: AuthRequest, r
 router.post('/volunteer-attendance/sign-in', async (req: Request, res: Response) => {
   try {
     const { taskId, volunteerName, volunteerPhone } = req.body
-    const signup = await prisma.volunteerSignup.create({
-      data: { taskId, volunteerName, volunteerPhone, status: 'CHECKED_IN', checkInTime: new Date() }
-    })
-    const task = await prisma.volunteerTask.findUnique({ where: { id: taskId } })
-    if (task) {
-      await prisma.volunteerTask.update({
-        where: { id: taskId },
-        data: { currentCount: task.currentCount + 1 }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const task = await tx.volunteerTask.findUnique({ where: { id: taskId } })
+      if (!task) {
+        throw new Error('义工任务不存在')
+      }
+      if (task.requiredCount && task.currentCount >= task.requiredCount) {
+        throw new Error('义工任务已满员')
+      }
+
+      const signup = await tx.volunteerSignup.create({
+        data: { taskId, volunteerName, volunteerPhone, status: 'CHECKED_IN', checkInTime: new Date() }
       })
+
+      await tx.volunteerTask.update({
+        where: { id: taskId },
+        data: { currentCount: { increment: 1 } }
+      })
+
+      return signup
+    })
+
+    res.json({ success: true, data: result })
+  } catch (error: any) {
+    if (error.message === '义工任务不存在' || error.message === '义工任务已满员') {
+      return res.status(400).json({ success: false, error: error.message })
     }
-    res.json({ success: true, data: signup })
-  } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
 })
@@ -360,6 +374,11 @@ router.post('/plaques', authMiddleware, async (req: AuthRequest, res: Response) 
     if (data.endDate && typeof data.endDate === 'string') {
       data.endDate = new Date(data.endDate)
     }
+
+    if (data.startDate && data.endDate && data.endDate < data.startDate) {
+      return res.status(400).json({ success: false, error: '结束日期不能早于开始日期' })
+    }
+
     const plaque = await prisma.memorialPlaque.create({ data })
     await logOperation(req.user, 'CREATE', 'memorial_plaque', plaque.id, null, plaque)
     res.json({ success: true, data: plaque })
@@ -760,6 +779,14 @@ router.post('/accommodations', authMiddleware, async (req: AuthRequest, res: Res
 
 router.put('/accommodations/:id/checkout', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
+    const existing = await prisma.accommodationRecord.findUnique({ where: { id: req.params.id } })
+    if (!existing) {
+      return res.status(404).json({ success: false, error: '住宿记录不存在' })
+    }
+    if (existing.status === 'CHECKED_OUT') {
+      return res.status(400).json({ success: false, error: '该住宿记录已退房' })
+    }
+
     const record = await prisma.accommodationRecord.update({
       where: { id: req.params.id },
       data: { status: 'CHECKED_OUT', checkOutDate: new Date() }
@@ -885,6 +912,22 @@ router.put('/users/:id/password', authMiddleware, async (req: AuthRequest, res: 
 
 router.delete('/users/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
+    if (req.params.id === req.user!.userId) {
+      return res.status(400).json({ success: false, error: '不能删除自己' })
+    }
+
+    const targetUser = await prisma.user.findUnique({ where: { id: req.params.id } })
+    if (!targetUser) {
+      return res.status(404).json({ success: false, error: '用户不存在' })
+    }
+
+    if (targetUser.role === 'ADMIN') {
+      const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } })
+      if (adminCount <= 1) {
+        return res.status(400).json({ success: false, error: '不能删除最后一个管理员' })
+      }
+    }
+
     await prisma.user.delete({ where: { id: req.params.id } })
     await logOperation(req.user, 'DELETE', 'user', req.params.id)
     res.json({ success: true })

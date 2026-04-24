@@ -1,10 +1,9 @@
 import { Router, Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
-import { PrismaClient } from '@prisma/client'
 import { signToken, authMiddleware, AuthRequest, requireRole } from '../middleware/auth'
+import { prisma } from '../lib/prisma'
 
 const router = Router()
-const prisma = new PrismaClient()
 
 const loginAttempts = new Map<string, { count: number; lockUntil: number }>()
 const MAX_LOGIN_ATTEMPTS = 5

@@ -1,8 +1,6 @@
 import * as XLSX from 'xlsx'
-import { PrismaClient } from '@prisma/client'
 import dayjs from 'dayjs'
-
-const prisma = new PrismaClient()
+import { prisma } from '../lib/prisma'
 
 export type ExportFormat = 'xlsx' | 'csv'
 

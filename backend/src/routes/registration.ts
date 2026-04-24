@@ -1,10 +1,10 @@
 import { Router, Request, Response } from 'express'
-import { PrismaClient, Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import { authMiddleware, AuthRequest } from '../middleware/auth'
 import { submitRequestSchema } from './validation'
+import { prisma } from '../lib/prisma'
 
 const router = Router()
-const prisma = new PrismaClient()
 
 // 获取登记任务列表（公开，获取已启用的）
 router.get('/tasks', async (req: Request, res: Response) => {
@@ -234,142 +234,152 @@ router.put('/requests/:id/approve', authMiddleware, async (req: AuthRequest, res
       return res.status(400).json({ success: false, error: '该请求已处理' })
     }
 
-    // 根据 taskType 分发到对应业务模块
     const { taskType, formData } = request
+    if (!formData || typeof formData !== 'object') {
+      return res.status(400).json({ success: false, error: '表单数据无效' })
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = formData as any
 
-    switch (taskType) {
-      case 'VOLUNTEER':
-        if (data.volunteerTaskId) {
-          await prisma.volunteerSignup.create({
-            data: {
-              taskId: data.volunteerTaskId,
-              volunteerName: data.name || request.submitterName,
-              volunteerPhone: data.phone || request.submitterPhone,
-              status: 'SIGNED_UP'
-            }
-          })
-          await prisma.volunteerTask.update({
-            where: { id: data.volunteerTaskId },
-            data: { currentCount: { increment: 1 } }
-          })
-        }
-        break
-
-      case 'PLAQUE':
-        await prisma.memorialPlaque.create({
-          data: {
-            plaqueType: data.plaqueType || 'LONGEVITY',
-            holderName: data.holderName,
-            deceasedName: data.deceasedName,
-            deceasedName2: data.deceasedName2,
-            birthDate2: data.birthDate2,
-            deathDate2: data.deathDate2,
-            zodiac2: data.zodiac2,
-            gender2: data.gender2,
-            gender: data.gender,
-            zodiac: data.zodiac,
-            birthDate: data.birthDate,
-            birthLunar: data.birthLunar?.includes('1'),
-            deathDate: data.deathDate,
-            deathLunar: data.deathLunar?.includes('1'),
-            yangShang: data.yangShang || request.submitterName,
-            phone: data.phone || request.submitterPhone,
-            address: data.address,
-            dedicationType: data.dedicationType,
-            longevitySubtype: data.longevitySubtype,
-            size: data.size,
-            blessingText: data.blessingText,
-            startDate: data.startDate ? new Date(data.startDate) : new Date(),
-            endDate: data.endDate ? new Date(data.endDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-          }
-        })
-        break
-
-      case 'RITUAL':
-        if (data.ritualId) {
-          await prisma.ritualParticipant.create({
-            data: {
-              ritualId: data.ritualId,
-              name: data.name || request.submitterName,
-              phone: data.phone || request.submitterPhone
-            }
-          })
-        }
-        break
-
-      case 'LAMPOFFERING':
-        await prisma.lampOffering.create({
-          data: {
-            name: request.submitterName,
-            phone: request.submitterPhone,
-            lampType: data.lampType,
-            location: data.location,
-            blessingName: data.blessingName,
-            blessingType: data.blessingType,
-            amount: data.amount || 0,
-            startDate: data.startDate ? new Date(data.startDate) : new Date(),
-            endDate: data.endDate ? new Date(data.endDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-          }
-        })
-        break
-
-      case 'ACCOMMODATION':
-        const roomId = data.roomId
-        if (roomId) {
-          const room = await prisma.room.findUnique({ where: { id: roomId } })
-          if (room && room.status === 'AVAILABLE') {
-            await prisma.accommodationRecord.create({
+    const result = await prisma.$transaction(async (tx) => {
+      switch (taskType) {
+        case 'VOLUNTEER':
+          if (data.volunteerTaskId) {
+            await tx.volunteerSignup.create({
               data: {
-                roomId: room.id,
-                guestName: data.name || request.submitterName,
-                guestPhone: data.phone || request.submitterPhone,
-                accommodationType: data.accommodationType || '住宿',
-                checkInDate: data.checkInDate ? new Date(data.checkInDate) : new Date(),
-                checkOutDate: data.checkOutDate ? new Date(data.checkOutDate) : null,
-                status: 'CHECKED_IN'
+                taskId: data.volunteerTaskId,
+                volunteerName: data.name || request.submitterName,
+                volunteerPhone: data.phone || request.submitterPhone,
+                status: 'SIGNED_UP'
+              }
+            })
+            await tx.volunteerTask.update({
+              where: { id: data.volunteerTaskId },
+              data: { currentCount: { increment: 1 } }
+            })
+          }
+          break
+
+        case 'PLAQUE':
+          await tx.memorialPlaque.create({
+            data: {
+              plaqueType: data.plaqueType || 'LONGEVITY',
+              holderName: data.holderName,
+              deceasedName: data.deceasedName,
+              deceasedName2: data.deceasedName2,
+              birthDate2: data.birthDate2,
+              deathDate2: data.deathDate2,
+              zodiac2: data.zodiac2,
+              gender2: data.gender2,
+              gender: data.gender,
+              zodiac: data.zodiac,
+              birthDate: data.birthDate,
+              birthLunar: data.birthLunar?.includes('1'),
+              deathDate: data.deathDate,
+              deathLunar: data.deathLunar?.includes('1'),
+              yangShang: data.yangShang || request.submitterName,
+              phone: data.phone || request.submitterPhone,
+              address: data.address,
+              dedicationType: data.dedicationType,
+              longevitySubtype: data.longevitySubtype,
+              size: data.size,
+              blessingText: data.blessingText,
+              startDate: data.startDate ? new Date(data.startDate) : new Date(),
+              endDate: data.endDate ? new Date(data.endDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+            }
+          })
+          break
+
+        case 'RITUAL':
+          if (data.ritualId) {
+            await tx.ritualParticipant.create({
+              data: {
+                ritualId: data.ritualId,
+                name: data.name || request.submitterName,
+                phone: data.phone || request.submitterPhone
               }
             })
           }
-        }
-        break
+          break
 
-      case 'DINING':
-        await prisma.diningReservation.create({
-          data: {
-            mealType: data.mealType || 'LUNCH',
-            date: data.date ? new Date(data.date) : new Date(),
-            contactName: request.submitterName,
-            contactPhone: request.submitterPhone,
-            mealCount: data.mealCount || 1,
-            amount: data.amount || 0
+        case 'LAMPOFFERING':
+          await tx.lampOffering.create({
+            data: {
+              name: request.submitterName,
+              phone: request.submitterPhone,
+              lampType: data.lampType,
+              location: data.location,
+              blessingName: data.blessingName,
+              blessingType: data.blessingType,
+              amount: data.amount || 0,
+              startDate: data.startDate ? new Date(data.startDate) : new Date(),
+              endDate: data.endDate ? new Date(data.endDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+            }
+          })
+          break
+
+        case 'ACCOMMODATION':
+          const roomId = data.roomId
+          if (roomId) {
+            const room = await tx.room.findUnique({ where: { id: roomId } })
+            if (room && room.status === 'AVAILABLE') {
+              await tx.accommodationRecord.create({
+                data: {
+                  roomId: room.id,
+                  guestName: data.name || request.submitterName,
+                  guestPhone: data.phone || request.submitterPhone,
+                  accommodationType: data.accommodationType || '住宿',
+                  checkInDate: data.checkInDate ? new Date(data.checkInDate) : new Date(),
+                  checkOutDate: data.checkOutDate ? new Date(data.checkOutDate) : null,
+                  status: 'CHECKED_IN'
+                }
+              })
+              await tx.room.update({
+                where: { id: roomId },
+                data: { status: 'OCCUPIED' }
+              })
+            }
           }
-        })
-        break
-    }
+          break
 
-    // 更新请求状态
-    const updated = await prisma.registrationRequest.update({
-      where: { id },
-      data: {
-        status: 'APPROVED',
-        approvedById: req.user!.userId,
-        approvedAt: new Date()
+        case 'DINING':
+          await tx.diningReservation.create({
+            data: {
+              mealType: data.mealType || 'LUNCH',
+              date: data.date ? new Date(data.date) : new Date(),
+              contactName: request.submitterName,
+              contactPhone: request.submitterPhone,
+              mealCount: data.mealCount || 1,
+              amount: data.amount || 0
+            }
+          })
+          break
       }
+
+      const updated = await tx.registrationRequest.update({
+        where: { id },
+        data: {
+          status: 'APPROVED',
+          approvedById: req.user!.userId,
+          approvedAt: new Date()
+        }
+      })
+
+      await tx.operationLog.create({
+        data: {
+          userId: req.user!.userId,
+          username: req.user!.username,
+          action: 'APPROVE',
+          targetType: 'registration_request',
+          targetId: id,
+          afterValue: { status: 'APPROVED' }
+        }
+      })
+
+      return updated
     })
 
-    await prisma.operationLog.create({
-      data: {
-        userId: req.user!.userId,
-        username: req.user!.username,
-        action: 'APPROVE',
-        targetType: 'registration_request',
-        targetId: id,
-        afterValue: { status: 'APPROVED' }
-      }
-    })
-
-    res.json({ success: true, data: updated })
+    res.json({ success: true, data: result })
   } catch (error) {
     console.error('Approve request error:', error)
     res.status(500).json({ success: false, error: '服务器错误' })
