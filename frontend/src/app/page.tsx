@@ -66,7 +66,7 @@ export default function HomePage() {
             <p className="text-gray-400">加载中...</p>
           ) : displayTasks.length > 0 ? (
             <div className="grid grid-cols-2 gap-5 max-w-md mx-auto">
-              {displayTasks.slice(0, 4).map(task => (
+              {displayTasks.map(task => (
                 <Link
                   key={task.id}
                   href={task.taskType === 'PLAQUE' ? '/register?taskType=PLAQUE' : `/register?taskId=${task.id}`}
