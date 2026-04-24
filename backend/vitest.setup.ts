@@ -1,0 +1,1 @@
+process.env.JWT_SECRET = 'test-secret-key-that-is-at-least-32-characters-long'
