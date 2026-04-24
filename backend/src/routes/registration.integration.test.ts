@@ -47,7 +47,7 @@ describe('Registration Flow Logic Tests', () => {
     })
 
     it('should correctly switch on taskType for PLAQUE', () => {
-      const taskType = 'PLAQUE'
+      const taskType: string = 'PLAQUE'
       let result: string
 
       switch (taskType) {
@@ -113,29 +113,29 @@ describe('Registration Flow Logic Tests', () => {
 
   describe('Submitter Info Extraction', () => {
     it('should extract submitterName correctly for LONGEVITY', () => {
-      const taskType = 'LONGEVITY'
-      const formData = { blessingName: '祝福人', holderName: '持名者' }
+      const taskType: string = 'LONGEVITY'
+      const formData: Record<string, string> = { blessingName: '祝福人', holderName: '持名者' }
 
-      const getSubmitterName = () => {
-        if (taskType === 'LONGEVITY' || taskType === 'LAMP') return formData.blessingName || formData.holderName || ''
-        if (taskType === 'DELIVERANCE') return formData.yangShang || ''
-        return formData.name || ''
+      const getSubmitterName = (tt: string, fd: Record<string, string>) => {
+        if (tt === 'LONGEVITY' || tt === 'LAMP') return fd.blessingName || fd.holderName || ''
+        if (tt === 'DELIVERANCE') return fd.yangShang || ''
+        return fd.name || ''
       }
 
-      expect(getSubmitterName()).toBe('祝福人')
+      expect(getSubmitterName(taskType, formData)).toBe('祝福人')
     })
 
     it('should extract submitterName for DELIVERANCE', () => {
-      const taskType = 'DELIVERANCE'
-      const formData = { yangShang: '阳上人', name: '其他' }
+      const taskType: string = 'DELIVERANCE'
+      const formData: Record<string, string> = { yangShang: '阳上人', name: '其他' }
 
-      const getSubmitterName = () => {
-        if (taskType === 'LONGEVITY' || taskType === 'LAMP') return formData.blessingName || formData.holderName || ''
-        if (taskType === 'DELIVERANCE') return formData.yangShang || ''
-        return formData.name || ''
+      const getSubmitterName = (tt: string, fd: Record<string, string>) => {
+        if (tt === 'LONGEVITY' || tt === 'LAMP') return fd.blessingName || fd.holderName || ''
+        if (tt === 'DELIVERANCE') return fd.yangShang || ''
+        return fd.name || ''
       }
 
-      expect(getSubmitterName()).toBe('阳上人')
+      expect(getSubmitterName(taskType, formData)).toBe('阳上人')
     })
   })
 })
