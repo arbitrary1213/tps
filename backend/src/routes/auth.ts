@@ -6,9 +6,52 @@ import { signToken, authMiddleware, AuthRequest, requireRole } from '../middlewa
 const router = Router()
 const prisma = new PrismaClient()
 
+const loginAttempts = new Map<string, { count: number; lockUntil: number }>()
+const MAX_LOGIN_ATTEMPTS = 5
+const LOCK_DURATION_MS = 15 * 60 * 1000
+
+const getClientIP = (req: Request): string => {
+  return req.ip || req.socket.remoteAddress || 'unknown'
+}
+
+const isLocked = (ip: string): boolean => {
+  const entry = loginAttempts.get(ip)
+  if (!entry) return false
+  if (Date.now() > entry.lockUntil) {
+    loginAttempts.delete(ip)
+    return false
+  }
+  return true
+}
+
+const recordFailedAttempt = (ip: string): void => {
+  const entry = loginAttempts.get(ip)
+  if (entry) {
+    entry.count++
+    entry.lockUntil = Date.now() + LOCK_DURATION_MS
+  } else {
+    loginAttempts.set(ip, { count: 1, lockUntil: Date.now() + LOCK_DURATION_MS })
+  }
+}
+
+const clearFailedAttempts = (ip: string): void => {
+  loginAttempts.delete(ip)
+}
+
 // 登录
 router.post('/login', async (req: Request, res: Response) => {
   try {
+    const clientIP = getClientIP(req)
+
+    if (isLocked(clientIP)) {
+      const entry = loginAttempts.get(clientIP)
+      const waitMinutes = Math.ceil((entry!.lockUntil - Date.now()) / 60000)
+      return res.status(429).json({
+        success: false,
+        error: `登录失败次数过多，请${waitMinutes}分钟后再试`
+      })
+    }
+
     const { username, password } = req.body
 
     if (!username || !password) {
@@ -22,13 +65,17 @@ router.post('/login', async (req: Request, res: Response) => {
     })
 
     if (!user) {
+      recordFailedAttempt(clientIP)
       return res.status(401).json({ success: false, error: '账号或密码错误' })
     }
 
     const valid = await bcrypt.compare(password, user.password)
     if (!valid) {
+      recordFailedAttempt(clientIP)
       return res.status(401).json({ success: false, error: '账号或密码错误' })
     }
+
+    clearFailedAttempts(clientIP)
 
     const token = signToken({
       userId: user.id,

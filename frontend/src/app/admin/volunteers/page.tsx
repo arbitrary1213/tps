@@ -264,6 +264,17 @@ export default function VolunteersPage() {
     setDetailModalOpen(true)
   }
 
+  const handleDelete = async (volunteer: Volunteer) => {
+    if (!confirm(`确定要删除义工"${volunteer.name}"吗？删除后不可恢复。`)) return
+    try {
+      await businessAPI.deleteVolunteer(token!, volunteer.id)
+      loadVolunteers()
+    } catch (error) {
+      console.error('删除失败:', error)
+      alert('删除失败')
+    }
+  }
+
   const resetForm = () => {
     setFormData(defaultForm)
     setEditing(null)
@@ -336,7 +347,8 @@ export default function VolunteersPage() {
                   <td className="py-3 px-4">{volunteer.totalHours}小时</td>
                   <td className="py-3 px-4">
                     <button onClick={() => handleView(volunteer)} className="text-blue-600 hover:underline mr-3">查看</button>
-                    <button onClick={() => handleEdit(volunteer)} className="text-vermilion hover:underline">编辑</button>
+                    <button onClick={() => handleEdit(volunteer)} className="text-vermilion hover:underline mr-3">编辑</button>
+                    <button onClick={() => handleDelete(volunteer)} className="text-red-600 hover:underline">删除</button>
                   </td>
                 </tr>
               ))}

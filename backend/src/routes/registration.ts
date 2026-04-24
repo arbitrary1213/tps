@@ -96,6 +96,27 @@ router.put('/tasks/:id', authMiddleware, async (req: AuthRequest, res: Response)
   }
 })
 
+// 删除登记请求（需认证）
+router.delete('/requests/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params
+    await prisma.registrationRequest.delete({ where: { id } })
+    await prisma.operationLog.create({
+      data: {
+        userId: req.user!.userId,
+        username: req.user!.username,
+        action: 'DELETE',
+        targetType: 'registration_request',
+        targetId: id
+      }
+    })
+    res.json({ success: true })
+  } catch (error) {
+    console.error('Delete request error:', error)
+    res.status(500).json({ success: false, error: '删除失败' })
+  }
+})
+
 // 删除登记任务（需认证）
 router.delete('/tasks/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -219,13 +240,20 @@ router.put('/requests/:id/approve', authMiddleware, async (req: AuthRequest, res
 
     switch (taskType) {
       case 'VOLUNTEER':
-        await prisma.volunteer.create({
-          data: {
-            name: data.name || request.submitterName,
-            phone: data.phone || request.submitterPhone,
-            skills: data.skills || []
-          }
-        })
+        if (data.volunteerTaskId) {
+          await prisma.volunteerSignup.create({
+            data: {
+              taskId: data.volunteerTaskId,
+              volunteerName: data.name || request.submitterName,
+              volunteerPhone: data.phone || request.submitterPhone,
+              status: 'SIGNED_UP'
+            }
+          })
+          await prisma.volunteerTask.update({
+            where: { id: data.volunteerTaskId },
+            data: { currentCount: { increment: 1 } }
+          })
+        }
         break
 
       case 'PLAQUE':

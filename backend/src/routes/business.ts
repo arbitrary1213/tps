@@ -338,7 +338,13 @@ router.get('/plaques', authMiddleware, async (req: AuthRequest, res: Response) =
 
 router.post('/plaques', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const data = { ...req.body, createdBy: req.user!.username }
+    const validFields = ['id', 'plaqueType', 'holderName', 'deceasedName', 'deceasedName2', 'birthDate2', 'deathDate2', 'zodiac2', 'gender2', 'gender', 'zodiac', 'birthDate', 'birthLunar', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'dedicationType', 'longevitySubtype', 'size', 'startDate', 'endDate', 'blessingText', 'status', 'remarks', 'templateId', 'devoteeId', 'ritualId', 'createdBy', 'createdAt', 'updatedAt']
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any = {}
+    for (const key of validFields) {
+      if (req.body[key] !== undefined) data[key] = req.body[key]
+    }
+    data.createdBy = req.user!.username
     // Clean invalid date values
     for (const _fk of ['startDate', 'endDate', 'deceasedDate', 'enlightenmentDate']) {
       const _fv = data[_fk]
@@ -365,7 +371,12 @@ router.post('/plaques', authMiddleware, async (req: AuthRequest, res: Response) 
 
 router.put('/plaques/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const data = { ...req.body }
+    const validFields = ['id', 'plaqueType', 'holderName', 'deceasedName', 'deceasedName2', 'birthDate2', 'deathDate2', 'zodiac2', 'gender2', 'gender', 'zodiac', 'birthDate', 'birthLunar', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'dedicationType', 'longevitySubtype', 'size', 'startDate', 'endDate', 'blessingText', 'status', 'remarks', 'templateId', 'devoteeId', 'ritualId', 'createdBy', 'createdAt', 'updatedAt']
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any = {}
+    for (const key of validFields) {
+      if (req.body[key] !== undefined) data[key] = req.body[key]
+    }
     // Clean invalid date values (handles empty, '0/0/0', invalid strings)
     for (const _fk of ['startDate', 'endDate', 'deceasedDate', 'enlightenmentDate']) {
       const _fv = data[_fk]

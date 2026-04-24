@@ -92,6 +92,16 @@ export default function ApprovalsPage() {
     setDetailModal(true)
   }
 
+  const handleDelete = async (id: string) => {
+    if (!confirm('确定要删除这条登记申请吗？删除后不可恢复。')) return
+    try {
+      await registrationAPI.deleteRequest(token!, id)
+      loadRequests()
+    } catch (error) {
+      console.error('删除失败:', error)
+    }
+  }
+
   const tabs = [
     { id: 'PENDING', label: '待审批', count: requests.filter(r => r.status === 'PENDING').length },
     { id: 'APPROVED', label: '已通过' },
@@ -119,6 +129,7 @@ export default function ApprovalsPage() {
             <Button size="sm" variant="danger" onClick={() => { setSelectedRequest(row); setDetailModal(true); }}>拒绝</Button>
           </>
         )}
+        <Button size="sm" variant="danger" onClick={() => handleDelete(row.id)}>删除</Button>
       </div>
     )},
   ]

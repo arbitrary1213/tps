@@ -173,9 +173,9 @@ export default function PlaquesPage() {
 
   const loadDedicationTypes = async () => {
     try {
-      const res = await systemAPI.getSettings()
-      if (res.dedicationTypes) {
-        setDedicationTypes(res.dedicationTypes.split(',').filter(Boolean))
+      const data = await systemAPI.getSettings()
+      if (data?.dedicationTypes) {
+        setDedicationTypes(data.dedicationTypes.split(',').filter(Boolean))
       }
     } catch (error) {
       console.error('加载超度类型失败:', error)

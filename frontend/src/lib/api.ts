@@ -86,6 +86,8 @@ export const registrationAPI = {
     request<any>(`/api/registration/requests/${id}/approve`, { method: 'PUT', token }),
   rejectRequest: (token: string, id: string, reason: string) =>
     request<any>(`/api/registration/requests/${id}/reject`, { method: 'PUT', token, body: JSON.stringify({ reason }) }),
+  deleteRequest: (token: string, id: string) =>
+    request(`/api/registration/requests/${id}`, { method: 'DELETE', token }),
 }
 
 // 业务模块

@@ -46,7 +46,7 @@ export default function SettingsPage() {
         if (data.dedicationTypes) {
           setDedicationTypes(data.dedicationTypes.split(',').filter(Boolean))
         } else {
-          setDedicationTypes(['冤亲债主', '堕胎婴灵', '历代宗亲', '无缘殊胜', '生日超度', '忌日超度', '新建地基主', '地基主'])
+          setDedicationTypes(['冤亲债主', '堕胎婴灵', '历代宗亲', '新建地基主', '地基主'])
         }
       }
     } catch (error) {
