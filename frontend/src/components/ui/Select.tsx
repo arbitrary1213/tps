@@ -4,7 +4,7 @@ import { SelectHTMLAttributes, forwardRef } from 'react'
 import { clsx } from 'clsx'
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
-  label?: string
+  label?: React.ReactNode
   error?: string
   options: { value: string; label: string }[]
   placeholder?: string

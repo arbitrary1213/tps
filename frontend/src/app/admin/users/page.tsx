@@ -49,6 +49,8 @@ export default function UsersPage() {
   }
 
   const handleSubmit = async () => {
+    if (!formData.username?.trim()) { alert('请输入用户名'); return; }
+    if (!formData.password?.trim()) { alert('请输入密码'); return; }
     try {
       await businessAPI.createUser(token!, formData)
       setModalOpen(false)
@@ -139,12 +141,12 @@ export default function UsersPage() {
       >
         <div className="space-y-4">
           <Input
-            label="用户名"
+            label="用户名*"
             value={formData.username}
             onChange={(e) => setFormData({ ...formData, username: e.target.value })}
           />
           <Input
-            label="密码"
+            label="密码*"
             type="password"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}

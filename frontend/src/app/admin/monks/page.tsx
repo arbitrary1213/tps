@@ -72,6 +72,7 @@ export default function MonksPage() {
   )
 
   const handleSubmit = async () => {
+    if (!formData.name?.trim()) { alert('请输入僧人字号'); return; }
     try {
       // Build API data with only non-empty values
       const apiData: any = {}
@@ -208,7 +209,7 @@ export default function MonksPage() {
             onChange={(e) => setFormData({ ...formData, dharmaName: e.target.value })}
           />
           <Input
-            label="字号"
+            label="字号*"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           />

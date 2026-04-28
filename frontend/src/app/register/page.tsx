@@ -22,6 +22,7 @@ const taskTypeMap: Record<string, string> = {
 type FieldType = 'text' | 'tel' | 'date' | 'select' | 'checkbox' | 'textarea'
 
 interface FieldDef {
+  required?: boolean
   type: FieldType
   label: string
   options?: { label: string; value: string }[]
@@ -32,11 +33,12 @@ interface FieldDef {
 
 const fieldDefs: Record<string, FieldDef> = {
   // --- 通用字段 ---
-  name:            { type: 'text',  label: '姓名' },
+  name:            { type: 'text',  label: '姓名', required: true },
+  holderName:      { type: 'text', label: '姓名', required: true },
   dharmaName:      { type: 'text',  label: '法名', hint: '（没有可留空）' },
   gender:          { type: 'select', label: '性别', options: [{ label:'男',value:'男' },{ label:'女',value:'女' }] },
   birthDate:       { type: 'date',  label: '出生年月' },
-  phone:           { type: 'tel',   label: '联系电话' },
+  phone:           { type: 'tel',   label: '联系电话', required: true },
   address:         { type: 'textarea', label: '通讯地址' },
   emergencyContact:{ type: 'tel',  label: '紧急联络人电话', hint: '（供突发状况联系）' },
 
@@ -83,7 +85,7 @@ const fieldDefs: Record<string, FieldDef> = {
   deceasedName:    { type: 'text', label: '亡者姓名' },
   deathDate:       { type: 'date', label: '忌日' },
   deathLunar:      { type: 'checkbox', label: '农历', options:[{ label:'农历',value:'1' }] },
-  yangShang:       { type: 'text', label: '阳上人（建档人）' },
+  yangShang:       { type: 'text', label: '阳上人（建档人）', required: true },
 
   // --- 超度牌位 ---
   dedicationType:   { type: 'select', label: '超度类型', options:[
@@ -110,7 +112,7 @@ const fieldDefs: Record<string, FieldDef> = {
     { label:'一楼',value:'一楼' },{ label:'二楼',value:'二楼' },
     { label:'三楼',value:'三楼' },{ label:'其他',value:'其他' },
   ]},
-  blessingName:    { type: 'text', label: '祈福人姓名' },
+  blessingName:    { type: 'text', label: '祈福人姓名', required: true },
 
   // --- 法会 ---
   ritualId:        { type: 'select', label: '选择法会', options:[] }, // 动态加载
@@ -132,8 +134,8 @@ const fieldDefs: Record<string, FieldDef> = {
   ]},
   mealCount:       { type:'text', label:'用餐人数' },
   mealDate:       { type: 'date', label: '预约时间' },
-  contactName:     { type: 'text', label: '联系人姓名' },
-  contactPhone:    { type: 'tel', label: '联系人电话' },
+  contactName:     { type: 'text', label: '联系人姓名', required: true },
+  contactPhone:    { type: 'tel', label: '联系人电话', required: true },
 
   // --- 住宿房间 ---
   roomId:          { type: 'select', label: '选择房间', options:[] },
@@ -384,6 +386,34 @@ export default function RegisterPage() {
     e.preventDefault()
     if (!activeTask) return
 
+    const requiredFieldsByTaskType: Record<string, string[]> = {
+      VOLUNTEER: ['name', 'phone'],
+      LONGEVITY: ['holderName', 'phone'],
+      DELIVERANCE_GENERAL: ['dedicationType', 'yangShang', 'phone'],
+      DELIVERANCE_SPECIFIC: ['yangShang', 'phone'],
+      RITUAL: ['ritualId', 'name', 'phone'],
+      LAMP: ['blessingName', 'lampType', 'phone'],
+      DINING: ['mealType', 'mealDate', 'contactName', 'contactPhone'],
+      ACCOMMODATION: ['name', 'phone'],
+    }
+
+    let taskTypeKey = activeTask.taskType
+    if (isPlaqueMode) {
+      if (activeTask.taskType === 'PLAQUE' || activeTask.taskType === 'LONGEVITY') {
+        taskTypeKey = 'LONGEVITY'
+      } else if (activeTask.taskType === 'DELIVERANCE' || activeTask.taskType === 'REBIRTH') {
+        taskTypeKey = plaqueType === 'DELIVERANCE' && formData.deceasedType === 'specific' ? 'DELIVERANCE_SPECIFIC' : 'DELIVERANCE_GENERAL'
+      }
+    }
+
+    const requiredFields = requiredFieldsByTaskType[taskTypeKey] || []
+    for (const field of requiredFields) {
+      if (!formData[field] || formData[field] === '') {
+        alert('请输入必填数据')
+        return
+      }
+    }
+
     setSubmitting(true)
     try {
       let taskId = activeTask.id
@@ -461,6 +491,7 @@ export default function RegisterPage() {
         <div key={fieldKey} className=''>
           <label className="block text-sm font-medium text-tea mb-1 tracking-wide">
             {label}
+            {def.required && <span className="text-red-500 ml-1">*</span>}
             {hint && <span className="text-xs text-tea/60 ml-1">{hint}</span>}
           </label>
           <select
@@ -480,7 +511,10 @@ export default function RegisterPage() {
     if (type === 'checkbox') {
       return (
         <div key={fieldKey} className=''>
-          <label className="block text-sm font-medium text-tea mb-2 tracking-wide">{label}</label>
+          <label className="block text-sm font-medium text-tea mb-2 tracking-wide">
+            {label}
+            {def.required && <span className="text-red-500 ml-1">*</span>}
+          </label>
           <div className="flex flex-wrap gap-2">
             {(options || []).map(opt => (
               <label key={opt.value} className="flex items-center gap-2 text-sm text-tea cursor-pointer py-1 px-2 border border-[#E8E0D0] rounded hover:bg-paper-dark">
@@ -511,6 +545,7 @@ export default function RegisterPage() {
         <div key={fieldKey} className=''>
           <label className="block text-sm font-medium text-tea mb-1 tracking-wide">
             {label}
+            {def.required && <span className="text-red-500 ml-1">*</span>}
             {hint && <span className="text-xs text-tea/60 ml-1">{hint}</span>}
           </label>
           <textarea
@@ -528,6 +563,7 @@ export default function RegisterPage() {
       <div key={fieldKey} className=''>
         <label className="block text-sm font-medium text-tea mb-1 tracking-wide">
           {label}
+          {def.required && <span className="text-red-500 ml-1">*</span>}
           {hint && <span className="text-xs text-tea/60 ml-1">{hint}</span>}
         </label>
         <input

@@ -90,12 +90,12 @@ export default function VolunteerAttendancePage() {
       </div>
 
       <Card>
-        <Table
+        <div className="overflow-x-auto rounded-xl border"><Table
           columns={columns}
           data={tasks}
           loading={loading}
           emptyText="当前没有进行中的任务"
-        />
+        /></div>
       </Card>
 
       <Modal

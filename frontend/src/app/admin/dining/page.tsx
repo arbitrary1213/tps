@@ -54,6 +54,9 @@ export default function DiningPage() {
   }
 
   const handleSubmit = async () => {
+    if (!formData.date?.trim()) { alert('请选择日期'); return; }
+    if (!formData.mealType) { alert('请选择餐型'); return; }
+    if (!formData.mealCount) { alert('请输入用餐人数'); return; }
     try {
       await businessAPI.createDining(token!, formData)
       setModalOpen(false)
@@ -92,24 +95,25 @@ export default function DiningPage() {
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-medium text-ink">斋堂管理</h2>
           <p className="text-sm text-tea/60 mt-1">管理用餐预定和记录</p>
         </div>
-        <Button onClick={() => setModalOpen(true)}>
+        <Button onClick={() => setModalOpen(true)} className="active:scale-[0.98] transition-all duration-200">
           新增预定
         </Button>
       </div>
 
       <Card>
-        <Table
+        <div className="overflow-x-auto rounded-xl border min-w-0"><Table
           columns={columns}
           data={records}
           loading={loading}
           emptyText="暂无用餐预定"
         />
+        </div>
       </Card>
 
       <Modal
@@ -120,19 +124,19 @@ export default function DiningPage() {
         <div className="grid grid-cols-2 gap-4">
           <Input
             onClick={(e) => e.stopPropagation()}
-            label="日期"
+            label={<><span className="text-red-500">*</span> 日期</>}
             type="date"
             value={formData.date}
             onChange={(e) => setFormData({ ...formData, date: e.target.value })}
           />
           <Select
-            label="餐型"
+            label={<><span className="text-red-500">*</span> 餐型</>}
             value={formData.mealType}
             onChange={(e) => setFormData({ ...formData, mealType: e.target.value })}
             options={mealTypeOptions}
           />
           <Input
-            label="用餐人数"
+            label={<><span className="text-red-500">*</span> 用餐人数</>}
             type="number"
             value={formData.mealCount}
             onChange={(e) => setFormData({ ...formData, mealCount: parseInt(e.target.value) || 0 })}
@@ -157,8 +161,8 @@ export default function DiningPage() {
           />
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={() => setModalOpen(false)}>取消</Button>
-          <Button onClick={handleSubmit}>保存</Button>
+          <Button variant="secondary" onClick={() => setModalOpen(false)} className="active:scale-[0.98] transition-all duration-200">取消</Button>
+          <Button onClick={handleSubmit} className="active:scale-[0.98] transition-all duration-200">保存</Button>
         </div>
       </Modal>
     </div>

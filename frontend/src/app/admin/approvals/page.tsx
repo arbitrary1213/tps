@@ -166,12 +166,12 @@ export default function ApprovalsPage() {
         {activeTab === 'PENDING' && requests.filter(r => r.status === 'PENDING').length === 0 ? (
           <Empty title="暂无待审批" description="当前没有待审批的登记申请" />
         ) : (
-          <Table
+          <div className="overflow-x-auto rounded-xl border"><Table
             columns={columns}
             data={requests}
             loading={loading}
             emptyText="暂无数据"
-          />
+          /></div>
         )}
       </Card>
 

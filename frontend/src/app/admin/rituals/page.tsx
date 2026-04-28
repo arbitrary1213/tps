@@ -76,6 +76,11 @@ export default function RitualsPage() {
   }
 
   const handleSubmit = async () => {
+    if (!formData.name?.trim()) { alert('请输入法会名称'); return; }
+    if (!formData.ritualDate?.trim()) { alert('请选择日期'); return; }
+    if (!formData.startTime?.trim()) { alert('请选择开始时间'); return; }
+    if (!formData.endTime?.trim()) { alert('请选择结束时间'); return; }
+    if (!formData.location?.trim()) { alert('请输入地点'); return; }
     try {
       if (editing) {
         await businessAPI.updateRitual(token!, editing.id, formData)
@@ -175,7 +180,7 @@ export default function RitualsPage() {
     )},
     { key: 'actions', title: '操作', render: (row: Ritual) => (
       <div className="flex gap-2">
-        <Button size="sm" variant="ghost" onClick={() => handleEdit(row)}>编辑</Button>
+        <Button size="sm" variant="ghost" onClick={() => handleEdit(row)} className="active:scale-[0.98] transition-all duration-200">编辑</Button>
         <select
           value={row.status}
           onChange={(e) => handleStatusChange(row, e.target.value)}
@@ -185,30 +190,31 @@ export default function RitualsPage() {
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
-        <Button size="sm" variant="danger" onClick={() => handleDelete(row.id)}>删除</Button>
+        <Button size="sm" variant="danger" onClick={() => handleDelete(row.id)} className="active:scale-[0.98] transition-all duration-200">删除</Button>
       </div>
     )},
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-medium text-ink">法会管理</h2>
           <p className="text-sm text-tea/60 mt-1">管理法会的创建、发布和参与者</p>
         </div>
-        <Button onClick={() => { resetForm(); setEditing(null); setModalOpen(true); }}>
+        <Button onClick={() => { resetForm(); setEditing(null); setModalOpen(true); }} className="active:scale-[0.98] transition-all duration-200">
           新建法会
         </Button>
       </div>
 
       <Card>
-        <Table
+        <div className="overflow-x-auto rounded-xl border min-w-0"><Table
           columns={columns}
           data={rituals}
           loading={loading}
           emptyText="暂无法会"
         />
+        </div>
       </Card>
 
       <Modal
@@ -220,7 +226,7 @@ export default function RitualsPage() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <Input
-              label="法会名称"
+              label="法会名称 *"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="如：观音诞辰法会"
@@ -241,21 +247,21 @@ export default function RitualsPage() {
           <div className="grid grid-cols-3 gap-4">
             <Input
               onClick={(e) => e.stopPropagation()}
-              label="日期"
+              label="日期 *"
               type="date"
               value={formData.ritualDate}
               onChange={(e) => setFormData({ ...formData, ritualDate: e.target.value })}
             />
             <Input
               onClick={(e) => e.stopPropagation()}
-              label="开始时间"
+              label="开始时间 *"
               type="time"
               value={formData.startTime}
               onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
             />
             <Input
               onClick={(e) => e.stopPropagation()}
-              label="结束时间"
+              label="结束时间 *"
               type="time"
               value={formData.endTime}
               onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
@@ -263,7 +269,7 @@ export default function RitualsPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Input
-              label="地点"
+              label="地点 *"
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
             />
@@ -291,8 +297,8 @@ export default function RitualsPage() {
           </div>
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={() => { setModalOpen(false); setEditing(null); }}>取消</Button>
-          <Button onClick={handleSubmit}>保存</Button>
+          <Button variant="secondary" onClick={() => { setModalOpen(false); setEditing(null); }} className="active:scale-[0.98] transition-all duration-200">取消</Button>
+          <Button onClick={handleSubmit} className="active:scale-[0.98] transition-all duration-200">保存</Button>
         </div>
       </Modal>
     </div>

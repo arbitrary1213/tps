@@ -339,6 +339,8 @@ model PlaqueTemplate {
   type            String   // LONGEVITY / REBIRTH / DELIVERANCE / ALL
   backgroundImage String?  // 底图（base64，仅设计参考，打印时不输出）
   elements        Json     // 模板元素数组
+  paperWidth      Int      @default(210)  @map("paperwidth")  // 纸张宽度(mm)
+  paperHeight     Int      @default(297)  @map("paperheight")  // 纸张高度(mm)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

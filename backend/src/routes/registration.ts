@@ -285,7 +285,8 @@ router.put('/requests/:id/approve', authMiddleware, async (req: AuthRequest, res
               size: data.size,
               blessingText: data.blessingText,
               startDate: data.startDate ? new Date(data.startDate) : new Date(),
-              endDate: data.endDate ? new Date(data.endDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+              endDate: data.endDate ? new Date(data.endDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+              ritualId: data.ritualId || null,
             }
           })
           break

@@ -192,12 +192,12 @@ export default function VolunteerTasksPage() {
       </div>
 
       <Card>
-        <Table
+        <div className="overflow-x-auto rounded-xl border"><Table
           columns={columns}
           data={tasks}
           loading={loading}
           emptyText="暂无义工任务"
-        />
+        /></div>
       </Card>
 
       <Modal

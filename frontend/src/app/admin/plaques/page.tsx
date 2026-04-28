@@ -373,17 +373,14 @@ export default function PlaquesPage() {
 
   const handleSubmit = async () => {
     // 验证必填字段
-    if (formData.plaqueType === 'LONGEVITY' && !formData.holderName) {
-      alert('请输入姓名')
-      return
+    if (formData.plaqueType === 'LONGEVITY' && !formData.holderName?.trim()) {
+      alert('请输入禄位持有人姓名'); return;
     }
-    if (formData.plaqueType === 'REBIRTH' && !formData.deceasedName) {
-      alert('请输入亡者姓名')
-      return
+    if (formData.plaqueType === 'REBIRTH' && !formData.deceasedName?.trim()) {
+      alert('请输入往生者姓名'); return;
     }
     if (formData.plaqueType === 'DELIVERANCE' && !formData.dedicationType) {
-      alert('请选择超度类型')
-      return
+      alert('请选择超度类型'); return;
     }
     if (formData.plaqueType === 'DELIVERANCE' && formData.dedicationType === 'custom' && !formData.customDedicationType) {
       alert('请输入自定义超度类型')
@@ -593,28 +590,28 @@ export default function PlaquesPage() {
     )},
     { key: 'actions', title: '操作', render: (row: Plaque) => (
       <div className="flex gap-2 flex-wrap">
-        <Button size="sm" variant="ghost" onClick={() => handlePreview(row)}>预览</Button>
-        <Button size="sm" variant="ghost" onClick={() => handleEdit(row)}>编辑</Button>
-        <Button size="sm" variant="secondary" onClick={() => handleExtend(row)}>延期</Button>
+        <Button size="sm" variant="ghost" onClick={() => handlePreview(row)} className="active:scale-[0.98] transition-all duration-200">预览</Button>
+        <Button size="sm" variant="ghost" onClick={() => handleEdit(row)} className="active:scale-[0.98] transition-all duration-200">编辑</Button>
+        <Button size="sm" variant="secondary" onClick={() => handleExtend(row)} className="active:scale-[0.98] transition-all duration-200">延期</Button>
         {row.status !== 'CANCELLED' && (
-          <Button size="sm" variant="danger" onClick={() => handleDelete(row.id)}>作废</Button>
+          <Button size="sm" variant="danger" onClick={() => handleDelete(row.id)} className="active:scale-[0.98] transition-all duration-200">作废</Button>
         )}
       </div>
     )},
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-medium text-ink">牌位管理</h2>
           <p className="text-sm text-tea/60 mt-1">管理延生禄位、往生莲位和超度牌位</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setImportModalOpen(true)}>
+          <Button variant="secondary" onClick={() => setImportModalOpen(true)} className="active:scale-[0.98] transition-all duration-200">
             批量导入
           </Button>
-          <Button onClick={() => { resetForm(); setEditing(null); setModalOpen(true); }}>
+          <Button onClick={() => { resetForm(); setEditing(null); setModalOpen(true); }} className="active:scale-[0.98] transition-all duration-200">
             新建牌位
           </Button>
         </div>
@@ -626,7 +623,7 @@ export default function PlaquesPage() {
             value={search}
             onChange={setSearch}
             placeholder="搜索姓名或阳上..."
-            className="w-64"
+            className="w-full sm:w-auto"
           />
           <Select
             value={filterType}
@@ -652,17 +649,18 @@ export default function PlaquesPage() {
         {selectedIds.size > 0 && (
           <div className="flex items-center gap-2 mb-4 p-2 bg-amber-50 rounded">
             <span className="text-sm text-amber-800">已选择 {selectedIds.size} 项</span>
-            <Button size="sm" variant="secondary" onClick={() => { setBatchAction('extend'); setBatchExtendDate(''); setBatchModalOpen(true); }}>批量延期</Button>
-            <Button size="sm" variant="danger" onClick={() => { setBatchAction('cancel'); setBatchModalOpen(true); }}>批量作废</Button>
-            <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>取消选择</Button>
+            <Button size="sm" variant="secondary" onClick={() => { setBatchAction('extend'); setBatchExtendDate(''); setBatchModalOpen(true); }} className="active:scale-[0.98] transition-all duration-200">批量延期</Button>
+            <Button size="sm" variant="danger" onClick={() => { setBatchAction('cancel'); setBatchModalOpen(true); }} className="active:scale-[0.98] transition-all duration-200">批量作废</Button>
+            <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} className="active:scale-[0.98] transition-all duration-200">取消选择</Button>
           </div>
         )}
-        <Table
+        <div className="overflow-x-auto rounded-xl border min-w-0"><Table
           columns={columns}
           data={filteredPlaques}
           loading={loading}
           emptyText="暂无牌位"
         />
+        </div>
       </Card>
 
       <Modal
@@ -1060,8 +1058,8 @@ export default function PlaquesPage() {
           />
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={() => { setModalOpen(false); setEditing(null); }}>取消</Button>
-          <Button onClick={handleSubmit}>保存</Button>
+          <Button variant="secondary" onClick={() => { setModalOpen(false); setEditing(null); }} className="active:scale-[0.98] transition-all duration-200">取消</Button>
+          <Button onClick={handleSubmit} className="active:scale-[0.98] transition-all duration-200">保存</Button>
         </div>
       </Modal>
 
@@ -1133,7 +1131,7 @@ export default function PlaquesPage() {
           </div>
 
           <div className="flex gap-3">
-            <Button variant="secondary" onClick={downloadImportTemplate}>
+            <Button variant="secondary" onClick={downloadImportTemplate} className="active:scale-[0.98] transition-all duration-200">
               下载模板
             </Button>
             <label className="flex-1">
@@ -1173,7 +1171,7 @@ export default function PlaquesPage() {
           )}
 
           <div className="flex justify-end">
-            <Button variant="secondary" onClick={closeImportModal}>
+            <Button variant="secondary" onClick={closeImportModal} className="active:scale-[0.98] transition-all duration-200">
               关闭
             </Button>
           </div>
@@ -1200,7 +1198,7 @@ export default function PlaquesPage() {
             </div>
           )}
           <div className="flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setBatchModalOpen(false)}>取消</Button>
+            <Button variant="secondary" onClick={() => setBatchModalOpen(false)} className="active:scale-[0.98] transition-all duration-200">取消</Button>
             <Button
               onClick={async () => {
                 try {
@@ -1219,7 +1217,7 @@ export default function PlaquesPage() {
                   alert('批量操作失败')
                 }
               }}
-            >
+             className="active:scale-[0.98] transition-all duration-200">
               确认
             </Button>
           </div>

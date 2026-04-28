@@ -53,6 +53,8 @@ export default function HallsPage() {
   }
 
   const handleSubmit = async () => {
+    if (!formData.name?.trim()) { alert('请输入殿堂名称'); return; }
+    if (!formData.location?.trim()) { alert('请输入位置'); return; }
     try {
       if (editing) {
         await businessAPI.updateHall(token!, editing.id, formData)
@@ -134,12 +136,12 @@ export default function HallsPage() {
       >
         <div className="space-y-4">
           <Input
-            label="殿堂名称"
+            label="殿堂名称*"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           />
           <Input
-            label="位置"
+            label="位置*"
             value={formData.location}
             onChange={(e) => setFormData({ ...formData, location: e.target.value })}
           />

@@ -30,6 +30,9 @@ export interface TemplateElement {
   lineWidth?: number
   fillColor?: string
   borderColor?: string
+  autoScale?: boolean
+  minFontSize?: number
+  maxFontSize?: number
   src?: string
 }
 
@@ -39,6 +42,8 @@ export interface PlaqueTemplate {
   type: PlaqueType | 'ALL'
   backgroundImage?: string
   elements: TemplateElement[]
+  paperWidth: number
+  paperHeight: number
   createdAt: string
   updatedAt: string
 }
@@ -62,6 +67,7 @@ export const FIELD_DEFINITIONS: Record<string, { key: string; label: string; typ
     { label: '禄位类型', key: 'longevitySubtype', type: 'LONGEVITY' },
     { label: '性别', key: 'gender', type: 'LONGEVITY' },
     { label: '出生日期', key: 'birthDate', type: 'LONGEVITY' },
+    { label: '阳上人', key: 'yangShang', type: 'LONGEVITY' },
     { label: '祈福祝福语', key: 'blessingText', type: 'LONGEVITY' },
   ],
   REBIRTH: [
@@ -125,7 +131,7 @@ export function createElement(type: TemplateElement['type']): TemplateElement {
     height: type === 'text' || type === 'field' ? 40 : 40,
     style: { ...DEFAULT_TEXT_STYLE },
     ...(type === 'text' && { staticText: '文本' }),
-    ...(type === 'field' && { fieldKey: '', fieldLabel: '', fieldType: 'COMMON' }),
+    ...(type === 'field' && { fieldKey: '', fieldLabel: '', fieldType: 'COMMON', autoScale: false, minFontSize: 10, maxFontSize: 72 }),
     ...(type === 'image' && { src: '' }),
     ...(type === 'line' && { lineWidth: 1 }),
     ...(type === 'rect' && { fillColor: 'transparent', borderColor: '#000000' }),

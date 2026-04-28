@@ -65,6 +65,8 @@ export default function VisitsPage() {
   }, [filterType])
 
   const handleSubmit = async () => {
+    if (!formData.visitorName?.trim()) { alert('请输入来访人姓名'); return; }
+    if (!formData.visitorPhone?.trim()) { alert('请输入联系电话'); return; }
     try {
       await businessAPI.createVisit(token!, formData)
       setModalOpen(false)
@@ -107,7 +109,7 @@ export default function VisitsPage() {
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-medium text-ink">来访管理</h2>
@@ -122,7 +124,7 @@ export default function VisitsPage() {
             <div className="text-2xl font-bold text-ink">{totalVisits}</div>
             <div className="text-xs text-tea/60">总来访量</div>
           </div>
-          <Button onClick={() => setModalOpen(true)}>
+          <Button onClick={() => setModalOpen(true)} className="active:scale-[0.98] transition-all duration-200">
             来访登记
           </Button>
         </div>
@@ -133,17 +135,18 @@ export default function VisitsPage() {
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
           options={[{ value: '', label: '全部类型' }, ...visitorTypeOptions]}
-          className="w-48"
+          className="w-full sm:w-48"
         />
       </div>
 
       <Card>
-        <Table
+        <div className="overflow-x-auto rounded-xl border min-w-0"><Table
           columns={columns}
           data={visits}
           loading={loading}
           emptyText="暂无来访记录"
         />
+        </div>
       </Card>
 
       <Modal
@@ -153,12 +156,12 @@ export default function VisitsPage() {
       >
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="来访人姓名"
+            label="来访人姓名*"
             value={formData.visitorName}
             onChange={(e) => setFormData({ ...formData, visitorName: e.target.value })}
           />
           <Input
-            label="联系电话"
+            label="联系电话*"
             value={formData.visitorPhone}
             onChange={(e) => setFormData({ ...formData, visitorPhone: e.target.value })}
           />
@@ -194,8 +197,8 @@ export default function VisitsPage() {
           />
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={() => setModalOpen(false)}>取消</Button>
-          <Button onClick={handleSubmit}>保存</Button>
+          <Button variant="secondary" onClick={() => setModalOpen(false)} className="active:scale-[0.98] transition-all duration-200">取消</Button>
+          <Button onClick={handleSubmit} className="active:scale-[0.98] transition-all duration-200">保存</Button>
         </div>
       </Modal>
     </div>

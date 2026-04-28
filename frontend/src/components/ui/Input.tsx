@@ -4,7 +4,7 @@ import { InputHTMLAttributes, forwardRef } from 'react'
 import { clsx } from 'clsx'
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  label?: string
+  label?: React.ReactNode
   error?: string
 }
 

@@ -54,6 +54,8 @@ export default function LampsPage() {
   }
 
   const handleSubmit = async () => {
+    if (!formData.name?.trim()) { alert('请输入祈福人姓名'); return; }
+    if (!formData.phone?.trim()) { alert('请输入联系电话'); return; }
     try {
       const endDate = new Date(formData.startDate)
       endDate.setDate(endDate.getDate() + formData.duration)
@@ -102,7 +104,7 @@ export default function LampsPage() {
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-medium text-ink">供灯祈福</h2>
@@ -113,19 +115,20 @@ export default function LampsPage() {
             <div className="text-2xl font-bold text-vermilion">¥{totalAmount}</div>
             <div className="text-xs text-tea/60">累计金额</div>
           </div>
-          <Button onClick={() => setModalOpen(true)}>
+          <Button onClick={() => setModalOpen(true)} className="active:scale-[0.98] transition-all duration-200">
             新增供灯
           </Button>
         </div>
       </div>
 
       <Card>
-        <Table
+        <div className="overflow-x-auto rounded-xl border min-w-0"><Table
           columns={columns}
           data={lamps}
           loading={loading}
           emptyText="暂无供灯记录"
         />
+        </div>
       </Card>
 
       <Modal
@@ -135,12 +138,12 @@ export default function LampsPage() {
       >
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="祈福人姓名"
+            label="祈福人姓名 *"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           />
           <Input
-            label="联系电话"
+            label="联系电话 *"
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
           />
@@ -182,8 +185,8 @@ export default function LampsPage() {
           <div className="text-sm text-tea">费用：{formData.duration} 天 × ¥30/天 = <span className="text-vermilion font-bold">¥{formData.duration * 30}</span></div>
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={() => setModalOpen(false)}>取消</Button>
-          <Button onClick={handleSubmit}>确认供奉</Button>
+          <Button variant="secondary" onClick={() => setModalOpen(false)} className="active:scale-[0.98] transition-all duration-200">取消</Button>
+          <Button onClick={handleSubmit} className="active:scale-[0.98] transition-all duration-200">确认供奉</Button>
         </div>
       </Modal>
     </div>

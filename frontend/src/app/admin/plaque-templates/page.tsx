@@ -1,5 +1,14 @@
 'use client'
 
+
+// 纸张尺寸预设 (单位: mm)
+const PAPER_PRESETS = {
+  A3: { width: 297, height: 420, label: 'A3 (297×420mm)' },
+  A4: { width: 210, height: 297, label: 'A4 (210×297mm)' },
+  A5: { width: 148, height: 210, label: 'A5 (148×210mm)' },
+  CUSTOM: { width: 0, height: 0, label: '自定义尺寸' },
+}
+
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { businessAPI } from '@/lib/api'
@@ -28,6 +37,9 @@ export default function PlaqueTemplateDesigner() {
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [editName, setEditName] = useState('')
   const [editType, setEditType] = useState<string>('ALL')
+  const [paperSize, setPaperSize] = useState<'A3' | 'A4' | 'A5' | 'CUSTOM'>('A4')
+  const [customWidth, setCustomWidth] = useState(210)
+  const [customHeight, setCustomHeight] = useState(297)
 
   const canvasRef = useRef<HTMLDivElement>(null)
   const elementRefs = useRef<Map<string, HTMLDivElement>>(new Map())
@@ -55,10 +67,14 @@ export default function PlaqueTemplateDesigner() {
       return
     }
     try {
+      const paperWidth = paperSize === 'CUSTOM' ? customWidth : PAPER_PRESETS[paperSize].width
+      const paperHeight = paperSize === 'CUSTOM' ? customHeight : PAPER_PRESETS[paperSize].height
       const data = await businessAPI.createPlaqueTemplate(token!, {
         name: editName,
         type: editType,
         elements: [],
+        paperWidth,
+        paperHeight,
       })
       setTemplates([data, ...templates])
       setEditModalOpen(false)
@@ -80,6 +96,8 @@ export default function PlaqueTemplateDesigner() {
         type: currentTemplate.type,
         backgroundImage: currentTemplate.backgroundImage,
         elements: currentTemplate.elements,
+        paperWidth: currentTemplate.paperWidth || 210,
+        paperHeight: currentTemplate.paperHeight || 297,
       })
       await loadTemplates()
     } catch (error) {
@@ -407,6 +425,44 @@ export default function PlaqueTemplateDesigner() {
               onChange={(e) => setEditType(e.target.value)}
               options={PLAQUE_TYPE_OPTIONS}
             />
+
+            {/* 纸张尺寸选择 */}
+            <div className="space-y-3">
+              <Select
+                label="纸张尺寸"
+                value={paperSize}
+                onChange={(e) => setPaperSize(e.target.value as any)}
+                options={[
+                  { value: 'A4', label: 'A4 (210×297mm)' },
+                  { value: 'A3', label: 'A3 (297×420mm)' },
+                  { value: 'A5', label: 'A5 (148×210mm)' },
+                  { value: 'CUSTOM', label: '自定义尺寸' },
+                ]}
+              />
+              {paperSize === 'CUSTOM' && (
+                <div className="flex gap-4 items-center p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">宽度(mm)</label>
+                    <input
+                      type="number"
+                      value={customWidth}
+                      onChange={(e) => setCustomWidth(Number(e.target.value))}
+                      className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C4A484]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">高度(mm)</label>
+                    <input
+                      type="number"
+                      value={customHeight}
+                      onChange={(e) => setCustomHeight(Number(e.target.value))}
+                      className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#C4A484]"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="flex justify-end gap-3 mt-6">
               <Button variant="secondary" onClick={() => setEditModalOpen(false)}>取消</Button>
               <Button onClick={handleCreateTemplate}>创建</Button>

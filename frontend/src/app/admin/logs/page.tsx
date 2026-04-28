@@ -111,12 +111,12 @@ export default function LogsPage() {
       </div>
 
       <Card>
-        <Table
+        <div className="overflow-x-auto rounded-xl border"><Table
           columns={columns}
           data={logs}
           loading={loading}
           emptyText="暂无操作记录"
-        />
+        /></div>
       </Card>
 
       {totalPages > 1 && (

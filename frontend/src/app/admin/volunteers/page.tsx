@@ -189,6 +189,8 @@ export default function VolunteersPage() {
   )
 
   const handleSubmit = async () => {
+    if (!formData.name?.trim()) { alert('请输入姓名'); return; }
+    if (!formData.phone?.trim()) { alert('请输入电话'); return; }
     try {
       const submitData = {
         ...formData,
@@ -322,7 +324,7 @@ export default function VolunteersPage() {
         ) : filteredVolunteers.length === 0 ? (
           <Empty title="暂无义工记录" />
         ) : (
-          <table className="w-full">
+          <div className="overflow-x-auto rounded-xl border"><table className="w-full">
             <thead>
               <tr className="border-b border-gray-100">
                 {columns.map(col => (
@@ -353,7 +355,7 @@ export default function VolunteersPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </Card>
 

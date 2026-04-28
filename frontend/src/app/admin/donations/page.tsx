@@ -69,6 +69,9 @@ export default function DonationsPage() {
   }
 
   const handleSubmit = async () => {
+    if (!formData.donorName?.trim()) { alert('请输入捐款人姓名'); return; }
+    if (!formData.donorPhone?.trim()) { alert('请输入捐款人电话'); return; }
+    if (!formData.amount) { alert('请输入功德金额'); return; }
     try {
       await businessAPI.createDonation(token!, {
         ...formData,
@@ -134,12 +137,12 @@ export default function DonationsPage() {
       </div>
 
       <Card>
-        <Table
+        <div className="overflow-x-auto rounded-xl border"><Table
           columns={columns}
           data={donations}
           loading={loading}
           emptyText="暂无功德记录"
-        />
+        /></div>
       </Card>
 
       <Modal
@@ -149,12 +152,12 @@ export default function DonationsPage() {
       >
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="捐款人姓名"
+            label="捐款人姓名*"
             value={formData.donorName}
             onChange={(e) => setFormData({ ...formData, donorName: e.target.value })}
           />
           <Input
-            label="捐款人电话"
+            label="捐款人电话*"
             value={formData.donorPhone}
             onChange={(e) => setFormData({ ...formData, donorPhone: e.target.value })}
           />
@@ -165,7 +168,7 @@ export default function DonationsPage() {
             options={donationTypeOptions}
           />
           <Input
-            label="金额"
+            label="金额*"
             type="number"
             value={formData.amount}
             onChange={(e) => setFormData({ ...formData, amount: e.target.value })}

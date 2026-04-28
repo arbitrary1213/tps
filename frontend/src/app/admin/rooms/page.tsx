@@ -84,6 +84,7 @@ export default function RoomsPage() {
   }
 
   const handleSubmit = async () => {
+    if (!formData.roomNumber?.trim()) { alert('请输入房间号'); return; }
     try {
       await businessAPI.createRoom(token!, formData)
       setModalOpen(false)
@@ -152,7 +153,7 @@ export default function RoomsPage() {
     { key: 'actions', title: '操作', render: (row: Room) => (
       <div className="flex gap-2">
         {row.status === 'AVAILABLE' && (
-          <Button size="sm" onClick={() => handleCheckIn(row)}>入住</Button>
+          <Button size="sm" onClick={() => handleCheckIn(row)} className="active:scale-[0.98] transition-all duration-200">入住</Button>
         )}
       </div>
     )},
@@ -171,19 +172,19 @@ export default function RoomsPage() {
     )},
     { key: 'actions', title: '操作', render: (row: Accommodation) => (
       row.status === 'CHECKED_IN' && (
-        <Button size="sm" variant="secondary" onClick={() => handleCheckOut(row.id)}>退房</Button>
+        <Button size="sm" variant="secondary" onClick={() => handleCheckOut(row.id)} className="active:scale-[0.98] transition-all duration-200">退房</Button>
       )
     )},
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-medium text-ink">住宿管理</h2>
           <p className="text-sm text-tea/60 mt-1">管理房间和入住记录</p>
         </div>
-        <Button onClick={() => setModalOpen(true)}>
+        <Button onClick={() => setModalOpen(true)} className="active:scale-[0.98] transition-all duration-200">
           新增房间
         </Button>
       </div>
@@ -208,12 +209,13 @@ export default function RoomsPage() {
       </div>
 
       <Card>
-        <Table
+        <div className="overflow-x-auto rounded-xl border min-w-0"><Table
           columns={tab === 'rooms' ? roomColumns : recordColumns}
           data={tab === 'rooms' ? rooms : accommodations}
           loading={loading}
           emptyText={tab === 'rooms' ? '暂无房间' : '暂无入住记录'}
         />
+        </div>
       </Card>
 
       <Modal
@@ -223,7 +225,7 @@ export default function RoomsPage() {
       >
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="房间号"
+            label="房间号*"
             value={formData.roomNumber}
             onChange={(e) => setFormData({ ...formData, roomNumber: e.target.value })}
           />
@@ -258,8 +260,8 @@ export default function RoomsPage() {
           />
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={() => setModalOpen(false)}>取消</Button>
-          <Button onClick={handleSubmit}>保存</Button>
+          <Button variant="secondary" onClick={() => setModalOpen(false)} className="active:scale-[0.98] transition-all duration-200">取消</Button>
+          <Button onClick={handleSubmit} className="active:scale-[0.98] transition-all duration-200">保存</Button>
         </div>
       </Modal>
     </div>

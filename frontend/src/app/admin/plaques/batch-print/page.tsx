@@ -423,7 +423,7 @@ export default function BatchPrintPage() {
   const pages = Math.ceil(selectedPlaques.length / totalSlots)
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-medium text-ink">批量打印</h2>
@@ -447,7 +447,7 @@ export default function BatchPrintPage() {
                 placeholder="搜索..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-48"
+                className="w-full sm:w-48"
               />
               <Select
                 value={printType}

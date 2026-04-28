@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/stores/authStore'
@@ -65,6 +65,8 @@ export default function DevoteesPage() {
   )
 
   const handleSubmit = async () => {
+    if (!formData.name?.trim()) { alert('请输入姓名'); return; }
+    if (!formData.phone?.trim()) { alert('请输入联系电话'); return; }
     try {
       if (editing) {
         await businessAPI.updateDevotee(token!, editing.id, formData)
@@ -190,12 +192,12 @@ export default function DevoteesPage() {
       >
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="姓名"
+            label="姓名*"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           />
           <Input
-            label="电话"
+            label="电话*"
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
           />

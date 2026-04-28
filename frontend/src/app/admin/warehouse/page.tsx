@@ -82,6 +82,7 @@ export default function WarehousePage() {
   }
 
   const handleSubmit = async () => {
+    if (!formData.name?.trim()) { alert('请输入物品名称'); return; }
     try {
       await businessAPI.createWarehouseItem(token!, formData)
       setModalOpen(false)
@@ -171,12 +172,12 @@ export default function WarehousePage() {
       </div>
 
       <Card>
-        <Table
+        <div className="overflow-x-auto rounded-xl border"><Table
           columns={columns}
           data={items}
           loading={loading}
           emptyText="暂无物品"
-        />
+        /></div>
       </Card>
 
       <Modal
@@ -186,7 +187,7 @@ export default function WarehousePage() {
       >
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="物品名称"
+            label="物品名称*"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           />
