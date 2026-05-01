@@ -1,0 +1,9 @@
+FROM node:22-slim
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=node:22-slim /usr/local/bin/node /usr/local/bin/node
+COPY --from=node:22-slim /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY ./.next/standalone/. ./
+COPY ./.next/static ./.next/static
+EXPOSE 3000
+CMD node server.js

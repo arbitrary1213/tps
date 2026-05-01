@@ -6,14 +6,13 @@ RUN npm install
 FROM node:22-slim AS builder
 WORKDIR /app
 ARG NEXT_PUBLIC_API_BASE
-ENV NEXT_PUBLIC_API_BASE=$NEXT_PUBLIC_API_BASE
+ENV NEXT_PUBLIC_API_BASE=
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN NODE_OPTIONS="--max-old-space-size=256" npm run build
+RUN NODE_OPTIONS=--max-old-space-size=256 npm run build
 
-FROM node:22-alpine AS runner
+FROM node:22-slim AS runner
 WORKDIR /app
-RUN apk add --no-cache wget
 ENV NODE_ENV=production
 
 COPY --from=builder /app/public ./public

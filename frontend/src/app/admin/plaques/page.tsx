@@ -482,6 +482,44 @@ export default function PlaquesPage() {
     setPreviewModalOpen(true)
   }
 
+  const handlePrint = async (plaque: Plaque) => {
+    await loadTemplates()
+    const template = templates.find(t => t.id === plaque.templateId) || templates.find(t => t.type === plaque.plaqueType) || templates.find(t => t.type === 'ALL')
+    setPreviewPlaque(plaque)
+    setPreviewTemplate(template || null)
+    setPreviewModalOpen(true)
+    // Open print dialog after a short delay to allow preview to render
+    setTimeout(() => {
+      const printContent = document.getElementById('plaque-print-content')
+      if (printContent) {
+        const printWindow = window.open('', '_blank')
+        if (printWindow) {
+          printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <title>牌位打印</title>
+              <style>
+                @page { size: A4; margin: 0; }
+                body { margin: 0; padding: 0; }
+                ${printContent.innerHTML}
+                @media print {
+                  body { -webkit-print-color-adjust: exact; }
+                }
+              </style>
+            </head>
+            <body>${printContent.innerHTML}</body>
+            </html>
+          `)
+          printWindow.document.close()
+          printWindow.focus()
+          printWindow.print()
+        }
+      }
+    }, 500)
+  }
+
   const resetForm = () => {
     setFormData({
       plaqueType: 'LONGEVITY',
@@ -591,6 +629,7 @@ export default function PlaquesPage() {
     { key: 'actions', title: '操作', render: (row: Plaque) => (
       <div className="flex gap-2 flex-wrap">
         <Button size="sm" variant="ghost" onClick={() => handlePreview(row)} className="active:scale-[0.98] transition-all duration-200">预览</Button>
+        <Button size="sm" variant="ghost" onClick={() => handlePrint(row)} className="active:scale-[0.98] transition-all duration-200">打印</Button>
         <Button size="sm" variant="ghost" onClick={() => handleEdit(row)} className="active:scale-[0.98] transition-all duration-200">编辑</Button>
         <Button size="sm" variant="secondary" onClick={() => handleExtend(row)} className="active:scale-[0.98] transition-all duration-200">延期</Button>
         {row.status !== 'CANCELLED' && (
@@ -610,6 +649,9 @@ export default function PlaquesPage() {
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => setImportModalOpen(true)} className="active:scale-[0.98] transition-all duration-200">
             批量导入
+          </Button>
+          <Button variant="secondary" onClick={() => window.location.href = '/admin/plaques/batch-print'} className="active:scale-[0.98] transition-all duration-200">
+            批量打印
           </Button>
           <Button onClick={() => { resetForm(); setEditing(null); setModalOpen(true); }} className="active:scale-[0.98] transition-all duration-200">
             新建牌位

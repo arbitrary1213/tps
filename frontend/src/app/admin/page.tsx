@@ -97,32 +97,56 @@ export default function AdminDashboard() {
         {recentRegistrations.length === 0 ? (
           <div className="text-center py-8 text-tea/60">暂无登记记录</div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="bg-[#F5F0E6] text-tea text-sm font-medium border-b border-[#E8E0D0]">
-                <th className="text-left py-3 px-4">姓名</th>
-                <th className="text-left py-3 px-4">类型</th>
-                <th className="text-left py-3 px-4">状态</th>
-                <th className="text-left py-3 px-4">日期</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-[#F5F0E6] text-tea text-sm font-medium border-b border-[#E8E0D0]">
+                    <th className="text-left py-3 px-4">姓名</th>
+                    <th className="text-left py-3 px-4">类型</th>
+                    <th className="text-left py-3 px-4">状态</th>
+                    <th className="text-left py-3 px-4">日期</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentRegistrations.map((item) => (
+                    <tr key={item.id} className="border-b border-[#F5F0E6] hover:bg-[#F5F0E6]/50 transition-colors">
+                      <td className="py-3 px-4 text-ink">{item.submitterName}</td>
+                      <td className="py-3 px-4 text-tea">{taskTypeMap[item.taskType] || item.taskType}</td>
+                      <td className="py-3 px-4">
+                        <Badge variant={statusMap[item.status]?.variant as any || 'info'}>
+                          {statusMap[item.status]?.label || item.status}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4 text-tea/70">
+                        {item.createdAt ? new Date(item.createdAt).toLocaleDateString('zh-CN') : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-3">
               {recentRegistrations.map((item) => (
-                <tr key={item.id} className="border-b border-[#F5F0E6] hover:bg-[#F5F0E6]/50 transition-colors">
-                  <td className="py-3 px-4 text-ink">{item.submitterName}</td>
-                  <td className="py-3 px-4 text-tea">{taskTypeMap[item.taskType] || item.taskType}</td>
-                  <td className="py-3 px-4">
+                <div key={item.id} className="bg-[#F5F0E6] rounded-lg p-4 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-ink">{item.submitterName}</span>
                     <Badge variant={statusMap[item.status]?.variant as any || 'info'}>
                       {statusMap[item.status]?.label || item.status}
                     </Badge>
-                  </td>
-                  <td className="py-3 px-4 text-tea/70">
-                    {item.createdAt ? new Date(item.createdAt).toLocaleDateString('zh-CN') : '-'}
-                  </td>
-                </tr>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-tea">{taskTypeMap[item.taskType] || item.taskType}</span>
+                    <span className="text-tea/70">
+                      {item.createdAt ? new Date(item.createdAt).toLocaleDateString('zh-CN') : '-'}
+                    </span>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
 

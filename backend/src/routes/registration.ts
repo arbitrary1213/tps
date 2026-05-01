@@ -187,7 +187,7 @@ router.post('/requests', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: validation.error.errors[0].message })
     }
 
-    const { taskId, submitterName, submitterPhone, formData } = validation.data
+    console.log("[DEBUG] body:", JSON.stringify(req.body)); const { taskId, submitterName, submitterPhone, formData } = validation.data
 
     if (!taskId || !submitterName || !submitterPhone) {
       return res.status(400).json({ success: false, error: '请填写必填字段' })

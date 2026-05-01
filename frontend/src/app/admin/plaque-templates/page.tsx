@@ -40,6 +40,15 @@ export default function PlaqueTemplateDesigner() {
   const [paperSize, setPaperSize] = useState<'A3' | 'A4' | 'A5' | 'CUSTOM'>('A4')
   const [customWidth, setCustomWidth] = useState(210)
   const [customHeight, setCustomHeight] = useState(297)
+  const [editRepeatEnabled, setEditRepeatEnabled] = useState(false)
+  const [editRepeatRows, setEditRepeatRows] = useState(3)
+  const [editRepeatCols, setEditRepeatCols] = useState(2)
+  const [editRepeatCellWidth, setEditRepeatCellWidth] = useState(80)
+  const [editRepeatCellHeight, setEditRepeatCellHeight] = useState(50)
+  const [editRepeatStartX, setEditRepeatStartX] = useState(10)
+  const [editRepeatStartY, setEditRepeatStartY] = useState(10)
+  const [editRepeatGapX, setEditRepeatGapX] = useState(5)
+  const [editRepeatGapY, setEditRepeatGapY] = useState(5)
 
   const canvasRef = useRef<HTMLDivElement>(null)
   const elementRefs = useRef<Map<string, HTMLDivElement>>(new Map())
@@ -69,12 +78,25 @@ export default function PlaqueTemplateDesigner() {
     try {
       const paperWidth = paperSize === 'CUSTOM' ? customWidth : PAPER_PRESETS[paperSize].width
       const paperHeight = paperSize === 'CUSTOM' ? customHeight : PAPER_PRESETS[paperSize].height
+      const repeatRegion = editRepeatEnabled ? {
+        enabled: true,
+        rows: editRepeatRows,
+        cols: editRepeatCols,
+        cellWidth: editRepeatCellWidth,
+        cellHeight: editRepeatCellHeight,
+        startX: editRepeatStartX,
+        startY: editRepeatStartY,
+        gapX: editRepeatGapX,
+        gapY: editRepeatGapY,
+        showGrid: true,
+      } : undefined
       const data = await businessAPI.createPlaqueTemplate(token!, {
         name: editName,
         type: editType,
         elements: [],
         paperWidth,
         paperHeight,
+        repeatRegion,
       })
       setTemplates([data, ...templates])
       setEditModalOpen(false)
@@ -98,6 +120,7 @@ export default function PlaqueTemplateDesigner() {
         elements: currentTemplate.elements,
         paperWidth: currentTemplate.paperWidth || 210,
         paperHeight: currentTemplate.paperHeight || 297,
+        repeatRegion: currentTemplate.repeatRegion,
       })
       await loadTemplates()
     } catch (error) {
@@ -463,6 +486,86 @@ export default function PlaqueTemplateDesigner() {
               )}
             </div>
 
+              {/* 重复区域设置 */}
+              <div className="border-t border-[#E8E0D0] pt-4 mt-4">
+                <label className="flex items-center gap-2 mb-3">
+                  <input
+                    type="checkbox"
+                    checked={editRepeatEnabled}
+                    onChange={(e) => setEditRepeatEnabled(e.target.checked)}
+                  />
+                  <span className="text-sm font-medium text-tea">启用重复区域（一页多列打印）</span>
+                </label>
+                {editRepeatEnabled && (
+                  <div className="grid grid-cols-2 gap-2 p-3 bg-gray-50 rounded-lg">
+                    <Input
+                      label="行数"
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={editRepeatRows}
+                      onChange={(e) => setEditRepeatRows(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
+                    />
+                    <Input
+                      label="列数"
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={editRepeatCols}
+                      onChange={(e) => setEditRepeatCols(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
+                    />
+                    <Input
+                      label="格子宽度"
+                      type="number"
+                      min={10}
+                      max={200}
+                      value={editRepeatCellWidth}
+                      onChange={(e) => setEditRepeatCellWidth(Math.max(10, parseInt(e.target.value) || 80))}
+                    />
+                    <Input
+                      label="格子高度"
+                      type="number"
+                      min={10}
+                      max={200}
+                      value={editRepeatCellHeight}
+                      onChange={(e) => setEditRepeatCellHeight(Math.max(10, parseInt(e.target.value) || 50))}
+                    />
+                    <Input
+                      label="起始X"
+                      type="number"
+                      min={0}
+                      max={200}
+                      value={editRepeatStartX}
+                      onChange={(e) => setEditRepeatStartX(Math.max(0, parseInt(e.target.value) || 0))}
+                    />
+                    <Input
+                      label="起始Y"
+                      type="number"
+                      min={0}
+                      max={200}
+                      value={editRepeatStartY}
+                      onChange={(e) => setEditRepeatStartY(Math.max(0, parseInt(e.target.value) || 0))}
+                    />
+                    <Input
+                      label="横向间距"
+                      type="number"
+                      min={0}
+                      max={50}
+                      value={editRepeatGapX}
+                      onChange={(e) => setEditRepeatGapX(Math.max(0, parseInt(e.target.value) || 0))}
+                    />
+                    <Input
+                      label="纵向间距"
+                      type="number"
+                      min={0}
+                      max={50}
+                      value={editRepeatGapY}
+                      onChange={(e) => setEditRepeatGapY(Math.max(0, parseInt(e.target.value) || 0))}
+                    />
+                  </div>
+                )}
+              </div>
+
             <div className="flex justify-end gap-3 mt-6">
               <Button variant="secondary" onClick={() => setEditModalOpen(false)}>取消</Button>
               <Button onClick={handleCreateTemplate}>创建</Button>
@@ -552,7 +655,7 @@ export default function PlaqueTemplateDesigner() {
         <div className="flex-1 overflow-auto p-8 bg-gray-200">
           <div
             ref={canvasRef}
-            className="relative bg-white shadow-lg mx-auto"
+            className="relative bg-white shadow-lg mx-auto overflow-hidden"
             style={{
               width: 400,
               height: 600,
@@ -563,6 +666,19 @@ export default function PlaqueTemplateDesigner() {
             }}
             onClick={() => setSelectedElement(null)}
           >
+            {/* Repeat region grid overlay */}
+            {currentTemplate.repeatRegion?.enabled && (
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  backgroundImage: `
+                    linear-gradient(to right, rgba(200,100,100,0.15) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(200,100,100,0.15) 1px, transparent 1px)
+                  `,
+                  backgroundSize: `${400 / currentTemplate.repeatRegion.cols}px ${600 / currentTemplate.repeatRegion.rows}px`,
+                }}
+              />
+            )}
             {currentTemplate.elements.map(renderElement)}
           </div>
         </div>

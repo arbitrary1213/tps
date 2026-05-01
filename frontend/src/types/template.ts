@@ -36,6 +36,19 @@ export interface TemplateElement {
   src?: string
 }
 
+export interface RepeatRegion {
+  enabled: boolean
+  rows: number
+  cols: number
+  cellWidth: number
+  cellHeight: number
+  startX: number
+  startY: number
+  gapX: number
+  gapY: number
+  showGrid: boolean
+}
+
 export interface PlaqueTemplate {
   id: string
   name: string
@@ -44,6 +57,7 @@ export interface PlaqueTemplate {
   elements: TemplateElement[]
   paperWidth: number
   paperHeight: number
+  repeatRegion?: RepeatRegion
   createdAt: string
   updatedAt: string
 }

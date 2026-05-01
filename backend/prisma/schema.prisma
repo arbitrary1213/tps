@@ -341,6 +341,7 @@ model PlaqueTemplate {
   elements        Json     // 模板元素数组
   paperWidth      Int      @default(210)  @map("paperwidth")  // 纸张宽度(mm)
   paperHeight     Int      @default(297)  @map("paperheight")  // 纸张高度(mm)
+  repeatRegion    Json?    @map(epeat_region\) // 重复区域配置，null表示单格模式
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

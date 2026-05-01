@@ -409,7 +409,7 @@ export default function RegisterPage() {
     const requiredFields = requiredFieldsByTaskType[taskTypeKey] || []
     for (const field of requiredFields) {
       if (!formData[field] || formData[field] === '') {
-        alert('请输入必填数据')
+        alert('请输入 ' + (fieldDefs[field]?.label || field))
         return
       }
     }
@@ -429,6 +429,15 @@ export default function RegisterPage() {
         }
         taskId = plaqueTask.id
         taskType = plaqueType
+      }
+
+      // 当 activeTask.id 为 'PLAQUE' (fake ID from URL) 时，从 tasks 列表查找真实的 PLAQUE 任务
+      if (taskId === 'PLAQUE') {
+        const realPlaqueTask = tasks.find(t => t.taskType === 'PLAQUE')
+        if (realPlaqueTask) {
+          taskId = realPlaqueTask.id
+          taskType = plaqueType // 使用 plaqueType 作为 taskType (LONGEVITY 或 DELIVERANCE)
+        }
       }
 
       // 只提交当前 formConfig.fields 中包含的字段
