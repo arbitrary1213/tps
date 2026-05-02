@@ -126,6 +126,13 @@ export default function BatchPrintPage() {
     return templates.find(t => t.type === plaque.plaqueType) || templates.find(t => t.type === 'ALL')
   }
 
+  const getSelectedTemplate = (): PlaqueTemplate | undefined => {
+    if (selectedTemplate) {
+      return templates.find(t => t.id === selectedTemplate)
+    }
+    return undefined
+  }
+
   const getPaperDimensions = () => {
     if (paperSize === 'CUSTOM') {
       return { width: customWidth, height: customHeight }
@@ -529,6 +536,16 @@ export default function BatchPrintPage() {
                   ...templates.map(t => ({ value: t.id, label: t.name }))
                 ]}
               />
+              {selectedTemplate && getSelectedTemplate()?.repeatRegion?.enabled && (() => {
+                const rr = getSelectedTemplate()!.repeatRegion!
+                return (
+                  <div className="text-sm text-tea/60 bg-blue-50 rounded p-2">
+                    该模板为多列套打模式，每页 {rr.rows * rr.cols} 个牌位
+                    （{rr.rows}行 × {rr.cols}列）
+                  </div>
+                )
+              })()}
+
               <div className="border-t border-[#E8E0D0] pt-4 mt-4">
                 <p className="text-sm font-medium text-tea mb-3">排版设置</p>
                 <div className="space-y-3">
@@ -677,34 +694,101 @@ export default function BatchPrintPage() {
           ref={printRef}
           className="print-container"
         >
-          {Array.from({ length: pages }).map((_, pageIndex) => (
-            <div
-              key={pageIndex}
-              className="print-page"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: autoColumnWidth
-                  ? `repeat(${cols}, ${optimalColumnWidth}px)`
-                  : `repeat(${cols}, 1fr)`,
-                gridTemplateRows: `repeat(${rows}, 1fr)`,
-              }}
-            >
-              {Array.from({ length: totalSlots }).map((_, slotIndex) => {
-                const plaqueIndex = pageIndex * totalSlots + slotIndex
-                const plaque = selectedPlaques[plaqueIndex]
-                if (!plaque) {
-                  return <div key={slotIndex} className="plaque-item" />
-                }
+          {(() => {
+            const selTpl = getSelectedTemplate()
+            const useRR = selTpl?.repeatRegion?.enabled
+            if (useRR) {
+              const rr = selTpl!.repeatRegion!
+              const perPage = rr.rows * rr.cols
+              const pageCount = Math.ceil(selectedPlaques.length / perPage) || 1
+              return Array.from({ length: pageCount }).map((_, pageIndex) => {
+                const startIdx = pageIndex * perPage
+                const pagePlaques = selectedPlaques.slice(startIdx, startIdx + perPage)
+                const paper = getPaperDimensions()
                 return (
-                  <div key={slotIndex} className="plaque-item">
-                    <div className="plaque-content">
-                      {renderPlaqueContent(plaque)}
-                    </div>
+                  <div
+                    key={pageIndex}
+                    className="print-page"
+                    style={{
+                      width: paper.width + 'mm',
+                      height: paper.height + 'mm',
+                      position: 'relative',
+                      padding: '0',
+                    }}
+                  >
+                    {pagePlaques.map((plaque, i) => {
+                      const row = Math.floor(i / rr.cols)
+                      const col = i % rr.cols
+                      const absX = rr.startX + col * (rr.cellWidth + rr.gapX)
+                      const absY = rr.startY + row * (rr.cellHeight + rr.gapY)
+                      return (
+                        <div
+                          key={plaque.id}
+                          style={{
+                            position: 'absolute',
+                            left: absX + 'mm',
+                            top: absY + 'mm',
+                            width: rr.cellWidth + 'mm',
+                            height: rr.cellHeight + 'mm',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <div className="plaque-content" style={{ width: '100%', height: '100%', transform: 'scale(1)', transformOrigin: 'top left' }}>
+                            {renderPlaqueContent(plaque)}
+                          </div>
+                        </div>
+                      )
+                    })}
+                    {pagePlaques.length < perPage &&
+                      Array.from({ length: perPage - pagePlaques.length }).map((_, i) => {
+                        const idx = pagePlaques.length + i
+                        const row = Math.floor(idx / rr.cols)
+                        const col = idx % rr.cols
+                        return (
+                          <div key={} style={{
+                            position: 'absolute',
+                            left: (rr.startX + col * (rr.cellWidth + rr.gapX)) + 'mm',
+                            top: (rr.startY + row * (rr.cellHeight + rr.gapY)) + 'mm',
+                            width: rr.cellWidth + 'mm',
+                            height: rr.cellHeight + 'mm',
+                          }} />
+                        )
+                      })
+                    }
                   </div>
                 )
-              })}
-            </div>
-          ))}
+              })
+            } else {
+              return Array.from({ length: pages }).map((_, pageIndex) => (
+                <div
+                  key={pageIndex}
+                  className="print-page"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: autoColumnWidth
+                      ? `repeat(${cols}, ${optimalColumnWidth}px)`
+                      : `repeat(${cols}, 1fr)`,
+                    gridTemplateRows: `repeat(${rows}, 1fr)`,
+                  }}
+                >
+                  {Array.from({ length: totalSlots }).map((_, slotIndex) => {
+                    const plaqueIndex = pageIndex * totalSlots + slotIndex
+                    const plaque = selectedPlaques[plaqueIndex]
+                    if (!plaque) {
+                      return <div key={slotIndex} className="plaque-item" />
+                    }
+                    return (
+                      <div key={slotIndex} className="plaque-item">
+                        <div className="plaque-content">
+                          {renderPlaqueContent(plaque)}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ))
+            }
+          })()}
         </div>
       </div>
     </div>
