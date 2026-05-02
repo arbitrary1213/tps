@@ -226,25 +226,19 @@ export default function PlaquesPage() {
     }
   }
 
-  const downloadImportTemplate = () => {
+    // 延生禄位导入模板
+  const downloadLongevityTemplate = () => {
     const templateData = [
       {
-        '牌位类型': '延生禄位/往生莲位/超度牌位 (必填)',
-        '姓名': '延生禄位必填',
-        '亡者姓名': '往生莲位必填',
-        '超度类型': '超度牌位必填',
-        '规格': '大/中/小',
+        '牌位类型': '延生禄位',
+        '姓名': '持名者姓名 (必填)',
         '性别': '男/女',
         '出生日期': '',
         '农历': '是/否',
-        '忌日': '',
-        '忌日农历': '是/否',
-        '第二亡者': '',
-        '第二亡者生日': '',
-        '第二亡者忌日': '',
         '阳上': '',
         '电话': '',
         '地址': '',
+        '祈福祝福语': '',
         '开始日期': 'YYYY-MM-DD',
         '结束日期': 'YYYY-MM-DD',
         '备注': '',
@@ -252,82 +246,94 @@ export default function PlaquesPage() {
       {
         '牌位类型': '延生禄位',
         '姓名': '王淑琴',
-        '亡者姓名': '',
-        '超度类型': '',
-        '规格': '大',
         '性别': '女',
         '出生日期': '1982-06-05',
         '农历': '是',
-        '忌日': '',
-        '忌日农历': '否',
-        '第二亡者': '',
-        '第二亡者生日': '',
-        '第二亡者忌日': '',
-        '阳上': '王淑琴',
+        '阳上': '马紫祥',
         '电话': '',
         '地址': '浙江省湖州市亿丰建材城1号楼301室',
+        '祈福祝福语': '心想事成 万事如意',
         '开始日期': '',
         '结束日期': '',
         '备注': '',
       },
+    ]
+    const ws = XLSX.utils.json_to_sheet(templateData)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, '延生禄位导入模板')
+    const colWidths = [
+      { wch: 12 }, { wch: 15 }, { wch: 8 }, { wch: 15 }, { wch: 8 },
+      { wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 20 },
+    ]
+    ws['!cols'] = colWidths
+    XLSX.writeFile(wb, '延生禄位导入模板.xlsx')
+  }
+
+  // 往生莲位+超度牌位导入模板
+  const downloadRebirthTemplate = () => {
+    const templateData = [
+      {
+        '牌位类型': '往生莲位/超度牌位 (必填)',
+        '亡者姓名': '往生莲位必填',
+        '亡者性别': '男/女',
+        '亡者出生日期': '',
+        '亡者农历': '是/否',
+        '亡者忌日': '',
+        '亡者忌日农历': '是/否',
+        '第二亡者': '',
+        '阳上': '',
+        '电话': '',
+        '地址': '',
+        '超度类型': '超度牌位必填',
+        '开始日期': 'YYYY-MM-DD',
+        '结束日期': 'YYYY-MM-DD',
+        '备注': '',
+      },
       {
         '牌位类型': '往生莲位',
-        '姓名': '',
         '亡者姓名': '陈五喜',
-        '超度类型': '',
-        '规格': '',
-        '性别': '',
-        '出生日期': '',
-        '农历': '否',
-        '忌日': '',
-        '忌日农历': '否',
-        '第二亡者': '赵振华',
-        '第二亡者生日': '',
-        '第二亡者忌日': '',
+        '亡者性别': '',
+        '亡者出生日期': '',
+        '亡者农历': '否',
+        '亡者忌日': '',
+        '亡者忌日农历': '否',
+        '第二亡者': '',
         '阳上': '王淑琴',
         '电话': '',
         '地址': '浙江省湖州市亿丰建材城1号楼301室',
+        '超度类型': '',
         '开始日期': '',
         '结束日期': '',
         '备注': '先外公',
       },
       {
         '牌位类型': '超度牌位',
-        '姓名': '',
         '亡者姓名': '',
-        '超度类型': '冤亲债主',
-        '规格': '',
-        '性别': '',
-        '出生日期': '',
-        '农历': '否',
-        '忌日': '',
-        '忌日农历': '否',
+        '亡者性别': '',
+        '亡者出生日期': '',
+        '亡者农历': '否',
+        '亡者忌日': '',
+        '亡者忌日农历': '否',
         '第二亡者': '',
-        '第二亡者生日': '',
-        '第二亡者忌日': '',
         '阳上': '马紫祥',
         '电话': '',
         '地址': '',
+        '超度类型': '冤亲债主',
         '开始日期': '',
         '结束日期': '',
         '备注': '',
       },
     ]
-
     const ws = XLSX.utils.json_to_sheet(templateData)
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, '牌位导入模板')
-
+    XLSX.utils.book_append_sheet(wb, ws, '往生超度导入模板')
     const colWidths = [
-      { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
-      { wch: 10 }, { wch: 8 }, { wch: 15 }, { wch: 8 },
-      { wch: 15 }, { wch: 10 }, { wch: 15 }, { wch: 15 },
-      { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 30 },
-      { wch: 15 }, { wch: 15 }, { wch: 20 },
+      { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 15 }, { wch: 10 },
+      { wch: 15 }, { wch: 10 }, { wch: 12 }, { wch: 15 }, { wch: 15 },
+      { wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 },
     ]
     ws['!cols'] = colWidths
-
-    XLSX.writeFile(wb, '牌位导入模板.xlsx')
+    XLSX.writeFile(wb, '往生超度导入模板.xlsx')
   }
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -352,6 +358,18 @@ export default function PlaquesPage() {
       }
     }
   }
+
+  const handleExportSelected = async () => {
+    if (selectedIds.size === 0) {
+      alert("请先选择要导出的牌位");
+      return;
+    }
+    try {
+      await businessAPI.exportPlaques(token!, Array.from(selectedIds));
+    } catch (error: any) {
+      alert(error.message || "导出失败");
+    }
+  };
 
   const closeImportModal = () => {
     setImportModalOpen(false)
@@ -488,36 +506,6 @@ export default function PlaquesPage() {
     setPreviewPlaque(plaque)
     setPreviewTemplate(template || null)
     setPreviewModalOpen(true)
-    // Open print dialog after a short delay to allow preview to render
-    setTimeout(() => {
-      const printContent = document.getElementById('plaque-print-content')
-      if (printContent) {
-        const printWindow = window.open('', '_blank')
-        if (printWindow) {
-          printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <meta charset="utf-8">
-              <title>牌位打印</title>
-              <style>
-                @page { size: A4; margin: 0; }
-                body { margin: 0; padding: 0; }
-                ${printContent.innerHTML}
-                @media print {
-                  body { -webkit-print-color-adjust: exact; }
-                }
-              </style>
-            </head>
-            <body>${printContent.innerHTML}</body>
-            </html>
-          `)
-          printWindow.document.close()
-          printWindow.focus()
-          printWindow.print()
-        }
-      }
-    }, 500)
   }
 
   const resetForm = () => {
@@ -649,6 +637,9 @@ export default function PlaquesPage() {
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => setImportModalOpen(true)} className="active:scale-[0.98] transition-all duration-200">
             批量导入
+          </Button>
+          <Button variant="secondary" onClick={handleExportSelected} className="active:scale-[0.98] transition-all duration-200">
+            批量导出
           </Button>
           <Button variant="secondary" onClick={() => window.location.href = '/admin/plaques/batch-print'} className="active:scale-[0.98] transition-all duration-200">
             批量打印
@@ -1173,8 +1164,11 @@ export default function PlaquesPage() {
           </div>
 
           <div className="flex gap-3">
-            <Button variant="secondary" onClick={downloadImportTemplate} className="active:scale-[0.98] transition-all duration-200">
-              下载模板
+            <Button variant="secondary" onClick={downloadLongevityTemplate} className="active:scale-[0.98] transition-all duration-200">
+              下载延生禄位模板
+            </Button>
+            <Button variant="secondary" onClick={downloadRebirthTemplate} className="active:scale-[0.98] transition-all duration-200">
+              下载往生/超度模板
             </Button>
             <label className="flex-1">
               <input

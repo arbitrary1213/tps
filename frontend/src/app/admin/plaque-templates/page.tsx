@@ -634,6 +634,68 @@ export default function PlaqueTemplateDesigner() {
           </button>
 
           <div className="border-t border-[#E8E0D0] pt-4 mt-4">
+            <p className="text-sm font-medium text-tea mb-2">纸张设置</p>
+            <div className="space-y-2">
+              <Select
+                label="纸张尺寸"
+                value={paperSize}
+                onChange={(e) => {
+                  const val = e.target.value as 'A3' | 'A4' | 'A5' | 'CUSTOM'
+                  setPaperSize(val)
+                  if (currentTemplate && val !== 'CUSTOM') {
+                    setCurrentTemplate({
+                      ...currentTemplate,
+                      paperWidth: PAPER_PRESETS[val].width,
+                      paperHeight: PAPER_PRESETS[val].height,
+                    })
+                  }
+                }}
+                options={[
+                  { value: 'A4', label: 'A4 (210×297mm)' },
+                  { value: 'A3', label: 'A3 (297×420mm)' },
+                  { value: 'A5', label: 'A5 (148×210mm)' },
+                  { value: 'CUSTOM', label: '自定义' },
+                ]}
+              />
+              {paperSize === 'CUSTOM' && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">宽(mm)</label>
+                    <input
+                      type="number"
+                      value={customWidth}
+                      onChange={(e) => {
+                        const v = Math.max(50, Math.min(500, Number(e.target.value) || 210))
+                        setCustomWidth(v)
+                        if (currentTemplate) setCurrentTemplate({ ...currentTemplate, paperWidth: v })
+                      }}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">高(mm)</label>
+                    <input
+                      type="number"
+                      value={customHeight}
+                      onChange={(e) => {
+                        const v = Math.max(50, Math.min(500, Number(e.target.value) || 297))
+                        setCustomHeight(v)
+                        if (currentTemplate) setCurrentTemplate({ ...currentTemplate, paperHeight: v })
+                      }}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+              {currentTemplate.paperWidth && currentTemplate.paperHeight && (
+                <p className="text-xs text-tea/50 text-center">
+                  {currentTemplate.paperWidth}x{currentTemplate.paperHeight}mm
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="border-t border-[#E8E0D0] pt-4 mt-4">
             <p className="text-sm font-medium text-tea mb-2">底图</p>
             <label className="w-full px-3 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded text-left cursor-pointer block">
               上传底图

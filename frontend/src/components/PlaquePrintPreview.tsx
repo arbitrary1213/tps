@@ -170,6 +170,14 @@ export function PlaquePrintPreview({ plaque, template, open, onClose }: Props) {
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
 
+    const pw = template?.paperWidth || 210
+    const ph = template?.paperHeight || 297
+    const pxW = Math.round(pw * 3.78)
+    const pxH = Math.round(ph * 3.78)
+    const bgStyle = template?.backgroundImage
+      ? `background-image: url('${template.backgroundImage}'); background-size: contain; background-repeat: no-repeat; background-position: center;`
+      : ''
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -177,16 +185,16 @@ export function PlaquePrintPreview({ plaque, template, open, onClose }: Props) {
           <title>牌位打印</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+            body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f0f0f0; }
+            .print-page { width: ${pxW}px; height: ${pxH}px; position: relative; background: white; ${bgStyle} }
             @media print {
-              body { margin: 0; }
+              body { margin: 0; background: white; }
+              @page { size: ${pw}mm ${ph}mm; margin: 0; }
             }
           </style>
         </head>
         <body>
-          <div style="width: 400px; height: 600px; position: relative; background: white;">
-            ${printContent.innerHTML}
-          </div>
+          <div class="print-page">${printContent.innerHTML}</div>
           <script>
             window.onload = function() {
               window.print();
@@ -198,7 +206,6 @@ export function PlaquePrintPreview({ plaque, template, open, onClose }: Props) {
     `)
     printWindow.document.close()
   }
-
   return (
     <Modal open={open} onClose={onClose} title="牌位预览" size="lg">
       <div className="space-y-4">
