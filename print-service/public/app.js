@@ -237,6 +237,7 @@ function init() {
   loadAllSamples();
   loadServerTemplates();
   loadRitualOptions();
+  loadDedicationTypeOptions();
   applyLaunchParams();
 }
 
@@ -455,9 +456,10 @@ async function loadSystemPlaques(group) {
 
   try {
     setBusy(`正在读取${group === "blessing" ? "延生" : "往生/超度"}数据...`);
+    const selectedType = $("systemPlaqueType").value;
     const subtype = $("systemPlaqueSubtype").value;
     const allowedTypes = group === "blessing" ? ["LONGEVITY"] : ["REBIRTH", "DELIVERANCE"];
-    const plaqueTypes = subtype && allowedTypes.includes(subtype) ? [subtype] : allowedTypes;
+    const plaqueTypes = selectedType && allowedTypes.includes(selectedType) ? [selectedType] : allowedTypes;
     const status = $("systemStatus").value;
     const keyword = $("systemKeyword").value.trim();
     const ritualId = $("systemRitual").value;
@@ -473,6 +475,7 @@ async function loadSystemPlaques(group) {
       .map(normalizeListResponse)
       .flat()
       .filter(matchesSystemFilters)
+      .filter((plaque) => matchesPlaqueSubtype(plaque, subtype))
       .map(plaqueToRow)
       .map((row, index) => normalizeRow(row, group, index));
     state.datasets[group] = rows;
@@ -556,6 +559,31 @@ async function loadRitualOptions() {
   }
 }
 
+async function loadDedicationTypeOptions() {
+  try {
+    const settings = await fetchJson("/api/system/settings");
+    const types = String(settings?.dedicationTypes || "")
+      .split(",")
+      .map((type) => type.trim())
+      .filter(Boolean);
+    const select = $("systemPlaqueSubtype");
+    const existing = new Set(Array.from(select.options).map((option) => option.value));
+    if (!types.length) return;
+    const group = document.createElement("optgroup");
+    group.label = "超度牌位主体";
+    types.forEach((type) => {
+      if (existing.has(type)) return;
+      const option = document.createElement("option");
+      option.value = type;
+      option.textContent = type;
+      group.appendChild(option);
+    });
+    if (group.children.length) select.appendChild(group);
+  } catch (error) {
+    console.warn("加载超度牌位主体预设失败:", error);
+  }
+}
+
 function matchesSystemFilters(plaque) {
   const size = $("systemSize").value;
   if (size && plaque.size !== size) return false;
@@ -571,6 +599,11 @@ function matchesSystemFilters(plaque) {
   if (startDate && comparable < startDate) return false;
   if (endDate && comparable > endDate) return false;
   return true;
+}
+
+function matchesPlaqueSubtype(plaque, subtype) {
+  if (!subtype) return true;
+  return plaque.longevitySubtype === subtype || plaque.dedicationType === subtype;
 }
 
 function normalizeRow(row, group, index) {

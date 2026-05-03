@@ -59,16 +59,28 @@
             </select>
           </label>
           <label>
-            牌位子类型
-            <select id="systemPlaqueSubtype">
+            牌位分类
+            <select id="systemPlaqueType">
               <option value="">按导入按钮自动选择</option>
-              <option value="LONGEVITY">延生</option>
-              <option value="REBIRTH">往生</option>
-              <option value="DELIVERANCE">超度</option>
+              <option value="LONGEVITY">延生禄位</option>
+              <option value="REBIRTH">往生莲位</option>
+              <option value="DELIVERANCE">超度牌位</option>
             </select>
           </label>
         </div>
         <div class="grid-2">
+          <label>
+            子类型
+            <select id="systemPlaqueSubtype">
+              <option value="">全部子类型</option>
+              <optgroup label="延生禄位">
+                <option value="祈福禄位">祈福禄位</option>
+                <option value="化太岁禄位">化太岁禄位</option>
+                <option value="财神禄位">财神禄位</option>
+                <option value="文殊禄位">文殊禄位</option>
+              </optgroup>
+            </select>
+          </label>
           <label>
             规格
             <select id="systemSize">
