@@ -455,7 +455,9 @@ async function loadSystemPlaques(group) {
 
   try {
     setBusy(`正在读取${group === "blessing" ? "延生" : "往生/超度"}数据...`);
-    const plaqueTypes = group === "blessing" ? ["LONGEVITY"] : ["REBIRTH", "DELIVERANCE"];
+    const subtype = $("systemPlaqueSubtype").value;
+    const allowedTypes = group === "blessing" ? ["LONGEVITY"] : ["REBIRTH", "DELIVERANCE"];
+    const plaqueTypes = subtype && allowedTypes.includes(subtype) ? [subtype] : allowedTypes;
     const status = $("systemStatus").value;
     const keyword = $("systemKeyword").value.trim();
     const ritualId = $("systemRitual").value;
@@ -468,6 +470,7 @@ async function loadSystemPlaques(group) {
       headers: authHeaders(),
     })));
     const rows = batches
+      .map(normalizeListResponse)
       .flat()
       .filter(matchesSystemFilters)
       .map(plaqueToRow)
@@ -1018,12 +1021,21 @@ async function fetchJson(url, options = {}) {
     ...(options.body ? { "Content-Type": "application/json" } : {}),
     ...(options.headers || {}),
   };
-  const response = await fetch(url, { ...options, headers });
+  const response = await fetch(url, { cache: "no-store", ...options, headers });
   const json = await response.json().catch(() => ({}));
   if (!response.ok || json.success === false) {
     throw new Error(json.error || `请求失败：${response.status}`);
   }
   return json.data ?? json;
+}
+
+function normalizeListResponse(value) {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.items)) return value.items;
+  if (Array.isArray(value?.list)) return value.list;
+  if (Array.isArray(value?.rows)) return value.rows;
+  if (Array.isArray(value?.data)) return value.data;
+  return [];
 }
 
 function setBusy(message) {
