@@ -1,7 +1,8 @@
 {
-  "name": "temple-print-service",
+  "name": "temple-tablet-print-service",
   "version": "1.0.0",
   "type": "module",
+  "private": true,
   "scripts": {
     "start": "node index.js"
   },

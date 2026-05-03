@@ -745,7 +745,7 @@ export default function BatchPrintPage() {
                         const row = Math.floor(idx / rr.cols)
                         const col = idx % rr.cols
                         return (
-                          <div key={} style={{
+                          <div key={`empty-${i}`} style={{
                             position: 'absolute',
                             left: (rr.startX + col * (rr.cellWidth + rr.gapX)) + 'mm',
                             top: (rr.startY + row * (rr.cellHeight + rr.gapY)) + 'mm',

@@ -1,11 +1,10 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useRef } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { businessAPI } from '@/lib/api'
 import { Button, Card, Table, Badge, Modal, Input, Select, Textarea, SearchBar, Checkbox } from '@/components/ui'
 import { systemAPI } from '@/lib/api'
-import { PlaquePrintPreview } from '@/components/PlaquePrintPreview'
 import { PlaqueTemplate } from '@/types/template'
 import * as XLSX from 'xlsx'
 
@@ -117,11 +116,6 @@ export default function PlaquesPage() {
   const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // 预览状态
-  const [previewModalOpen, setPreviewModalOpen] = useState(false)
-  const [previewPlaque, setPreviewPlaque] = useState<Plaque | null>(null)
-  const [previewTemplate, setPreviewTemplate] = useState<PlaqueTemplate | null>(null)
-  
   const [formData, setFormData] = useState({
     plaqueType: 'LONGEVITY',
     longevitySubtype: '',
@@ -492,20 +486,17 @@ export default function PlaquesPage() {
     }
   }
 
-  const handlePreview = async (plaque: Plaque) => {
-    await loadTemplates()
-    const template = templates.find(t => t.id === plaque.templateId) || templates.find(t => t.type === plaque.plaqueType) || templates.find(t => t.type === 'ALL')
-    setPreviewPlaque(plaque)
-    setPreviewTemplate(template || null)
-    setPreviewModalOpen(true)
+  const openPrintTool = (params?: Record<string, string>) => {
+    const query = params ? '?' + new URLSearchParams(params).toString() : ''
+    window.location.href = `/admin/plaque-templates${query}`
   }
 
-  const handlePrint = async (plaque: Plaque) => {
-    await loadTemplates()
-    const template = templates.find(t => t.id === plaque.templateId) || templates.find(t => t.type === plaque.plaqueType) || templates.find(t => t.type === 'ALL')
-    setPreviewPlaque(plaque)
-    setPreviewTemplate(template || null)
-    setPreviewModalOpen(true)
+  const handlePreview = (plaque: Plaque) => {
+    openPrintTool({ plaqueId: plaque.id, type: plaque.plaqueType })
+  }
+
+  const handlePrint = (plaque: Plaque) => {
+    openPrintTool({ plaqueId: plaque.id, type: plaque.plaqueType })
   }
 
   const resetForm = () => {
@@ -641,7 +632,7 @@ export default function PlaquesPage() {
           <Button variant="secondary" onClick={handleExportSelected} className="active:scale-[0.98] transition-all duration-200">
             批量导出
           </Button>
-          <Button variant="secondary" onClick={() => window.location.href = '/admin/plaques/batch-print'} className="active:scale-[0.98] transition-all duration-200">
+          <Button variant="secondary" onClick={() => openPrintTool(filterType ? { type: filterType } : undefined)} className="active:scale-[0.98] transition-all duration-200">
             批量打印
           </Button>
           <Button onClick={() => { resetForm(); setEditing(null); setModalOpen(true); }} className="active:scale-[0.98] transition-all duration-200">
@@ -729,10 +720,16 @@ export default function PlaquesPage() {
                 options={[{ value: '', label: '请选择' }, ...sizeOptions]}
               />
               <Input
-                label="姓名 *"
+                label="牌位主体 *"
                 value={formData.holderName}
                 onChange={(e) => setFormData({ ...formData, holderName: e.target.value })}
                 required
+              />
+              <Input
+                label="信人"
+                value={formData.yangShang}
+                onChange={(e) => setFormData({ ...formData, yangShang: e.target.value })}
+                placeholder="请输入信人姓名"
               />
               <Select
                 label="性别"
@@ -741,7 +738,7 @@ export default function PlaquesPage() {
                 options={[{ value: '', label: '请选择' }, ...genderOptions]}
               />
               <Input
-                label="出生日期"
+                label="生日"
                 value={formData.birthDate}
                 onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
                 placeholder={formData.birthLunar ? '如：一九九零年正月十五' : '如：1990-01-15'}
@@ -756,24 +753,27 @@ export default function PlaquesPage() {
                 />
                 <label htmlFor="birthLunar" className="text-sm text-tea">农历</label>
               </div>
-              <Input
-                label="联系电话"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
+
               <div className="md:col-span-2">
                 <Input
                   label="地址"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="请输入地址"
                 />
               </div>
+              <Input
+                label="联系电话"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
               <Input
                 label="祈福祝福语"
                 value={formData.blessingText}
                 onChange={(e) => setFormData({ ...formData, blessingText: e.target.value })}
                 placeholder="如：心想事成 万事如意"
               />
+
               <div>
                 <label className="block text-sm font-medium text-tea mb-2">关联信众</label>
                 <button
@@ -826,6 +826,12 @@ export default function PlaquesPage() {
                 onChange={(e) => setFormData({ ...formData, deceasedName: e.target.value })}
                 required
               />
+              <Input
+                label="信人"
+                value={formData.yangShang}
+                onChange={(e) => setFormData({ ...formData, yangShang: e.target.value })}
+                placeholder="请输入信人姓名"
+              />
               <Select
                 label="性别"
                 value={formData.gender}
@@ -833,7 +839,7 @@ export default function PlaquesPage() {
                 options={[{ value: '', label: '请选择' }, ...genderOptions]}
               />
               <Input
-                label="出生日期"
+                label="生日"
                 value={formData.birthDate}
                 onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
                 placeholder="如：1960-05-20"
@@ -941,16 +947,13 @@ export default function PlaquesPage() {
                 value={formData.yangShang}
                 onChange={(e) => setFormData({ ...formData, yangShang: e.target.value })}
               />
-              <Input
-                label="联系电话"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
+
               <div className="md:col-span-2">
                 <Input
                   label="地址"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="请输入地址"
                 />
               </div>
               <div>
@@ -1018,16 +1021,13 @@ export default function PlaquesPage() {
                 value={formData.yangShang}
                 onChange={(e) => setFormData({ ...formData, yangShang: e.target.value })}
               />
-              <Input
-                label="联系电话"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
+
               <div className="md:col-span-2">
                 <Input
                   label="地址"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="请输入地址"
                 />
               </div>
               <Select
@@ -1142,13 +1142,6 @@ export default function PlaquesPage() {
         </div>
       </Modal>
 
-      <PlaquePrintPreview
-        plaque={previewPlaque!}
-        template={previewTemplate}
-        open={previewModalOpen}
-        onClose={() => setPreviewModalOpen(false)}
-      />
-
       {/* 导入弹窗 */}
       <Modal open={importModalOpen} onClose={closeImportModal} title="批量导入牌位" size="md">
         <div className="space-y-4">
@@ -1262,3 +1255,5 @@ export default function PlaquesPage() {
     </div>
   )
 }
+
+
