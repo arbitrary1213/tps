@@ -570,7 +570,7 @@ async function loadDedicationTypeOptions() {
     const existing = new Set(Array.from(select.options).map((option) => option.value));
     if (!types.length) return;
     const group = document.createElement("optgroup");
-    group.label = "超度牌位主体";
+    group.label = "超度牌位主体预设";
     types.forEach((type) => {
       if (existing.has(type)) return;
       const option = document.createElement("option");

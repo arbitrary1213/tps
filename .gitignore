@@ -14,6 +14,13 @@ dist/
 # Misc
 .DS_Store
 *.pem
+*.bak
+*.bak-*
+*.tar.gz
+backup/
+docker/backup/
+docker/logs/
+frontend-deploy/
 
 # Debug
 npm-debug.log*
