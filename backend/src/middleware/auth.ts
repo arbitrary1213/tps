@@ -28,12 +28,22 @@ export const verifyToken = (token: string): JWTPayload => {
 
 export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization
+  const cookieHeader = req.headers.cookie || ''
+  const cookieToken = cookieHeader
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith('temple_token='))
+    ?.split('=')
+    .slice(1)
+    .join('=')
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const token = authHeader?.startsWith('Bearer ')
+    ? authHeader.split(' ')[1]
+    : (cookieToken ? decodeURIComponent(cookieToken) : '')
+
+  if (!token) {
     return res.status(401).json({ success: false, error: '未登录' })
   }
-
-  const token = authHeader.split(' ')[1]
 
   try {
     const payload = verifyToken(token)

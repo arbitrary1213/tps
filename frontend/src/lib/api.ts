@@ -56,6 +56,9 @@ export const authAPI = {
 
   changePassword: (token: string, data: { currentPassword: string; newPassword: string; confirmPassword: string }) =>
     request('/api/auth/change-password', { method: 'PUT', token, body: JSON.stringify(data) }),
+
+  logout: () =>
+    request('/api/auth/logout', { method: 'POST', credentials: 'include' }),
 }
 
 // 系统设置

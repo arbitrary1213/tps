@@ -8,6 +8,27 @@ const router = Router()
 const loginAttempts = new Map<string, { count: number; lockUntil: number }>()
 const MAX_LOGIN_ATTEMPTS = 5
 const LOCK_DURATION_MS = 15 * 60 * 1000
+const AUTH_COOKIE_NAME = 'temple_token'
+const AUTH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
+
+const setAuthCookie = (res: Response, token: string) => {
+  res.cookie(AUTH_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: AUTH_COOKIE_MAX_AGE_MS,
+  })
+}
+
+const clearAuthCookie = (res: Response) => {
+  res.clearCookie(AUTH_COOKIE_NAME, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+  })
+}
 
 const getClientIP = (req: Request): string => {
   return req.ip || req.socket.remoteAddress || 'unknown'
@@ -83,6 +104,8 @@ router.post('/login', async (req: Request, res: Response) => {
       role: user.role
     })
 
+    setAuthCookie(res, token)
+
     res.json({
       success: true,
       data: {
@@ -100,6 +123,11 @@ router.post('/login', async (req: Request, res: Response) => {
     console.error('Login error:', error)
     res.status(500).json({ success: false, error: '服务器错误' })
   }
+})
+
+router.post('/logout', (req: Request, res: Response) => {
+  clearAuthCookie(res)
+  res.json({ success: true })
 })
 
 // 注册
