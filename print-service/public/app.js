@@ -237,6 +237,7 @@ function init() {
   loadAllSamples();
   loadServerTemplates();
   loadRitualOptions();
+  applyLaunchParams();
 }
 
 function setMode(mode) {
@@ -486,6 +487,53 @@ async function loadSystemPlaques(group) {
     console.error("读取系统数据失败:", error);
     alert(error.message || "读取系统数据失败");
     setBusy("读取系统数据失败");
+  }
+}
+
+async function applyLaunchParams() {
+  const params = new URLSearchParams(window.location.search);
+  const plaqueId = params.get("plaqueId");
+  const type = params.get("type");
+  if (!plaqueId && !type) return;
+  if (!authToken()) return;
+
+  const group = type === "LONGEVITY" ? "blessing" : "deliverance";
+  if (state.mode !== "single") setMode("single");
+  if (type === "LONGEVITY") {
+    $("tabletType").value = "blessing";
+  } else if (type === "REBIRTH") {
+    $("tabletType").value = "deliveranceDetail";
+  } else if (type === "DELIVERANCE") {
+    $("tabletType").value = "deliveranceSimple";
+  }
+  $("summaryDataGroup").value = group;
+
+  try {
+    setBusy("正在载入牌位数据...");
+    const query = new URLSearchParams({
+      ...(type ? { plaqueType: type } : {}),
+      ...(!plaqueId && ($("systemStatus").value || "ACTIVE")
+        ? { status: $("systemStatus").value || "ACTIVE" }
+        : {}),
+    });
+    const plaques = await fetchJson(`/api/plaques?${query.toString()}`, { headers: authHeaders() });
+    const rows = plaques
+      .map(plaqueToRow)
+      .map((row, index) => normalizeRow(row, group, index));
+    state.datasets[group] = rows;
+    state.selectedRowIds[group].clear();
+    if (plaqueId) state.selectedRowIds[group].add(plaqueId);
+    state.pageIndex = Math.max(0, rows.findIndex((row) => row.__rowId === plaqueId));
+    buildFieldMapping();
+    buildStyleEditor();
+    renderTable();
+    updateDataHint();
+    applySummaryDefault(true);
+    render();
+    setBusy(plaqueId ? "已载入当前牌位" : `已载入${rows.length}条数据`);
+  } catch (error) {
+    console.error("载入入口数据失败:", error);
+    setBusy("载入入口数据失败");
   }
 }
 
