@@ -40,16 +40,20 @@ GET /api/local-print/clients/:id/jobs/next
 POST /api/local-print/jobs/:jobId/items/:itemId/report
 ```
 
-The stable job status flow is:
+Stage 1 keeps this protocol family as the desktop execution path. The web `print-service` stays available for template design and fallback preview, but it is no longer the long-term primary execution path.
+
+The Stage 1 stable job status flow is:
 
 ```text
 PENDING -> DISPATCHED -> PRINTING -> COMPLETED
-                             |
-                             v
-                           FAILED
+            |                |
+            |                v
+            |              FAILED
+            |
+            +------------> CANCELLED
 ```
 
-Failed jobs can be fetched again by the assigned print client.
+If some items succeed and some fail, the job should be treated as `PARTIAL_FAILED` on the server side. Failed jobs can be fetched again by the assigned print client.
 
 ## Migration Order
 
@@ -74,4 +78,3 @@ Failed jobs can be fetched again by the assigned print client.
 - Multi-tenant shared server.
 - Payment flow.
 - Removing web admin business pages.
-

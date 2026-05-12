@@ -187,7 +187,20 @@ desktop app reports status to server
 /opt/temple-os/docker/.env
 ```
 
-## 7. Known Current State
+## 7. Stage 1 Governance Baseline
+
+阶段 1 实施统一遵守以下基线：
+
+- 生产前端主路径是 `systemd + Next standalone`，不是 Docker Compose 前端容器。
+- 生产后端主路径是 Docker 容器。
+- 生产打印服务主路径是 Docker 容器。
+- 生产数据库主路径是 PostgreSQL 容器。
+- `print-service` 负责模板设计、Web 预览和备用打印，不作为长期主打印执行端。
+- `desktop-app` 是后续本地打印主执行端，负责打印机发现、任务领取、本地执行和状态回传。
+- `wechat-platform` 在阶段 1 仅做结构整理，不扩业务面，不接入主业务强依赖。
+- 阶段 1 只做结构治理：后端拆域、打印模型定稿、前端核心 API 类型化，不做新业务扩张。
+
+## 8. Known Current State
 
 - 本地正式项目目录已经建立。
 - `frontend-deploy/` 和 `frontend-runtime/` 已从本地正式项目排除。
@@ -196,4 +209,3 @@ desktop app reports status to server
 - `docker/nginx.conf` 中中文注释有乱码，但配置指令本身可读。
 - `business.ts` 过大，集中承载了大部分业务路由，后续维护成本较高。
 - 生产前端实际由 systemd 运行，compose 中前端服务定义与生产现实不完全一致。
-

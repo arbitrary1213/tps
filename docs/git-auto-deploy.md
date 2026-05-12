@@ -65,6 +65,7 @@ print
 - The current frontend runtime is systemd-based, not a frontend Docker container.
 - The backend and print service are containerized with host networking.
 - The deploy script creates a database backup before pulling and rebuilding.
+- `desktop-app` and `wechat-platform` are not deployed by this workflow today.
 
 ## Recommended Daily Flow
 

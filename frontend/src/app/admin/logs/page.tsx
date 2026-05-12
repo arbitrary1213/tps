@@ -4,18 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { businessAPI } from '@/lib/api'
 import { Card, Table, Badge, Select, Empty } from '@/components/ui'
-
-interface Log {
-  id: string
-  userId: string
-  username: string
-  action: string
-  targetType: string
-  targetId: string
-  beforeValue?: any
-  afterValue?: any
-  createdAt: string
-}
+import type { OperationLogRecord } from '@/types/api'
 
 const actionMap: Record<string, { label: string; variant: 'success' | 'warning' | 'danger' | 'info' }> = {
   CREATE: { label: '创建', variant: 'success' },
@@ -25,7 +14,7 @@ const actionMap: Record<string, { label: string; variant: 'success' | 'warning' 
 
 export default function LogsPage() {
   const { token } = useAuthStore()
-  const [logs, setLogs] = useState<Log[]>([])
+  const [logs, setLogs] = useState<OperationLogRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -39,7 +28,7 @@ export default function LogsPage() {
   const loadLogs = async () => {
     try {
       setLoading(true)
-      const params: any = { page, pageSize: 20 }
+      const params: Record<string, string | number> = { page, pageSize: 20 }
       if (actionFilter) params.action = actionFilter
       if (targetFilter) params.targetType = targetFilter
       const data = await businessAPI.getLogs(token!, params)
@@ -53,17 +42,17 @@ export default function LogsPage() {
   }
 
   const columns = [
-    { key: 'createdAt', title: '时间', render: (row: Log) => new Date(row.createdAt).toLocaleString('zh-CN') },
+    { key: 'createdAt', title: '时间', render: (row: OperationLogRecord) => new Date(row.createdAt).toLocaleString('zh-CN') },
     { key: 'username', title: '用户' },
-    { key: 'action', title: '操作', render: (row: Log) => {
+    { key: 'action', title: '操作', render: (row: OperationLogRecord) => {
       const action = actionMap[row.action]
       return <Badge variant={action?.variant || 'info'}>{action?.label || row.action}</Badge>
     }},
     { key: 'targetType', title: '对象类型' },
-    { key: 'targetId', title: '对象ID', render: (row: Log) => (
+    { key: 'targetId', title: '对象ID', render: (row: OperationLogRecord) => (
       <span className="text-xs text-tea/60 truncate max-w-32 block">{row.targetId}</span>
     )},
-    { key: 'details', title: '详情', render: (row: Log) => {
+    { key: 'details', title: '详情', render: (row: OperationLogRecord) => {
       if (row.action === 'CREATE') {
         return <span className="text-bamboo text-sm">新增记录</span>
       }

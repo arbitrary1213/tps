@@ -4,34 +4,17 @@ import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { businessAPI } from '@/lib/api'
 import { Button, Card, Table, Badge, Modal, Input, Select, Textarea, SearchBar, Empty } from '@/components/ui'
+import type { DevoteeRecord } from '@/types/api'
 
 const tagOptions = ['常客', '义工', '捐赠者', 'VIP']
 
-interface Devotee {
-  id: string
-  name: string
-  phone: string
-  wechat?: string
-  email?: string
-  idCard?: string
-  birthday?: string
-  zodiac?: string
-  address?: string
-  tags: string[]
-  totalDonation: number
-  firstVisitDate?: string
-  lastVisitDate?: string
-  remarks?: string
-  createdAt: string
-}
-
 export default function DevoteesPage() {
   const { token } = useAuthStore()
-  const [devotees, setDevotees] = useState<Devotee[]>([])
+  const [devotees, setDevotees] = useState<DevoteeRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
-  const [editing, setEditing] = useState<Devotee | null>(null)
+  const [editing, setEditing] = useState<DevoteeRecord | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -82,7 +65,7 @@ export default function DevoteesPage() {
     }
   }
 
-  const handleEdit = (devotee: Devotee) => {
+  const handleEdit = (devotee: DevoteeRecord) => {
     setEditing(devotee)
     setFormData({
       name: devotee.name,
@@ -139,16 +122,16 @@ export default function DevoteesPage() {
     { key: 'name', title: '姓名' },
     { key: 'phone', title: '电话' },
     { key: 'wechat', title: '微信' },
-    { key: 'tags', title: '标签', render: (row: Devotee) => (
+    { key: 'tags', title: '标签', render: (row: DevoteeRecord) => (
       <div className="flex flex-wrap gap-1">
         {(row.tags || []).map(tag => (
           <Badge key={tag} variant="info">{tag}</Badge>
         ))}
       </div>
     )},
-    { key: 'totalDonation', title: '累计功德', render: (row: Devotee) => `¥${row.totalDonation || 0}` },
-    { key: 'lastVisitDate', title: '最近到访', render: (row: Devotee) => row.lastVisitDate ? new Date(row.lastVisitDate).toLocaleDateString('zh-CN') : '-' },
-    { key: 'actions', title: '操作', render: (row: Devotee) => (
+    { key: 'totalDonation', title: '累计功德', render: (row: DevoteeRecord) => `¥${row.totalDonation || 0}` },
+    { key: 'lastVisitDate', title: '最近到访', render: (row: DevoteeRecord) => row.lastVisitDate ? new Date(row.lastVisitDate).toLocaleDateString('zh-CN') : '-' },
+    { key: 'actions', title: '操作', render: (row: DevoteeRecord) => (
       <div className="flex gap-2">
         <Button size="sm" variant="ghost" onClick={() => handleEdit(row)}>编辑</Button>
         <Button size="sm" variant="danger" onClick={() => handleDelete(row.id)}>删除</Button>

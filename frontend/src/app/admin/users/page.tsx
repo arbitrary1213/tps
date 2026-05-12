@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { businessAPI } from '@/lib/api'
 import { Button, Card, Table, Badge, Modal, Input, Select, Empty } from '@/components/ui'
+import type { UserRecord } from '@/types/api'
 
 const roleOptions = [
   { value: 'ADMIN', label: '管理员' },
@@ -11,22 +12,13 @@ const roleOptions = [
   { value: 'VIEWER', label: '查看者' },
 ]
 
-interface User {
-  id: string
-  username: string
-  name?: string
-  email?: string
-  role: string
-  createdAt: string
-}
-
 export default function UsersPage() {
   const { token, user: currentUser } = useAuthStore()
-  const [users, setUsers] = useState<User[]>([])
+  const [users, setUsers] = useState<UserRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [passwordModalOpen, setPasswordModalOpen] = useState(false)
-  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [editingUser, setEditingUser] = useState<UserRecord | null>(null)
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -64,7 +56,7 @@ export default function UsersPage() {
     }
   }
 
-  const handleEditPassword = (user: User) => {
+  const handleEditPassword = (user: UserRecord) => {
     setEditingUser(user)
     setNewPassword('')
     setPasswordModalOpen(true)
@@ -119,13 +111,13 @@ export default function UsersPage() {
     { key: 'username', title: '用户名' },
     { key: 'name', title: '姓名' },
     { key: 'email', title: '邮箱' },
-    { key: 'role', title: '角色', render: (row: User) => (
+    { key: 'role', title: '角色', render: (row: UserRecord) => (
       <Badge variant={roleBadgeMap[row.role] || 'info'}>
         {roleOptions.find(r => r.value === row.role)?.label || row.role}
       </Badge>
     )},
-    { key: 'createdAt', title: '创建时间', render: (row: User) => new Date(row.createdAt).toLocaleString('zh-CN') },
-    { key: 'actions', title: '操作', render: (row: User) => (
+    { key: 'createdAt', title: '创建时间', render: (row: UserRecord) => new Date(row.createdAt).toLocaleString('zh-CN') },
+    { key: 'actions', title: '操作', render: (row: UserRecord) => (
       <div className="flex gap-2">
         <Button
           size="sm"

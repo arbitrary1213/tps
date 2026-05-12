@@ -4,6 +4,10 @@ const fs = require('fs')
 const path = require('path')
 const { Pool } = require('pg')
 const { XMLParser } = require('fast-xml-parser')
+const { createEmptyStore, loadStore, saveStoreToFile: persistStoreToFile } = require('./store')
+const { createId, handleAsync, toDateOrNull } = require('./utils')
+const { registerPlatformRoutes } = require('./routes/platformRoutes')
+const { createPlatformAuthService } = require('./services/platformAuth')
 require('dotenv').config()
 
 const app = express()
@@ -23,40 +27,14 @@ const WECHAT_API_BASE = 'https://api.weixin.qq.com/cgi-bin/component'
 const parser = new XMLParser({ ignoreAttributes: false })
 const pool = DATABASE_URL ? new Pool({ connectionString: DATABASE_URL }) : null
 
-const store = loadStore()
+const store = loadStore(STORE_FILE)
 
 app.disable('x-powered-by')
 app.use(express.json({ limit: '20mb' }))
 app.use(express.text({ type: ['text/*', 'application/xml'], limit: '20mb' }))
 
-function createEmptyStore() {
-  return {
-    componentVerifyTicket: '',
-    componentAccessToken: '',
-    componentAccessTokenExpiresAt: 0,
-    preAuthCode: '',
-    preAuthCodeExpiresAt: 0,
-    authorizers: {},
-    messages: [],
-    articles: [],
-    templateMessages: [],
-  }
-}
-
-function loadStore() {
-  const initial = createEmptyStore()
-  try {
-    if (!fs.existsSync(STORE_FILE)) return initial
-    return { ...initial, ...JSON.parse(fs.readFileSync(STORE_FILE, 'utf8')) }
-  } catch (error) {
-    console.warn(`Failed to read WeChat platform store: ${error.message}`)
-    return initial
-  }
-}
-
 function saveStoreToFile() {
-  fs.mkdirSync(DATA_DIR, { recursive: true })
-  fs.writeFileSync(STORE_FILE, JSON.stringify(store, null, 2))
+  persistStoreToFile(DATA_DIR, STORE_FILE, store)
 }
 
 async function initDatabaseStore() {
@@ -176,12 +154,6 @@ async function saveStore() {
     `,
     ['main', JSON.stringify(store)]
   )
-}
-
-function toDateOrNull(value) {
-  if (!value) return null
-  const date = typeof value === 'number' ? new Date(value) : new Date(value)
-  return Number.isNaN(date.getTime()) ? null : date
 }
 
 async function persistAuthorizer(record) {
@@ -377,10 +349,6 @@ function verifySignature(query) {
   return hash === signature
 }
 
-function createId(prefix) {
-  return `${prefix}_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`
-}
-
 function parsePayload(body) {
   if (!body) return {}
   if (typeof body !== 'string') return body
@@ -449,92 +417,6 @@ async function postOfficialAccount(authorizerAppId, pathname, payload) {
   return json
 }
 
-async function getComponentAccessToken(force = false) {
-  if (!force && store.componentAccessToken && Date.now() < store.componentAccessTokenExpiresAt - 300000) {
-    return store.componentAccessToken
-  }
-  if (!COMPONENT_APP_ID || !COMPONENT_SECRET || !store.componentVerifyTicket) {
-    throw new Error('WeChat component app id, secret, or verify ticket is missing')
-  }
-
-  const json = await postWechat('/api_component_token', {
-    component_appid: COMPONENT_APP_ID,
-    component_appsecret: COMPONENT_SECRET,
-    component_verify_ticket: store.componentVerifyTicket,
-  })
-  store.componentAccessToken = json.component_access_token
-  store.componentAccessTokenExpiresAt = Date.now() + Number(json.expires_in || 7200) * 1000
-  await persistToken('component_access_token', 'COMPONENT_ACCESS_TOKEN', store.componentAccessToken, store.componentAccessTokenExpiresAt, { expiresIn: json.expires_in })
-  await persistEvent('COMPONENT_ACCESS_TOKEN_REFRESHED', json, { status: 'SUCCESS' })
-  await saveStore()
-  return store.componentAccessToken
-}
-
-async function getPreAuthCode(force = false) {
-  if (!force && store.preAuthCode && Date.now() < store.preAuthCodeExpiresAt - 300000) {
-    return store.preAuthCode
-  }
-  const componentAccessToken = await getComponentAccessToken()
-  const json = await postWechat(`/api_create_preauthcode?component_access_token=${componentAccessToken}`, {
-    component_appid: COMPONENT_APP_ID,
-  })
-  store.preAuthCode = json.pre_auth_code
-  store.preAuthCodeExpiresAt = Date.now() + Number(json.expires_in || 600) * 1000
-  await persistToken('pre_auth_code', 'PRE_AUTH_CODE', store.preAuthCode, store.preAuthCodeExpiresAt, { expiresIn: json.expires_in })
-  await persistEvent('PRE_AUTH_CODE_CREATED', json, { status: 'SUCCESS' })
-  await saveStore()
-  return store.preAuthCode
-}
-
-async function queryAuthorization(authCode) {
-  const componentAccessToken = await getComponentAccessToken()
-  return postWechat(`/api_query_auth?component_access_token=${componentAccessToken}`, {
-    component_appid: COMPONENT_APP_ID,
-    authorization_code: authCode,
-  })
-}
-
-async function refreshAuthorizerAccessToken(authorizerAppId) {
-  const record = store.authorizers[authorizerAppId]
-  if (!record?.authorizerRefreshToken) {
-    throw new Error(`Authorizer ${authorizerAppId} has no refresh token`)
-  }
-  const componentAccessToken = await getComponentAccessToken()
-  const json = await postWechat(`/api_authorizer_token?component_access_token=${componentAccessToken}`, {
-    component_appid: COMPONENT_APP_ID,
-    authorizer_appid: authorizerAppId,
-    authorizer_refresh_token: record.authorizerRefreshToken,
-  })
-  return upsertAuthorizer({
-    authorizerAppId,
-    authorizerAccessToken: json.authorizer_access_token,
-    authorizerRefreshToken: json.authorizer_refresh_token || record.authorizerRefreshToken,
-    expiresAt: Date.now() + Number(json.expires_in || 7200) * 1000,
-    status: 'ACTIVE',
-  })
-}
-
-async function getAuthorizerAccessToken(authorizerAppId) {
-  const record = store.authorizers[authorizerAppId]
-  if (!record) throw new Error(`Authorizer ${authorizerAppId} is not bound`)
-  if (record.authorizerAccessToken && Date.now() < Number(record.expiresAt || 0) - 300000) {
-    return record.authorizerAccessToken
-  }
-  const updated = await refreshAuthorizerAccessToken(authorizerAppId)
-  return updated.authorizerAccessToken
-}
-
-async function upsertAuthorizer(record) {
-  store.authorizers[record.authorizerAppId] = {
-    ...(store.authorizers[record.authorizerAppId] || {}),
-    ...record,
-    updatedAt: new Date().toISOString(),
-  }
-  await persistAuthorizer(store.authorizers[record.authorizerAppId])
-  await saveStore()
-  return store.authorizers[record.authorizerAppId]
-}
-
 function normalizeArticlePayload(input) {
   const source = input?.article || input || {}
   if (source.articles) return source
@@ -549,282 +431,53 @@ function normalizeArticlePayload(input) {
   }
 }
 
-async function handleAsync(res, fn) {
-  try {
-    const data = await fn()
-    res.json({ success: true, data })
-  } catch (error) {
-    res.status(400).json({ success: false, error: error.message })
-  }
+const platformAuth = createPlatformAuthService({
+  COMPONENT_APP_ID,
+  COMPONENT_SECRET,
+  createId: (prefix) => createId(prefix, crypto),
+  persistAuthorizer,
+  persistEvent,
+  persistToken,
+  postWechat,
+  saveStore,
+  store,
+})
+
+const {
+  getAuthorizerAccessToken,
+  getPreAuthCode,
+  handleAuthorizedCallback,
+} = {
+  ...platformAuth,
+  handleAuthorizedCallback: (req, res) => platformAuth.handleAuthorizedCallback(req, res, parsePayload),
 }
 
-async function handleAuthorizedCallback(req, res) {
-  try {
-    const payload = parsePayload(Object.keys(req.body || {}).length ? req.body : req.query)
-    await persistEvent('AUTHORIZED_CALLBACK', payload, { status: 'RECEIVED' })
-    const authCode = payload.auth_code || payload.authorization_code || req.query.auth_code || req.query.authorization_code
-    if (authCode) {
-      const result = await queryAuthorization(authCode)
-      const info = result.authorization_info || {}
-      const record = await upsertAuthorizer({
-        authorizerAppId: info.authorizer_appid,
-        authorizerAccessToken: info.authorizer_access_token,
-        authorizerRefreshToken: info.authorizer_refresh_token,
-        expiresAt: Date.now() + Number(info.expires_in || 7200) * 1000,
-        funcInfo: info.func_info || [],
-        rawPayload: result,
-        status: 'ACTIVE',
-      })
-      return res.json({ success: true, data: record })
-    }
-
-    const appId = payload.authorizerAppId || payload.AuthorizerAppid || payload.appId || createId('authorizer')
-    const record = await upsertAuthorizer({
-      authorizerAppId: appId,
-      nickName: payload.nickName || payload.NickName || '',
-      rawPayload: payload,
-      status: 'ACTIVE',
-    })
-    res.json({ success: true, data: record })
-  } catch (error) {
-    res.status(503).json({ success: false, error: error.message })
-  }
-}
-
-app.get('/health', (_req, res) => {
-  res.json({
-    ok: true,
-    service: 'temple-os-wechat-platform',
-    configured: Boolean(COMPONENT_APP_ID && COMPONENT_SECRET && COMPONENT_TOKEN && COMPONENT_ENCODING_AES_KEY && API_TOKEN),
-    store: pool ? 'postgres' : 'json-file',
-    hasVerifyTicket: Boolean(store.componentVerifyTicket),
-    hasComponentAccessToken: Boolean(store.componentAccessToken && Date.now() < store.componentAccessTokenExpiresAt),
-    time: new Date().toISOString(),
-  })
-})
-
-app.post('/wechat-platform/callback/component', async (req, res) => {
-  if (COMPONENT_TOKEN && !verifySignature(req.query)) {
-    await persistEvent('COMPONENT_CALLBACK_SIGNATURE_FAILED', { query: req.query }, { status: 'FAILED', errorMessage: 'Invalid signature' })
-    return res.status(403).send('Invalid signature')
-  }
-  const payload = normalizeWechatPayload(req.body)
-  await persistEvent(payload.InfoType || 'COMPONENT_CALLBACK', payload, { status: 'RECEIVED' })
-  if (payload.ComponentVerifyTicket) {
-    store.componentVerifyTicket = payload.ComponentVerifyTicket
-    await persistToken('component_verify_ticket', 'COMPONENT_VERIFY_TICKET', store.componentVerifyTicket, null, { infoType: payload.InfoType || null })
-    await saveStore()
-  }
-  res.send('success')
-})
-
-app.get('/wechat-platform/auth-url', requireApiToken, async (req, res) => {
-  try {
-    const redirectUri = encodeURIComponent(String(req.query.redirectUri || `${PUBLIC_BASE_URL}/wechat-platform/callback/authorized`))
-    const state = encodeURIComponent(String(req.query.state || 'temple-os'))
-    const preAuthCode = await getPreAuthCode()
-    const url = `https://mp.weixin.qq.com/cgi-bin/componentloginpage?component_appid=${COMPONENT_APP_ID}&pre_auth_code=${preAuthCode}&redirect_uri=${redirectUri}&auth_type=3&biz_appid=&state=${state}`
-    res.json({ success: true, data: { url, state: req.query.state || 'temple-os' } })
-  } catch (error) {
-    res.status(503).json({ success: false, error: error.message })
-  }
-})
-
-app.post('/wechat-platform/callback/authorized', handleAuthorizedCallback)
-app.get('/wechat-platform/callback/authorized', handleAuthorizedCallback)
-
-app.post('/wechat-platform/callback/message/:authorizerAppId', async (req, res) => {
-  if (COMPONENT_TOKEN && !verifySignature(req.query)) {
-    await persistEvent('MESSAGE_CALLBACK_SIGNATURE_FAILED', { query: req.query }, { authorizerAppId: req.params.authorizerAppId, status: 'FAILED', errorMessage: 'Invalid signature' })
-    return res.status(403).send('Invalid signature')
-  }
-  const payload = normalizeWechatPayload(req.body)
-  await persistEvent(payload.MsgType || payload.Event || 'MESSAGE_CALLBACK', payload, { authorizerAppId: req.params.authorizerAppId, status: 'RECEIVED' })
-  const message = {
-    id: createId('msg'),
-    authorizerAppId: req.params.authorizerAppId,
-    openId: payload.FromUserName || payload.openId || '',
-    msgType: payload.MsgType || payload.msgType || '',
-    eventType: payload.Event || payload.eventType || '',
-    content: payload.Content || payload.content || '',
-    rawPayload: payload,
-    createdAt: new Date().toISOString(),
-  }
-  store.messages.push(message)
-  await persistMessage(message)
-  await saveStore()
-  res.send('success')
-})
-
-app.get('/wechat-platform/authorizers', requireApiToken, async (_req, res) => {
-  if (pool) {
-    const result = await pool.query('SELECT * FROM wechat_platform_authorizers ORDER BY updated_at DESC')
-    return res.json({ success: true, data: result.rows })
-  }
-  res.json({ success: true, data: Object.values(store.authorizers) })
-})
-
-app.get('/wechat-platform/messages', requireApiToken, async (req, res) => {
-  const authorizerAppId = String(req.query.authorizerAppId || '')
-  if (pool) {
-    const result = authorizerAppId
-      ? await pool.query('SELECT * FROM wechat_platform_messages WHERE authorizer_app_id = $1 ORDER BY created_at DESC LIMIT 200', [authorizerAppId])
-      : await pool.query('SELECT * FROM wechat_platform_messages ORDER BY created_at DESC LIMIT 200')
-    return res.json({ success: true, data: result.rows })
-  }
-  const data = authorizerAppId ? store.messages.filter((item) => item.authorizerAppId === authorizerAppId) : store.messages
-  res.json({ success: true, data: data.slice(-200).reverse() })
-})
-
-app.get('/wechat-platform/tokens', requireApiToken, async (_req, res) => {
-  if (pool) {
-    const result = await pool.query('SELECT token_key, token_type, value, expires_at, metadata, updated_at FROM wechat_platform_tokens ORDER BY updated_at DESC')
-    return res.json({
-      success: true,
-      data: result.rows.map((row) => ({
-        tokenKey: row.token_key,
-        tokenType: row.token_type,
-        configured: Boolean(row.value),
-        valueTail: row.value ? String(row.value).slice(-6) : '',
-        expiresAt: row.expires_at,
-        metadata: row.metadata,
-        updatedAt: row.updated_at,
-      })),
-    })
-  }
-  res.json({
-    success: true,
-    data: [
-      { tokenKey: 'component_verify_ticket', tokenType: 'COMPONENT_VERIFY_TICKET', configured: Boolean(store.componentVerifyTicket), valueTail: String(store.componentVerifyTicket || '').slice(-6), expiresAt: null },
-      { tokenKey: 'component_access_token', tokenType: 'COMPONENT_ACCESS_TOKEN', configured: Boolean(store.componentAccessToken), valueTail: String(store.componentAccessToken || '').slice(-6), expiresAt: toDateOrNull(store.componentAccessTokenExpiresAt) },
-      { tokenKey: 'pre_auth_code', tokenType: 'PRE_AUTH_CODE', configured: Boolean(store.preAuthCode), valueTail: String(store.preAuthCode || '').slice(-6), expiresAt: toDateOrNull(store.preAuthCodeExpiresAt) },
-    ],
-  })
-})
-
-app.get('/wechat-platform/events', requireApiToken, async (req, res) => {
-  const authorizerAppId = String(req.query.authorizerAppId || '')
-  const eventType = String(req.query.eventType || '')
-  if (!pool) {
-    return res.json({ success: true, data: [] })
-  }
-  const where = []
-  const params = []
-  if (authorizerAppId) {
-    params.push(authorizerAppId)
-    where.push(`authorizer_app_id = $${params.length}`)
-  }
-  if (eventType) {
-    params.push(eventType)
-    where.push(`event_type = $${params.length}`)
-  }
-  const sql = `SELECT * FROM wechat_platform_events${where.length ? ` WHERE ${where.join(' AND ')}` : ''} ORDER BY created_at DESC LIMIT 200`
-  const result = await pool.query(sql, params)
-  res.json({ success: true, data: result.rows })
-})
-
-app.post('/wechat-platform/articles/draft', requireApiToken, (req, res) => {
-  handleAsync(res, async () => {
-    const { authorizerAppId, article } = req.body || {}
-    if (!authorizerAppId) throw new Error('authorizerAppId is required')
-    const payload = article?.articles ? article : { articles: [normalizeArticlePayload(article || req.body)] }
-    const remote = DRY_RUN ? { media_id: createId('dry_media'), dryRun: true } : await postOfficialAccount(authorizerAppId, '/draft/add', payload)
-    const record = {
-      id: createId('draft'),
-      authorizerAppId,
-      status: 'DRAFT',
-      localPayload: req.body,
-      remote,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-    store.articles.push(record)
-    await persistArticle(record)
-    await saveStore()
-    return record
-  })
-})
-
-app.post('/wechat-platform/articles/publish', requireApiToken, (req, res) => {
-  handleAsync(res, async () => {
-    const { authorizerAppId, article, mediaId } = req.body || {}
-    if (!authorizerAppId) throw new Error('authorizerAppId is required')
-    let draftMediaId = mediaId || article?.media_id || article?.remoteMediaId
-    let draftResult = null
-    if (!draftMediaId) {
-      const payload = article?.articles ? article : { articles: [normalizeArticlePayload(article || req.body)] }
-      draftResult = DRY_RUN ? { media_id: createId('dry_media'), dryRun: true } : await postOfficialAccount(authorizerAppId, '/draft/add', payload)
-      draftMediaId = draftResult.media_id
-    }
-    const remote = DRY_RUN ? { publish_id: createId('dry_publish'), dryRun: true } : await postOfficialAccount(authorizerAppId, '/freepublish/submit', { media_id: draftMediaId })
-    const publish = {
-      publishId: remote.publish_id || createId('publish'),
-      authorizerAppId,
-      status: 'PUBLISHED',
-      draftMediaId,
-      draftResult,
-      article: article || req.body,
-      remote,
-      createdAt: new Date().toISOString(),
-    }
-    store.articles.push(publish)
-    await persistArticle({ id: publish.publishId, ...publish })
-    await saveStore()
-    return publish
-  })
-})
-
-app.post('/wechat-platform/messages/reply', requireApiToken, (req, res) => {
-  handleAsync(res, async () => {
-    const { authorizerAppId, openId, content } = req.body || {}
-    if (!authorizerAppId || !openId || !content) throw new Error('authorizerAppId, openId, and content are required')
-    const payload = {
-      touser: openId,
-      msgtype: 'text',
-      text: { content },
-    }
-    const remote = DRY_RUN ? { errcode: 0, errmsg: 'dry run', dryRun: true } : await postOfficialAccount(authorizerAppId, '/message/custom/send', payload)
-    const reply = {
-      id: createId('reply'),
-      ...req.body,
-      status: 'SENT',
-      remote,
-      createdAt: new Date().toISOString(),
-    }
-    store.messages.push(reply)
-    await persistMessage({ ...reply, direction: 'OUTBOUND', openId })
-    await saveStore()
-    return reply
-  })
-})
-
-app.post('/wechat-platform/template-messages/send', requireApiToken, (req, res) => {
-  handleAsync(res, async () => {
-    const { authorizerAppId, openId, templateId, url, miniprogram, payload } = req.body || {}
-    if (!authorizerAppId || !openId || !templateId || !payload) {
-      throw new Error('authorizerAppId, openId, templateId, and payload are required')
-    }
-    const message = {
-      touser: openId,
-      template_id: templateId,
-      url,
-      miniprogram,
-      data: payload,
-    }
-    Object.keys(message).forEach((key) => message[key] === undefined && delete message[key])
-    const remote = DRY_RUN ? { msgid: createId('dry_tplmsg'), dryRun: true } : await postOfficialAccount(authorizerAppId, '/message/template/send', message)
-    const record = {
-      msgid: remote.msgid || createId('tplmsg'),
-      ...req.body,
-      status: 'SENT',
-      remote,
-      createdAt: new Date().toISOString(),
-    }
-    store.templateMessages.push(record)
-    await persistTemplateMessage(record)
-    await saveStore()
-    return record
-  })
+registerPlatformRoutes(app, {
+  API_TOKEN,
+  COMPONENT_APP_ID,
+  COMPONENT_ENCODING_AES_KEY,
+  COMPONENT_SECRET,
+  COMPONENT_TOKEN,
+  DRY_RUN,
+  PUBLIC_BASE_URL,
+  createId: (prefix) => createId(prefix, crypto),
+  getPreAuthCode,
+  handleAsync,
+  handleAuthorizedCallback,
+  normalizeArticlePayload,
+  normalizeWechatPayload,
+  persistArticle,
+  persistEvent,
+  persistMessage,
+  persistTemplateMessage,
+  persistToken,
+  pool,
+  postOfficialAccount,
+  requireApiToken,
+  saveStore,
+  store,
+  toDateOrNull,
+  verifySignature,
 })
 
 initDatabaseStore()

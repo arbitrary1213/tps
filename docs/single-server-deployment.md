@@ -26,10 +26,21 @@ admin panel  ---- HTTPS API ---- PostgreSQL
 /opt/temple-os/backend          Backend API
 /opt/temple-os/frontend         Public site and admin panel
 /opt/temple-os/print-service    Current web print/template tool
+/opt/temple-os/desktop-app      Local desktop client source
+/opt/temple-os/wechat-platform  Independent WeChat platform service source
 /opt/temple-os/docker           Docker Compose, Nginx example, env files
 /opt/temple-os/storage          Uploads and template assets
 /opt/temple-os/backup           Database backups
 ```
+
+## Runtime Truth
+
+- Frontend production runtime: `systemd + Next standalone`
+- Backend production runtime: Docker container
+- Print-service production runtime: Docker container
+- Database production runtime: PostgreSQL container
+- `desktop-app` does not run on the server; it calls the HTTPS API remotely.
+- `wechat-platform` remains a separately deployable service and is not yet part of the mandatory single-customer runtime path.
 
 ## New Customer Setup
 

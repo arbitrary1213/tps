@@ -6,6 +6,7 @@ import { businessAPI } from '@/lib/api'
 import { Button, Card, Table, Badge, Modal, Input, Select, Textarea, SearchBar, Checkbox } from '@/components/ui'
 import { systemAPI } from '@/lib/api'
 import { PlaqueTemplate } from '@/types/template'
+import type { DevoteeRecord, PlaqueRecord, RitualRecord } from '@/types/api'
 import * as XLSX from 'xlsx'
 
 // 牌位大类型
@@ -47,41 +48,9 @@ const statusOptions = [
   { value: 'RENEWED', label: '已延期' },
 ]
 
-interface Plaque {
-  id: string
-  plaqueType: string
-  longevitySubtype?: string
-  size?: string
-  holderName?: string
-  deceasedName?: string
-  gender?: string
-  birthDate?: string
-  birthLunar: boolean
-  deathDate?: string
-  deathLunar: boolean
-  deceasedName2?: string
-  birthDate2?: string
-  birthLunar2: boolean
-  deathDate2?: string
-  deathLunar2: boolean
-  yangShang?: string
-  phone?: string
-  address?: string
-  dedicationType?: string
-  customDedicationType?: string
-  blessingText?: string
-  startDate: string
-  endDate: string
-  status: string
-  remarks?: string
-  templateId?: string
-  devoteeId?: string
-  ritualId?: string
-  createdAt: string
-}
-
-interface Devotee { id: string; name: string; phone?: string }
-interface Ritual { id: string; name: string }
+type Plaque = PlaqueRecord & { customDedicationType?: string }
+type Devotee = Pick<DevoteeRecord, 'id' | 'name' | 'phone'>
+type Ritual = RitualRecord
 
 export default function PlaquesPage() {
   const { token } = useAuthStore()

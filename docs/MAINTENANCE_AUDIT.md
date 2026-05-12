@@ -14,6 +14,11 @@
 
 ## P1: Immediate Cleanup
 
+0. 基线冻结
+   - 目标：阶段 1 所有实施以统一运行时真相和模块职责为准。
+   - 当前：前端生产实际是 `systemd + Next standalone`，Compose 里仍保留前端定义；打印长期方向是 `desktop-app` 接管本地执行。
+   - 验收：文档、实施计划、代码改造都以这一基线为唯一判断依据。
+
 1. 配置安全
    - 目标：Git 中不再跟踪真实 `backend/.env` 和 `docker/.env`。
    - 当前：本地正式目录已删除真实 `.env`，只保留 `docker/.env.example`。
@@ -92,4 +97,3 @@ node --check public/app.js
 powershell -ExecutionPolicy Bypass -File .\scripts\make-release.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\check-release.ps1 -ZipPath <zip>
 ```
-

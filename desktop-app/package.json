@@ -6,7 +6,7 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
-    "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js && node --check src/setup.js && node --check src/loading.js",
+    "check": "node --check src/main.js && node --check src/main/printers.js && node --check src/main/localStore.js && node --check src/main/frontendRuntime.js && node --check src/main/windows.js && node --check src/main/ipc.js && node --check src/preload.js && node --check src/renderer.js && node --check src/setup.js && node --check src/loading.js",
     "rebuild:native": "electron-rebuild -f -w better-sqlite3"
   },
   "dependencies": {

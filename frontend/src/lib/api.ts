@@ -1,5 +1,22 @@
 const API_BASE = ''
 
+import type {
+  ApiUser,
+  DashboardStats,
+  DevoteeRecord,
+  OperationLogList,
+  PlaqueRecord,
+  PrintClientRecord,
+  PrintJobRecord,
+  RegistrationRequestList,
+  RegistrationRequestRecord,
+  RegistrationTaskRecord,
+  RitualRecord,
+  SystemSettingsRecord,
+  UserRecord,
+} from '@/types/api'
+import type { PlaqueTemplate } from '@/types/template'
+
 declare global {
   interface Window {
     templeDesktop?: {
@@ -146,19 +163,19 @@ export type DesktopStartupSyncResult = {
 // 认证
 export const authAPI = {
   login: (username: string, password: string) =>
-    request<{ token: string; user: any }>('/api/auth/login', {
+    request<{ token: string; user: ApiUser }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ username, password }),
     }),
 
   register: (data: { username: string; password: string; email?: string; name?: string }) =>
-    request<{ token: string; user: any }>('/api/auth/register', {
+    request<{ token: string; user: ApiUser }>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   me: (token: string) =>
-    request<any>('/api/auth/me', { token }),
+    request<ApiUser>('/api/auth/me', { token }),
 
   changePassword: (token: string, data: { currentPassword: string; newPassword: string; confirmPassword: string }) =>
     request('/api/auth/change-password', { method: 'PUT', token, body: JSON.stringify(data) }),
@@ -169,32 +186,32 @@ export const authAPI = {
 
 // 系统设置
 export const systemAPI = {
-  getSettings: (options?: FetchOptions) => request<any>('/api/system/settings', options),
-  updateSettings: (token: string, data: any) =>
+  getSettings: (options?: FetchOptions) => request<SystemSettingsRecord>('/api/system/settings', options),
+  updateSettings: (token: string, data: Partial<SystemSettingsRecord>) =>
     request('/api/system/settings', { method: 'PUT', token, body: JSON.stringify(data) }),
 }
 
 // 登记
 export const registrationAPI = {
-  getTasks: () => request<any[]>('/api/registration/tasks'),
-  getTasksAll: (token: string) => request<any[]>('/api/registration/tasks/all', { token }),
-  createTask: (token: string, data: any) =>
-    request<any>('/api/registration/tasks', { method: 'POST', token, body: JSON.stringify(data) }),
-  updateTask: (token: string, id: string, data: any) =>
-    request<any>(`/api/registration/tasks/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
+  getTasks: () => request<RegistrationTaskRecord[]>('/api/registration/tasks'),
+  getTasksAll: (token: string) => request<RegistrationTaskRecord[]>('/api/registration/tasks/all', { token }),
+  createTask: (token: string, data: Partial<RegistrationTaskRecord>) =>
+    request<RegistrationTaskRecord>('/api/registration/tasks', { method: 'POST', token, body: JSON.stringify(data) }),
+  updateTask: (token: string, id: string, data: Partial<RegistrationTaskRecord>) =>
+    request<RegistrationTaskRecord>(`/api/registration/tasks/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
   deleteTask: (token: string, id: string) =>
     request(`/api/registration/tasks/${id}`, { method: 'DELETE', token }),
 
-  getRequests: (token: string, params?: any, options?: FetchOptions) => {
+  getRequests: (token: string, params?: Record<string, string>, options?: FetchOptions) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    return request<any>(`/api/registration/requests${query}`, { token, ...(options || {}) })
+    return request<RegistrationRequestList>(`/api/registration/requests${query}`, { token, ...(options || {}) })
   },
-  submitRequest: (data: { taskId: string; submitterName: string; submitterPhone: string; formData: any }) =>
-    request<any>('/api/registration/requests', { method: 'POST', body: JSON.stringify(data) }),
+  submitRequest: (data: { taskId: string; submitterName: string; submitterPhone: string; formData: Record<string, unknown> }) =>
+    request<RegistrationRequestRecord>('/api/registration/requests', { method: 'POST', body: JSON.stringify(data) }),
   approveRequest: (token: string, id: string) =>
-    request<any>(`/api/registration/requests/${id}/approve`, { method: 'PUT', token }),
+    request<RegistrationRequestRecord>(`/api/registration/requests/${id}/approve`, { method: 'PUT', token }),
   rejectRequest: (token: string, id: string, reason: string) =>
-    request<any>(`/api/registration/requests/${id}/reject`, { method: 'PUT', token, body: JSON.stringify({ reason }) }),
+    request<RegistrationRequestRecord>(`/api/registration/requests/${id}/reject`, { method: 'PUT', token, body: JSON.stringify({ reason }) }),
   deleteRequest: (token: string, id: string) =>
     request(`/api/registration/requests/${id}`, { method: 'DELETE', token }),
 }
@@ -246,24 +263,24 @@ export const businessAPI = {
   // 信众
   getDevotees: (token: string, params?: any, options?: FetchOptions) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    return request<any[]>(`/api/devotees${query}`, { token, ...(options || {}) })
+    return request<DevoteeRecord[]>(`/api/devotees${query}`, { token, ...(options || {}) })
   },
-  createDevotee: (token: string, data: any) =>
-    request<any>('/api/devotees', { method: 'POST', token, body: JSON.stringify(data) }),
-  updateDevotee: (token: string, id: string, data: any) =>
-    request<any>(`/api/devotees/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
+  createDevotee: (token: string, data: Partial<DevoteeRecord>) =>
+    request<DevoteeRecord>('/api/devotees', { method: 'POST', token, body: JSON.stringify(data) }),
+  updateDevotee: (token: string, id: string, data: Partial<DevoteeRecord>) =>
+    request<DevoteeRecord>(`/api/devotees/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
   deleteDevotee: (token: string, id: string) =>
     request(`/api/devotees/${id}`, { method: 'DELETE', token }),
 
   // 牌位
   getPlaques: (token: string, params?: any, options?: FetchOptions) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    return request<any[]>(`/api/plaques${query}`, { token, ...(options || {}) })
+    return request<PlaqueRecord[]>(`/api/plaques${query}`, { token, ...(options || {}) })
   },
-  createPlaque: (token: string, data: any) =>
-    request<any>('/api/plaques', { method: 'POST', token, body: JSON.stringify(data) }),
-  updatePlaque: (token: string, id: string, data: any) =>
-    request<any>(`/api/plaques/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
+  createPlaque: (token: string, data: Partial<PlaqueRecord> & { customDedicationType?: string }) =>
+    request<PlaqueRecord>('/api/plaques', { method: 'POST', token, body: JSON.stringify(data) }),
+  updatePlaque: (token: string, id: string, data: Partial<PlaqueRecord> & { customDedicationType?: string }) =>
+    request<PlaqueRecord>(`/api/plaques/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
   batchUpdatePlaques: (token: string, data: { ids: string[]; action: string; ritualId?: string; endDate?: string }) =>
     request<any>('/api/plaques/batch', { method: 'PUT', token, body: JSON.stringify(data) }),
   deletePlaque: (token: string, id: string) =>
@@ -280,18 +297,18 @@ export const businessAPI = {
     printClientId?: string
     remarks?: string
   }) =>
-    request<any>('/api/print-jobs', { method: 'POST', token, body: JSON.stringify(data) }),
+    request<Pick<PrintJobRecord, 'id' | 'jobNo' | 'totalCount'> & { missingIds: string[] }>('/api/print-jobs', { method: 'POST', token, body: JSON.stringify(data) }),
   getPrintJobs: (token: string, params?: any, options?: FetchOptions) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    return request<any[]>(`/api/print-jobs${query}`, { token, ...(options || {}) })
+    return request<PrintJobRecord[]>(`/api/print-jobs${query}`, { token, ...(options || {}) })
   },
   getPrintJob: (token: string, id: string) =>
-    request<any>(`/api/print-jobs/${id}`, { token }),
+    request<PrintJobRecord>(`/api/print-jobs/${id}`, { token }),
 
   // 法会
   getRituals: (params?: any, options?: FetchOptions) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    return request<any[]>(`/api/rituals${query}`, options)
+    return request<RitualRecord[]>(`/api/rituals${query}`, options)
   },
   createRitual: (token: string, data: any) =>
     request<any>('/api/rituals', { method: 'POST', token, body: JSON.stringify(data) }),
@@ -361,32 +378,38 @@ export const businessAPI = {
     request<any>('/api/visits', { method: 'POST', token, body: JSON.stringify(data) }),
 
   // 用户
-  getUsers: (token: string) => request<any[]>('/api/users', { token }),
-  createUser: (token: string, data: any) =>
-    request<any>('/api/users', { method: 'POST', token, body: JSON.stringify(data) }),
+  getUsers: (token: string) => request<UserRecord[]>('/api/users', { token }),
+  createUser: (token: string, data: { username: string; password: string; email?: string; name?: string; role: string }) =>
+    request<UserRecord>('/api/users', { method: 'POST', token, body: JSON.stringify(data) }),
   updateUserPassword: (token: string, id: string, newPassword: string) =>
     request(`/api/users/${id}/password`, { method: 'PUT', token, body: JSON.stringify({ newPassword }) }),
   deleteUser: (token: string, id: string) =>
     request(`/api/users/${id}`, { method: 'DELETE', token }),
 
   // 日志
-  getLogs: (token: string, params?: any) => {
-    const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    return request<any>(`/api/logs${query}`, { token })
+  getLogs: (token: string, params?: Record<string, string | number>) => {
+    const query = params
+      ? '?' + new URLSearchParams(
+          Object.fromEntries(Object.entries(params).map(([key, value]) => [key, String(value)]))
+        ).toString()
+      : ''
+    return request<OperationLogList>(`/api/logs${query}`, { token })
   },
 
   // 统计
-  getStats: (token: string, options?: FetchOptions) => request<any>('/api/stats/dashboard', { token, ...(options || {}) }),
+  getStats: (token: string, options?: FetchOptions) => request<DashboardStats>('/api/stats/dashboard', { token, ...(options || {}) }),
 
   // 牌位模板
-  getPlaqueTemplates: (token: string, options?: FetchOptions) => request<any[]>('/api/plaque-templates', { token, ...(options || {}) }),
-  getPlaqueTemplate: (id: string) => request<any>(`/api/plaque-templates/${id}`),
-  createPlaqueTemplate: (token: string, data: any) =>
-    request<any>('/api/plaque-templates', { method: 'POST', token, body: JSON.stringify(data) }),
-  updatePlaqueTemplate: (token: string, id: string, data: any) =>
-    request<any>(`/api/plaque-templates/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
+  getPlaqueTemplates: (token: string, options?: FetchOptions) => request<PlaqueTemplate[]>('/api/plaque-templates', { token, ...(options || {}) }),
+  getPlaqueTemplate: (id: string) => request<PlaqueTemplate>(`/api/plaque-templates/${id}`),
+  createPlaqueTemplate: (token: string, data: Partial<PlaqueTemplate>) =>
+    request<PlaqueTemplate>('/api/plaque-templates', { method: 'POST', token, body: JSON.stringify(data) }),
+  updatePlaqueTemplate: (token: string, id: string, data: Partial<PlaqueTemplate>) =>
+    request<PlaqueTemplate>(`/api/plaque-templates/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
   deletePlaqueTemplate: (token: string, id: string) =>
     request(`/api/plaque-templates/${id}`, { method: 'DELETE', token }),
+  getPrintClients: (token: string, options?: FetchOptions) =>
+    request<PrintClientRecord[]>('/api/print-clients', { token, ...(options || {}) }),
 
   // 牌位导入
   importPlaques: async (token: string, file: File) => {

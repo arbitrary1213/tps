@@ -21,11 +21,11 @@
 
 ## 2. 服务结构
 
-当前线上由 4 个 Docker 服务组成：
+当前线上真实运行结构为：前端由 `systemd + Next standalone` 运行，后端、打印服务、数据库使用容器。
 
 | 服务 | 容器名 | 端口 | 说明 |
 | --- | --- | --- | --- |
-| 前端 | `temple-frontend` | `3000` | Next.js 后台和前台页面 |
+| 前端 | `temple-frontend.service` | `3000` | Next.js 后台和前台页面（systemd + standalone） |
 | 后端 | `temple-backend` | `3002` | Express API 服务 |
 | 打印服务 | `temple-print` | `3001` | 牌位模板设计和套打工具 |
 | 数据库 | `temple-db` | `5432` | PostgreSQL |
@@ -51,7 +51,7 @@ Nginx 对外暴露：
 
 ## 4. 牌位打印流程
 
-现在牌位打印已经统一到新打印服务。
+当前牌位打印仍保留 Web 打印工具，但长期主执行方向是桌面端本地打印。
 
 ### 4.1 模板设计入口
 
@@ -89,7 +89,7 @@ Nginx 对外暴露：
 /admin/plaque-templates
 ```
 
-不再使用旧的批量打印页作为主打印流程。
+不再使用旧的批量打印页作为主打印流程。`print-service` 当前承担模板设计、Web 预览和备用打印；`desktop-app` 后续承担本地打印执行。
 
 ### 4.3 数据分类
 
@@ -139,25 +139,24 @@ docker ps
 
 ```bash
 docker logs --tail=100 temple-backend
-docker logs --tail=100 temple-frontend
 docker logs --tail=100 temple-print
+journalctl -u temple-frontend.service -n 100 --no-pager
 ```
 
 重建并启动服务：
 
 ```bash
-cd /opt/temple-os/docker
-docker-compose up -d --build temple-backend
-docker-compose up -d --build temple-frontend
-docker-compose up -d --build temple-print
+cd /opt/temple-os
+./deploy.sh backend
+./deploy.sh frontend
+./deploy.sh print
 ```
 
-如果 Docker Compose 重建报容器复用错误，可先删除对应容器：
+如果需要手工处理容器，可先删除对应容器再重启：
 
 ```bash
-docker rm -f temple-backend temple-frontend temple-print
-cd /opt/temple-os/docker
-docker-compose up -d --no-deps temple-backend temple-frontend temple-print
+docker rm -f temple-backend temple-print
+systemctl restart temple-frontend.service
 ```
 
 健康检查：
@@ -205,12 +204,12 @@ cd /opt/temple-os/print-service
 node --check public/app.js
 ```
 
-最近验证结果：
+最近验证方式：
 
-- 后端测试：45 passed
+- 后端测试：`npm test`
 - 后端构建：通过
 - 前端构建：通过
-- 当前 4 个容器均为 healthy
+- 打印服务语法检查：通过
 
 ## 8. 已完成的重要整改
 

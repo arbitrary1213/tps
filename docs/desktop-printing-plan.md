@@ -59,6 +59,12 @@ Desktop app reports print failure and reason.
 
 The current `print-service` can stay as the web template design and fallback preview tool. Over time, the template rendering and local printer integration should move into the desktop app.
 
+Stage 1 freezes the responsibility split as follows:
+
+- `backend`: create print jobs, store print state, register clients, assign jobs, and keep the source of truth for job status.
+- `print-service`: template design, browser preview, fallback print utility only.
+- `desktop-app`: local printer discovery, local execution, task pickup, offline queue, and print result reporting.
+
 `desktop-app/` contains the first Electron client shell. It stores server URL, auth, print client registration, default printer, cached jobs, recent data, and pending print status reports locally.
 
 Suggested migration order:
@@ -92,3 +98,30 @@ updatedAt
 ```
 
 The template snapshot must be stored with the print job, so historical print records are not affected when a template is edited later.
+
+## Stage 1 Status Model
+
+Recommended `PrintClient` status semantics:
+
+- `ONLINE`: heartbeats are current and the client can receive work.
+- `STALE`: recent heartbeats are missing and the server should warn operators.
+- `OFFLINE`: the client is not available for new work.
+- `DISABLED`: the client is intentionally blocked from assignment.
+
+Recommended `PrintJob` status semantics:
+
+- `PENDING`: created but not yet assigned.
+- `DISPATCHED`: assigned to a client and waiting for local execution.
+- `PRINTING`: currently being processed locally.
+- `COMPLETED`: all items printed successfully.
+- `FAILED`: the job ended in failure.
+- `PARTIAL_FAILED`: at least one item printed and at least one failed.
+- `CANCELLED`: manually cancelled before completion.
+
+Recommended `PrintJobItem` status semantics:
+
+- `PENDING`: not yet executed.
+- `PRINTING`: in progress locally.
+- `COMPLETED`: printed successfully.
+- `FAILED`: local execution failed.
+- `SKIPPED`: intentionally not executed.

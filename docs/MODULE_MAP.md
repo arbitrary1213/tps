@@ -9,7 +9,12 @@
 | Auth | `backend/src/routes/auth.ts`, `backend/src/middleware/auth.ts` | JWT, HttpOnly cookie, role guard |
 | System | `backend/src/routes/system.ts` | System settings |
 | Registration | `backend/src/routes/registration.ts`, `validation.ts` | Public task forms, approvals |
-| Business | `backend/src/routes/business.ts` | Main mixed business routes; should be split later |
+| Business aggregate | `backend/src/routes/business.ts`, `backend/src/routes/business/index.ts` | Mixed business entry during Stage 1 split |
+| Business people | `backend/src/routes/business/people.ts` | Monks, volunteers, devotee, volunteer tasks and attendance |
+| Business rituals | `backend/src/routes/business/rituals.ts` | Rituals, participants, halls, lamp offerings |
+| Business logistics | `backend/src/routes/business/logistics.ts` | Donations, warehouse, rooms, accommodations, dining, visits |
+| Business system admin | `backend/src/routes/business/systemAdmin.ts` | Users, logs, dashboard stats |
+| Business plaques/printing | `backend/src/routes/business/plaquesPrinting.ts` | Plaques, print jobs, print clients, local print, templates, import |
 | Batch | `backend/src/routes/batch.ts` | Bulk approve/delete/update/export |
 | Export | `backend/src/routes/export.ts` | XLSX/CSV exports |
 | Search | `backend/src/routes/search.ts` | Search helpers |
@@ -38,6 +43,8 @@
 | `print-service/public/styles.css` | Print UI styles |
 | `print-service/public/sample-*.csv` | Local sample import files |
 
+定位：模板设计、Web 预览、备用打印工具。阶段 1 不再把它定义为长期主打印执行端。
+
 ## Desktop App
 
 | File | Role |
@@ -48,12 +55,14 @@
 | `desktop-app/src/renderer.js` | API calls, short cache, print workflow |
 | `desktop-app/src/styles.css` | Desktop UI styles |
 
+定位：本地打印主执行端，负责打印机能力、本地任务执行、离线缓存和状态回传。
+
 ## Deployment Files
 
 | File | Role |
 | --- | --- |
 | `deploy.sh` | Production pull/build/restart/verify script |
-| `docker/docker-compose.yml` | DB/backend/print and legacy frontend service definitions |
+| `docker/docker-compose.yml` | DB/backend/print and legacy frontend service definitions; frontend production truth is still systemd |
 | `docker/nginx.conf` | Example Nginx reverse proxy config |
 | `docker/.env.example` | Per-server env template |
 | `.github/workflows/ci.yml` | CI checks |

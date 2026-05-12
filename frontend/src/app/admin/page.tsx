@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui'
 import { useAuthStore } from '@/stores/authStore'
 import { businessAPI } from '@/lib/api'
+import type { DashboardRegistrationItem, DashboardStats } from '@/types/api'
 
 const taskTypeMap: Record<string, string> = {
   VOLUNTEER: '义工报名',
@@ -229,13 +230,13 @@ function BuddhistCalendar() {
 
 export default function AdminDashboard() {
   const { token } = useAuthStore()
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<Pick<DashboardStats, 'pendingCount' | 'volunteerCount' | 'plaqueCount' | 'ritualCount'>>({
     pendingCount: 0,
     volunteerCount: 0,
     plaqueCount: 0,
     ritualCount: 0,
   })
-  const [recentRegistrations, setRecentRegistrations] = useState<any[]>([])
+  const [recentRegistrations, setRecentRegistrations] = useState<DashboardRegistrationItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

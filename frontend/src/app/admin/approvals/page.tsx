@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { registrationAPI } from '@/lib/api'
 import { Button, Card, Table, Badge, Modal, Tabs, Empty } from '@/components/ui'
+import type { RegistrationRequestRecord } from '@/types/api'
 
 const statusMap: Record<string, { label: string; variant: 'warning' | 'success' | 'danger' }> = {
   PENDING: { label: '待审批', variant: 'warning' },
@@ -22,27 +23,13 @@ const taskTypeMap: Record<string, string> = {
   DINING: '斋堂用餐',
 }
 
-interface Request {
-  id: string
-  taskId: string
-  taskType: string
-  status: string
-  submitterName: string
-  submitterPhone: string
-  formData: any
-  rejectReason?: string
-  approvedAt?: string
-  createdAt: string
-  task?: { name: string }
-}
-
 export default function ApprovalsPage() {
   const { token } = useAuthStore()
-  const [requests, setRequests] = useState<Request[]>([])
+  const [requests, setRequests] = useState<RegistrationRequestRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('PENDING')
   const [detailModal, setDetailModal] = useState(false)
-  const [selectedRequest, setSelectedRequest] = useState<Request | null>(null)
+  const [selectedRequest, setSelectedRequest] = useState<RegistrationRequestRecord | null>(null)
   const [rejectReason, setRejectReason] = useState('')
 
   useEffect(() => {
@@ -52,9 +39,9 @@ export default function ApprovalsPage() {
   const loadRequests = async () => {
     try {
       setLoading(true)
-      const params = activeTab !== 'ALL' ? { status: activeTab } : {}
+      const params: Record<string, string> | undefined = activeTab !== 'ALL' ? { status: activeTab } : undefined
       const data = await registrationAPI.getRequests(token!, params)
-      setRequests(data.list || data.data || [])
+      setRequests(data.list || [])
     } catch (error) {
       console.error('加载失败:', error)
     } finally {
@@ -86,7 +73,7 @@ export default function ApprovalsPage() {
     }
   }
 
-  const handleViewDetail = (request: Request) => {
+  const handleViewDetail = (request: RegistrationRequestRecord) => {
     setSelectedRequest(request)
     setRejectReason('')
     setDetailModal(true)
@@ -112,15 +99,15 @@ export default function ApprovalsPage() {
   const columns = [
     { key: 'submitterName', title: '提交人' },
     { key: 'submitterPhone', title: '电话' },
-    { key: 'taskType', title: '类型', render: (row: Request) => (
+    { key: 'taskType', title: '类型', render: (row: RegistrationRequestRecord) => (
       <Badge variant="info">{taskTypeMap[row.taskType] || row.taskType}</Badge>
     )},
-    { key: 'status', title: '状态', render: (row: Request) => {
+    { key: 'status', title: '状态', render: (row: RegistrationRequestRecord) => {
       const s = statusMap[row.status]
       return <Badge variant={s.variant}>{s.label}</Badge>
     }},
-    { key: 'createdAt', title: '提交时间', render: (row: Request) => new Date(row.createdAt).toLocaleString('zh-CN') },
-    { key: 'actions', title: '操作', render: (row: Request) => (
+    { key: 'createdAt', title: '提交时间', render: (row: RegistrationRequestRecord) => new Date(row.createdAt).toLocaleString('zh-CN') },
+    { key: 'actions', title: '操作', render: (row: RegistrationRequestRecord) => (
       <div className="flex gap-2">
         <Button size="sm" variant="ghost" onClick={() => handleViewDetail(row)}>查看</Button>
         {row.status === 'PENDING' && (
@@ -134,7 +121,7 @@ export default function ApprovalsPage() {
     )},
   ]
 
-  const renderFormData = (data: any, taskType: string) => {
+  const renderFormData = (data: Record<string, unknown>, _taskType: string) => {
     if (!data) return null
     const entries = Object.entries(data).filter(([k]) => !k.startsWith('_'))
     return (
