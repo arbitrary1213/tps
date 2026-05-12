@@ -25,6 +25,8 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false)
+  const [editingUser, setEditingUser] = useState<User | null>(null)
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -32,6 +34,7 @@ export default function UsersPage() {
     email: '',
     role: 'OPERATOR',
   })
+  const [newPassword, setNewPassword] = useState('')
 
   useEffect(() => {
     loadUsers()
@@ -58,6 +61,27 @@ export default function UsersPage() {
       loadUsers()
     } catch (error) {
       console.error('创建失败:', error)
+    }
+  }
+
+  const handleEditPassword = (user: User) => {
+    setEditingUser(user)
+    setNewPassword('')
+    setPasswordModalOpen(true)
+  }
+
+  const handlePasswordSubmit = async () => {
+    if (!newPassword?.trim()) { alert('请输入新密码'); return; }
+    if (newPassword.length < 6) { alert('密码长度不能少于6位'); return; }
+    try {
+      await businessAPI.updateUserPassword(token!, editingUser!.id, newPassword)
+      setPasswordModalOpen(false)
+      setEditingUser(null)
+      setNewPassword('')
+      alert('密码修改成功')
+    } catch (error) {
+      console.error('修改失败:', error)
+      alert('修改失败，请重试')
     }
   }
 
@@ -102,14 +126,23 @@ export default function UsersPage() {
     )},
     { key: 'createdAt', title: '创建时间', render: (row: User) => new Date(row.createdAt).toLocaleString('zh-CN') },
     { key: 'actions', title: '操作', render: (row: User) => (
-      <Button
-        size="sm"
-        variant="danger"
-        onClick={() => handleDelete(row.id)}
-        disabled={row.id === currentUser?.id}
-      >
-        删除
-      </Button>
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => handleEditPassword(row)}
+        >
+          修改密码
+        </Button>
+        <Button
+          size="sm"
+          variant="danger"
+          onClick={() => handleDelete(row.id)}
+          disabled={row.id === currentUser?.id}
+        >
+          删除
+        </Button>
+      </div>
     )},
   ]
 
@@ -172,6 +205,27 @@ export default function UsersPage() {
         <div className="flex justify-end gap-3 mt-6">
           <Button variant="secondary" onClick={() => setModalOpen(false)}>取消</Button>
           <Button onClick={handleSubmit}>创建</Button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={passwordModalOpen}
+        onClose={() => setPasswordModalOpen(false)}
+        title="修改密码"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-tea">正在修改用户 <strong>{editingUser?.username}</strong> 的密码</p>
+          <Input
+            label="新密码*"
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="请输入新密码（至少6位）"
+          />
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <Button variant="secondary" onClick={() => setPasswordModalOpen(false)}>取消</Button>
+          <Button onClick={handlePasswordSubmit}>确认修改</Button>
         </div>
       </Modal>
     </div>

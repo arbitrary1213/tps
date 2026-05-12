@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Temple OS Setup</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="setup-page">
+      <section class="setup-card wide">
+        <h1>Temple OS 安装助手</h1>
+        <p class="hint">请选择连接已有服务器，或准备部署一台新的寺院服务器。SSH 凭据只用于部署过程，不会保存到本地配置。</p>
+
+        <div class="mode-grid">
+          <button id="connectModeBtn" class="mode-card active" type="button">
+            <strong>连接已有服务器</strong>
+            <span>填写服务器地址，检测 /api/health 后进入桌面端。</span>
+          </button>
+          <button id="deployModeBtn" class="mode-card" type="button">
+            <strong>部署新服务器</strong>
+            <span>填写 SSH 信息，后续自动上传并部署 Temple OS。</span>
+          </button>
+        </div>
+
+        <section id="connectPanel" class="setup-panel">
+          <label>
+            服务器地址
+            <input id="serverUrl" placeholder="https://xiandingsi.cn" />
+          </label>
+          <div class="actions">
+            <button id="saveBtn" class="primary">检测并进入工作台</button>
+            <button id="openBtn" type="button">直接打开工作台</button>
+            <button id="clearBtn" type="button">清除本地配置</button>
+          </div>
+        </section>
+
+        <section id="deployPanel" class="setup-panel hidden">
+          <div class="grid">
+            <label>服务器 IP<input id="serverHost" placeholder="1.2.3.4" /></label>
+            <label>SSH 端口<input id="sshPort" value="22" /></label>
+            <label>SSH 用户名<input id="sshUsername" placeholder="root" /></label>
+            <label>SSH 密码<input id="sshPassword" type="password" /></label>
+            <label>域名<input id="domain" placeholder="temple.example.com" /></label>
+            <label>管理员账号<input id="adminUsername" value="admin" /></label>
+            <label>管理员密码<input id="adminPassword" type="password" /></label>
+            <label>数据库密码<input id="databasePassword" type="password" /></label>
+          </div>
+          <button id="deployCheckBtn" class="primary">生成部署检查清单</button>
+          <p class="hint">当前版本先生成部署清单；自动 SSH 部署将在下一阶段接入。</p>
+        </section>
+
+        <pre id="message" class="hint output"></pre>
+      </section>
+    </main>
+    <script src="./setup.js"></script>
+  </body>
+</html>

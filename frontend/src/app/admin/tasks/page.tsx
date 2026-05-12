@@ -15,12 +15,12 @@ const taskTypeOptions = [
 ]
 
 const defaultFormConfig = {
-  VOLUNTEER: ['name', 'phone', 'skills'],
-  PLAQUE: ['holderName', 'longevitySubtype', 'size', 'gender', 'birthDate', 'birthLunar', 'deceasedName', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'blessingText', 'startDate', 'dedicationType'],
-  RITUAL: ['ritualId', 'name', 'phone'],
+  VOLUNTEER: ['volunteerTaskId', 'name', 'dharmaName', 'gender', 'birthDate', 'phone', 'emergencyContact', 'address', 'ethnicity', 'education', 'currentOccupation', 'healthStatus', 'hasInfectiousDisease', 'hasAllergy', 'hasSpecialNeeds', 'firstContactBuddhism', 'hasTakenRefuge', 'refugeTime', 'preceptsHeld', 'willingToLearn', 'guidanceHope', 'hasVolunteerExperience', 'volunteerTimes', 'lastVolunteerDate', 'lastVolunteerLocation', 'lastVolunteerContent', 'serviceStartDate', 'serviceEndDate', 'serviceDuration', 'signature'],
+  PLAQUE: ['holderName', 'longevitySubtype', 'size', 'gender', 'birthDate', 'birthLunar', 'deceasedName', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'blessingText', 'startDate', 'endDate', 'dedicationType', 'customDedicationType', 'deceasedName2', 'birthDate2', 'birthLunar2', 'deathDate2', 'deathLunar2'],
+  RITUAL: ['ritualId', 'name', 'phone', 'plaqueType', 'holderName', 'deceasedName', 'dedicationType', 'customDedicationType', 'yangShang', 'longevitySubtype', 'size', 'gender', 'birthDate', 'birthLunar', 'deathDate', 'deathLunar', 'deceasedName2', 'birthDate2', 'deathDate2', 'address', 'blessingText', 'startDate', 'endDate'],
   LAMP: ['name', 'phone', 'lampType', 'location', 'blessingName', 'startDate', 'endDate'],
   ACCOMMODATION: ['name', 'phone', 'roomId', 'accommodationType', 'checkInDate', 'checkOutDate'],
-  DINING: ['mealType', 'date', 'mealCount', 'contactName', 'contactPhone'],
+  DINING: ['mealType', 'mealDate', 'mealCount', 'contactName', 'contactPhone'],
 }
 
 interface Task {

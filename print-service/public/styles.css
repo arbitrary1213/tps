@@ -141,6 +141,14 @@ textarea {
   gap: 10px;
 }
 
+.static-field-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: -2px 0 12px;
+  align-items: end;
+}
+
 .segmented {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -214,6 +222,12 @@ textarea {
 .pager {
   display: flex;
   gap: 8px;
+  align-items: center;
+}
+
+.pager input {
+  width: 76px;
+  padding: 6px 8px;
 }
 
 .preview {
@@ -312,6 +326,27 @@ textarea {
   text-align: center;
 }
 
+.field-flow {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.no-break-token {
+  display: inline-block;
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+
+.vertical-text .no-break-token {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+}
+
+.license-token {
+  letter-spacing: 0;
+}
+
 .is-placeholder {
   color: var(--muted) !important;
 }
@@ -328,11 +363,21 @@ textarea {
   flex-wrap: nowrap;
 }
 
+.vertical-text .field-flow {
+  display: block;
+}
+
 .editable-field:hover,
 .editable-field.dragging,
 .editable-field.resizing {
   border-color: var(--accent);
   background: rgb(255 246 220 / 76%);
+}
+
+.editable-field.is-selected {
+  border-color: #0b57d0;
+  background: rgb(219 234 254 / 72%);
+  box-shadow: 0 0 0 1px rgb(11 87 208 / 35%);
 }
 
 .editable-field.auto-shrunk {
@@ -387,6 +432,35 @@ textarea {
 
 .static-field-tools label {
   margin-bottom: 0;
+}
+
+.duplex-settings {
+  margin-top: 12px;
+}
+
+.segmented.compact {
+  margin-top: 8px;
+}
+
+.back-empty {
+  position: absolute;
+  inset: 40% 12%;
+  text-align: center;
+  color: var(--muted);
+}
+
+.static-visibility {
+  margin: 8px 0 12px;
+  padding: 8px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  background: rgb(255 248 232 / 45%);
+}
+
+.static-visibility-title {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .tablet-meta {
@@ -465,50 +539,54 @@ textarea {
   gap: calc(var(--column-gap) * 1mm);
 }
 
-.summary-column {
-  min-width: 0;
-  height: 100%;
-  border-left: 1px dashed rgb(156 31 34 / 25%);
-  border-right: 1px dashed rgb(156 31 34 / 25%);
-  display: grid;
-  grid-template-rows: repeat(var(--rows-per-column), minmax(0, 1fr));
-  gap: calc(var(--line-gap) * 1px);
-  padding: 2mm 1mm;
-}
-
-.summary-item {
-  width: 100%;
-  min-width: 0;
-  min-height: 0;
-  color: var(--ink);
-  font-size: var(--summary-font);
-  line-height: 1.25;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  text-align: left;
-  overflow: hidden;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-.summary-page.vertical-summary {
+.summary-layout-grid {
   align-items: stretch;
 }
 
-.vertical-summary .summary-column {
-  grid-template-rows: none;
-  grid-template-columns: repeat(var(--rows-per-column), minmax(0, 1fr));
+.summary-edit-mode {
+  align-items: stretch;
 }
 
-.vertical-summary .summary-item {
-  width: auto;
+.summary-editor-surface {
+  z-index: 2;
+  background: rgb(255 248 232 / 42%);
+}
+
+.summary-column {
+  position: relative;
   min-width: 0;
   height: 100%;
-  justify-content: flex-start;
-  align-items: flex-start;
-  writing-mode: vertical-rl;
-  text-orientation: upright;
+  border-left: 1px dashed rgb(156 31 34 / 35%);
+  border-right: 1px dashed rgb(156 31 34 / 35%);
+  background: rgb(255 248 232 / 32%);
+}
+
+.summary-cell.empty {
+  background: rgb(255 248 232 / 14%);
+}
+
+.summary-guide-column {
+  background:
+    linear-gradient(180deg, rgb(156 31 34 / 8%), rgb(156 31 34 / 3%));
+}
+
+.summary-field {
+  position: absolute;
+  color: var(--ink);
+  line-height: 1.2;
+  text-align: left;
+}
+
+.summary-variant-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  padding: 2px 6px;
+  border-radius: 999px;
+  color: #fff;
+  background: rgb(156 31 34 / 82%);
+  font-size: 12px;
 }
 
 .table-wrap {
@@ -556,6 +634,12 @@ th {
 .select-col {
   width: 44px;
   text-align: center;
+}
+
+.row-index-col {
+  width: 54px;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .select-col input {
@@ -623,7 +707,6 @@ th {
     max-width: var(--print-w);
     height: var(--print-h);
     min-height: var(--print-h);
-    max-height: var(--print-h);
     margin: 0;
     overflow: hidden;
     box-shadow: none;
@@ -654,13 +737,25 @@ th {
   }
 
   .editable-field {
-    border-color: transparent;
-    background: transparent;
-    box-shadow: none;
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
   }
 
   .resize-handle {
     display: none;
+  }
+
+  .field-content,
+  .field-flow,
+  .no-break-token,
+  .license-token {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
   }
 }
 

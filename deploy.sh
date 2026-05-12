@@ -1,72 +1,172 @@
 #!/bin/bash
-set -e
-
-# 仙顶寺部署脚本
-# 用法: ./deploy.sh
+set -euo pipefail
 
 APP_DIR="/opt/temple-os"
 BACKUP_DIR="$APP_DIR/backup"
+DOCKER_DIR="$APP_DIR/docker"
+LOG_DIR="$DOCKER_DIR/logs"
 DATE=$(date +%Y%m%d_%H%M%S)
 
-echo "===== 仙顶寺智慧管理系统部署 ====="
+DB_CONTAINER="temple-db"
+BACKEND_CONTAINER="temple-backend"
+PRINT_CONTAINER="temple-print"
+FRONTEND_SERVICE="temple-frontend.service"
 
-# 备份函数
+POSTGRES_DB="${POSTGRES_DB:-temple_os}"
+POSTGRES_USER="${POSTGRES_USER:-postgres}"
+POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-postgres}"
+JWT_SECRET="${JWT_SECRET:-SrpuIPv+t/9AUKrOOarrVxgU6CuoiSKvmt3X2SBRHaA=}"
+ALLOWED_ORIGIN="${ALLOWED_ORIGIN:-https://temple.example.com}"
+NEXT_PUBLIC_API_BASE="${NEXT_PUBLIC_API_BASE:-}"
+
+TARGETS=("$@")
+if [ ${#TARGETS[@]} -eq 0 ]; then
+  TARGETS=("backend" "frontend" "print")
+fi
+
+echo "===== Temple OS Deploy ====="
+
+has_target() {
+  local wanted="$1"
+  for item in "${TARGETS[@]}"; do
+    if [ "$item" = "all" ] || [ "$item" = "$wanted" ]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
 backup_db() {
-    echo "[1/6] 备份数据库..."
-    mkdir -p $BACKUP_DIR
-    docker exec temple-db pg_dump -U postgres temple_os > $BACKUP_DIR/db_backup_$DATE.sql 2>/dev/null || true
+  echo "[1/6] Backing up database..."
+  mkdir -p "$BACKUP_DIR"
+  docker exec "$DB_CONTAINER" pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" > "$BACKUP_DIR/db_backup_$DATE.sql" 2>/dev/null || true
 }
 
-# 拉取代码
 pull_code() {
-    echo "[2/6] 拉取最新代码..."
-    cd $APP_DIR
-    git pull origin main
+  echo "[2/6] Pulling latest code..."
+  cd "$APP_DIR"
+  local env_backup_dir
+  env_backup_dir="$(mktemp -d)"
+  if [ -f "$APP_DIR/backend/.env" ]; then
+    cp "$APP_DIR/backend/.env" "$env_backup_dir/backend.env"
+  fi
+  if [ -f "$APP_DIR/docker/.env" ]; then
+    cp "$APP_DIR/docker/.env" "$env_backup_dir/docker.env"
+  fi
+  git pull --rebase --autostash origin main
+  if [ -f "$env_backup_dir/backend.env" ]; then
+    cp "$env_backup_dir/backend.env" "$APP_DIR/backend/.env"
+  fi
+  if [ -f "$env_backup_dir/docker.env" ]; then
+    cp "$env_backup_dir/docker.env" "$APP_DIR/docker/.env"
+  fi
+  rm -rf "$env_backup_dir"
 }
 
-# 构建镜像
-build_images() {
-    echo "[3/6] 构建 Docker 镜像..."
-    cd $APP_DIR/docker
-    docker-compose build --no-cache
+build_backend_image() {
+  echo "[3/6] Building backend image..."
+  docker build -t docker_temple-backend:latest "$APP_DIR/backend"
 }
 
-# 更新数据库
-update_db() {
-    echo "[4/6] 更新数据库结构..."
-    docker exec temple-backend npx prisma db push --skip-generate 2>/dev/null || true
-    docker exec temple-backend npx prisma generate 2>/dev/null || true
+restart_backend() {
+  echo "[4/6] Restarting backend container..."
+  mkdir -p "$LOG_DIR"
+  docker rm -f "$BACKEND_CONTAINER" >/dev/null 2>&1 || true
+  docker run -d \
+    --name "$BACKEND_CONTAINER" \
+    --network host \
+    --restart unless-stopped \
+    -e "DATABASE_URL=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@localhost:5432/$POSTGRES_DB" \
+    -e "JWT_SECRET=$JWT_SECRET" \
+    -e "ALLOWED_ORIGIN=$ALLOWED_ORIGIN" \
+    -e "PORT=3002" \
+    -e "NODE_ENV=production" \
+    -v "$LOG_DIR:/app/logs" \
+    docker_temple-backend:latest >/dev/null
 }
 
-# 重启服务
-restart_services() {
-    echo "[5/6] 重启服务..."
-    cd $APP_DIR/docker
-    docker-compose down
-    docker-compose up -d
+update_backend_db() {
+  echo "[5/6] Updating backend database schema..."
+  docker exec "$BACKEND_CONTAINER" npx prisma db push --skip-generate >/dev/null
+  docker exec "$BACKEND_CONTAINER" npx prisma generate >/dev/null
 }
 
-# 验证
-verify() {
-    echo "[6/6] 验证服务..."
-    sleep 5
-    if curl -sf http://localhost:3000 > /dev/null; then
-        echo "✓ 前端正常"
-    else
-        echo "✗ 前端异常"
-    fi
-    if curl -sf http://localhost:3002/api/health > /dev/null; then
-        echo "✓ 后端正常"
-    else
-        echo "✗ 后端异常"
-    fi
+build_frontend() {
+  echo "[3/6] Building frontend..."
+  cd "$APP_DIR/frontend"
+  NEXT_PUBLIC_API_BASE="$NEXT_PUBLIC_API_BASE" npm run build
+}
+
+restart_frontend() {
+  echo "[4/6] Restarting frontend service..."
+  local stale_pids
+  stale_pids=$(ss -ltnp 2>/dev/null | awk '/:3000 / { if (match($0, /pid=[0-9]+/)) print substr($0, RSTART + 4, RLENGTH - 4) }' | sort -u)
+  if [ -n "$stale_pids" ]; then
+    for pid in $stale_pids; do
+      if ! systemctl show "$FRONTEND_SERVICE" -p MainPID --value | grep -qx "$pid"; then
+        kill "$pid" >/dev/null 2>&1 || true
+      fi
+    done
+    sleep 2
+  fi
+  systemctl restart "$FRONTEND_SERVICE"
+}
+
+build_print_image() {
+  echo "[3/6] Building print image..."
+  docker build -t docker_temple-print:latest "$APP_DIR/print-service"
+}
+
+restart_print() {
+  echo "[4/6] Restarting print container..."
+  docker rm -f "$PRINT_CONTAINER" >/dev/null 2>&1 || true
+  docker run -d \
+    --name "$PRINT_CONTAINER" \
+    --network host \
+    --restart unless-stopped \
+    -e "PORT=3001" \
+    -e "NODE_ENV=production" \
+    docker_temple-print:latest >/dev/null
+}
+
+verify_backend() {
+  curl -fsS http://127.0.0.1:3002/api/health >/dev/null
+  echo "✓ backend healthy"
+}
+
+verify_frontend() {
+  curl -fsS http://127.0.0.1:3000 >/dev/null
+  echo "✓ frontend healthy"
+}
+
+verify_print() {
+  curl -fsS http://127.0.0.1:3001/health >/dev/null
+  echo "✓ print healthy"
 }
 
 backup_db
 pull_code
-build_images
-update_db
-restart_services
-verify
 
-echo "===== 部署完成 ====="
+if has_target backend; then
+  build_backend_image
+  restart_backend
+  update_backend_db
+fi
+
+if has_target frontend; then
+  build_frontend
+  restart_frontend
+fi
+
+if has_target print; then
+  build_print_image
+  restart_print
+fi
+
+echo "[6/6] Verifying services..."
+sleep 5
+if has_target backend; then verify_backend; fi
+if has_target frontend; then verify_frontend; fi
+if has_target print; then verify_print; fi
+
+echo "===== Deploy Complete ====="

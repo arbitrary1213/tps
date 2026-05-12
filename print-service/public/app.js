@@ -115,6 +115,46 @@ const tabletTypes = {
   },
 };
 
+const summaryVariantPresets = {
+  blessing: [
+    {
+      key: "blessing_bodhisattva",
+      label: "延生谢菩萨",
+      match: "bodhisattva",
+      fields: ["summary_subject", "summary_believer", "summary_address"],
+    },
+    {
+      key: "blessing_person",
+      label: "延生姓名生日",
+      match: "person",
+      fields: ["summary_subject", "summary_birthday", "summary_address"],
+    },
+  ],
+  deliverance: [
+    {
+      key: "deliverance_default",
+      label: "往生/超度默认",
+      match: "default",
+      fields: ["summary_subject", "summary_yangshang", "summary_address"],
+    },
+  ],
+};
+
+const singleVariantPresets = [
+  { key: "layout_one", label: "版式一" },
+  { key: "layout_two", label: "版式二" },
+];
+
+const blessingSingleVariantAliases = {
+  layout_one: "blessing_bodhisattva",
+  layout_two: "blessing_person",
+  blessing_bodhisattva: "layout_one",
+  blessing_person: "layout_two",
+};
+
+const SUMMARY_LAYOUT_REPAIR_VERSION = 3;
+const APP_BUILD = "2026-05-11-2240";
+
 const sampleData = {
   blessing: [
   { "牌位主体": "张三延生禄位", "信人": "张三", "年龄": "四十八岁", "生肖": "属龙", "生日年月日": "1978年正月初三", "地址": "本市东街一号", "祈福语": "消灾延寿 福慧增长" },
@@ -142,16 +182,20 @@ const state = {
     blessing: new Set(),
     deliverance: new Set(),
   },
+  activeFieldKey: "",
+  editSide: "front",
+  renderSide: "",
+  renderSingleVariant: "",
 };
 
 const $ = (id) => document.getElementById(id);
 
 const controls = [
-  "templateSelect", "paperSelect", "paperWidth", "paperHeight", "tabletType",
+  "templateSelect", "paperSelect", "paperWidth", "paperHeight", "tabletType", "singleVariant",
   "singleFont", "singleOffsetY", "singleVertical",
-  "styleField", "fieldFontSize", "fieldColor", "fieldFontFamily", "staticFieldText",
-  "showBg",
-  "summaryDataGroup", "summaryFormat", "columnCount", "rowsPerColumn", "summaryFont",
+  "styleField", "fieldFontSize", "fieldColor", "fieldFontFamily", "fieldTextAlign", "fieldVerticalAlign", "fieldWrapMode", "staticFieldText",
+  "showBg", "enableDuplex",
+  "summaryDataGroup", "summaryVariant", "summaryFormat", "columnCount", "rowsPerColumn", "summaryFont",
   "summaryLineGap", "pageMargin", "columnGap", "summaryVertical",
 ].map($);
 
@@ -172,8 +216,7 @@ function init() {
 
   $("sampleBtn").addEventListener("click", () => loadRows(sampleData[currentDataGroup()]));
   $("pasteBtn").addEventListener("click", () => loadRows(parseDelimited($("pasteInput").value)));
-  $("loadBlessingDataBtn").addEventListener("click", () => loadSystemPlaques("blessing"));
-  $("loadDeliveranceDataBtn").addEventListener("click", () => loadSystemPlaques("deliverance"));
+  $("loadSystemDataBtn").addEventListener("click", loadSystemPlaquesFromFilters);
   $("selectAllRowsBtn").addEventListener("click", selectAllCurrentRows);
   $("clearSelectedRowsBtn").addEventListener("click", clearSelectedRows);
   $("fileInput").addEventListener("change", handleFile);
@@ -183,10 +226,19 @@ function init() {
   $("printBtn").addEventListener("click", printAll);
   $("prevBtn").addEventListener("click", () => changePage(-1));
   $("nextBtn").addEventListener("click", () => changePage(1));
+  $("jumpPageBtn").addEventListener("click", jumpToPage);
+  $("printFromPageBtn").addEventListener("click", printFromPage);
   $("paperSelect").addEventListener("change", applyPaperPreset);
   $("templateSelect").addEventListener("change", applyTemplate);
+  $("singleVariant").addEventListener("change", handleSingleVariantChange);
   $("addStaticFieldBtn").addEventListener("click", addStaticField);
+  $("addSummaryStaticFieldBtn").addEventListener("click", addSummaryStaticField);
+  $("editStaticFieldBtn").addEventListener("click", editSelectedStaticField);
+  $("deleteStaticFieldBtn").addEventListener("click", deleteSelectedStaticField);
   $("deleteTemplateBtn").addEventListener("click", deleteCurrentTemplate);
+  document.querySelectorAll("[data-side]").forEach((button) => {
+    button.addEventListener("click", () => setEditSide(button.dataset.side || "front"));
+  });
 
   document.getElementById("selectAllFields").addEventListener("click", () => {
     document.querySelectorAll(".field-checkbox").forEach(cb => cb.checked = true);
@@ -224,15 +276,30 @@ function init() {
       renderTable();
       updateDataHint();
       applySummaryDefault(control.id === "summaryDataGroup");
+      refreshSummaryVariantOptions();
       ensureLayout(currentLayoutKey());
     }
+    if (control.id === "summaryVariant") {
+      buildSummaryFieldMapping();
+      buildStyleEditor();
+    }
+    if (control.id === "singleVariant") {
+      handleSingleVariantChange();
+    }
     if (control.id === "styleField") syncStyleInputs();
-    if (["fieldFontSize", "fieldColor", "fieldFontFamily"].includes(control.id)) updateSelectedFieldStyle();
+    if (["fieldFontSize", "fieldColor", "fieldFontFamily", "fieldTextAlign", "fieldVerticalAlign", "fieldWrapMode"].includes(control.id)) updateSelectedFieldStyle();
     if (control.id === "singleFont") syncSubjectFontSize();
+    if (control.id === "enableDuplex") syncDuplexSetting();
     render();
   }));
 
   document.getElementById("confirmNewTemplate").addEventListener("click", createCustomTemplate);
+  $("summaryVariant").addEventListener("change", () => {
+    buildSummaryFieldMapping();
+    buildStyleEditor();
+    render();
+  });
+  relocateSharedStyleEditor();
   applyTemplate();
   loadAllSamples();
   loadServerTemplates();
@@ -241,9 +308,19 @@ function init() {
   applyLaunchParams();
 }
 
+function handleSingleVariantChange() {
+  if (state.mode !== "single") return;
+  state.activeFieldKey = "";
+  buildFieldMapping();
+  buildStyleEditor();
+  buildStaticVisibilityControls();
+  render();
+}
+
 function setMode(mode) {
   state.mode = mode;
   state.pageIndex = 0;
+  if (mode !== "single") state.editSide = "front";
   if (mode === "summary" && !isSummaryTemplate(currentTemplate())) {
     $("templateSelect").value = "a4summary";
   }
@@ -256,12 +333,52 @@ function setMode(mode) {
   });
   $("singleSettings").hidden = mode !== "single";
   $("summarySettings").hidden = mode !== "summary";
+  if ($("duplexSettings")) $("duplexSettings").hidden = mode !== "single";
+  syncSideButtons();
+  relocateSharedStyleEditor();
   buildFieldMapping();
   buildStyleEditor();
   renderTable();
   updateDataHint();
   applySummaryDefault();
   render();
+}
+
+function relocateSharedStyleEditor() {
+  const editor = document.querySelector(".field-style-editor");
+  const staticActions = $("sharedStaticFieldActions");
+  const singleSettings = $("singleSettings");
+  const summarySettings = $("summarySettings");
+  if (!editor || !singleSettings || !summarySettings) return;
+
+  if (state.mode === "summary") {
+    const summaryStaticAnchor = summarySettings.querySelector(".static-field-actions-anchor");
+    if (staticActions && summaryStaticAnchor && staticActions.parentElement !== summarySettings) {
+      summarySettings.insertBefore(staticActions, summaryStaticAnchor);
+    } else if (staticActions && summaryStaticAnchor && staticActions.nextElementSibling !== summaryStaticAnchor) {
+      summarySettings.insertBefore(staticActions, summaryStaticAnchor);
+    }
+    const summaryAnchor = summarySettings.querySelector(".grid-2");
+    if (summaryAnchor && editor.parentElement !== summarySettings) {
+      summarySettings.insertBefore(editor, summaryAnchor);
+    } else if (!summaryAnchor && editor.parentElement !== summarySettings) {
+      summarySettings.appendChild(editor);
+    }
+    return;
+  }
+
+  const singleStaticTools = singleSettings.querySelector(".static-field-tools");
+  if (staticActions && singleStaticTools && staticActions.parentElement !== singleSettings) {
+    singleSettings.insertBefore(staticActions, singleStaticTools.nextSibling);
+  } else if (staticActions && singleStaticTools && staticActions.previousElementSibling !== singleStaticTools) {
+    singleSettings.insertBefore(staticActions, singleStaticTools.nextSibling);
+  }
+  const singleFontWrap = singleSettings.querySelector(".grid-2");
+  if (singleFontWrap && editor.parentElement !== singleSettings) {
+    singleSettings.insertBefore(editor, singleFontWrap);
+  } else if (!singleFontWrap && editor.parentElement !== singleSettings) {
+    singleSettings.appendChild(editor);
+  }
 }
 
 function applyPaperPreset() {
@@ -283,11 +400,15 @@ function applyPaperPreset() {
 
 function applyTemplate() {
   const template = currentTemplate();
-  const layout = ensureLayout(template.id);
+  ensureLayout(template.id);
+  if (isSummaryTemplate(template)) state.editSide = "front";
   syncControlsFromSelectedTemplate();
   if (template.tabletType) $("tabletType").value = template.tabletType;
   if (isSummaryTemplate(template)) {
     setMode("summary");
+    refreshSummaryVariantOptions();
+    buildSummaryFieldMapping();
+    buildStyleEditor();
     renderTable();
     updateDataHint();
   } else {
@@ -309,10 +430,122 @@ function syncControlsFromSelectedTemplate() {
   $("paperSelect").value = paperPresetForSize(Number($("paperWidth").value), Number($("paperHeight").value));
   if (isSummaryTemplate(template)) {
     applySavedSummarySettings(layout.summary);
+    refreshSummaryVariantOptions();
+    if (layout.summary?.variantKey && Array.from($("summaryVariant").options).some((option) => option.value === layout.summary.variantKey)) {
+      $("summaryVariant").value = layout.summary.variantKey;
+    }
+    buildSummaryFieldMapping();
   } else {
     $("singleFont").value = template.font;
     $("singleVertical").checked = layout.paper?.vertical ?? template.vertical;
+    if ($("enableDuplex")) $("enableDuplex").checked = Boolean(layout.duplex?.enabled);
   }
+  syncSideButtons();
+}
+
+function setEditSide(side) {
+  const layout = ensureLayout(currentLayoutKey());
+  if (side === "back" && !layout.duplex?.enabled) return;
+  state.editSide = side === "back" ? "back" : "front";
+  state.activeFieldKey = "";
+  syncSideButtons();
+  buildFieldMapping();
+  buildStyleEditor();
+  render();
+}
+
+function syncSideButtons() {
+  const layout = state.mode === "single" ? ensureLayout(currentLayoutKey()) : null;
+  const duplexEnabled = Boolean(layout?.duplex?.enabled);
+  if (!duplexEnabled && state.editSide === "back") state.editSide = "front";
+  document.querySelectorAll("[data-side]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.side === state.editSide);
+    if (button.dataset.side === "back") button.disabled = state.mode !== "single" || !duplexEnabled;
+  });
+  if ($("fieldMapping")) $("fieldMapping").hidden = false;
+  if ($("singleFont")) $("singleFont").closest("label").hidden = state.mode === "single" && state.editSide === "back";
+  if ($("singleOffsetY")) $("singleOffsetY").closest("label").hidden = state.mode === "single" && state.editSide === "back";
+  if ($("singleVertical")) $("singleVertical").closest("label").hidden = false;
+  syncSingleVariantControls();
+}
+
+function syncSingleVariantControls() {
+  const wrap = $("singleVariantWrap");
+  if (!wrap) return;
+  wrap.hidden = state.mode !== "single" || state.editSide === "back";
+  refreshSingleVariantOptions();
+  if (!$("singleVariant")?.value) $("singleVariant").value = singleVariantPresets[0].key;
+  const row = currentRows()[state.pageIndex];
+  if (row && state.mode === "single") {
+    const detectedKey = summaryVariantPresetForRow(row)?.key || "";
+    wrap.dataset.detectedVariant = detectedKey;
+  } else {
+    delete wrap.dataset.detectedVariant;
+  }
+  buildStaticVisibilityControls();
+}
+
+function refreshSingleVariantOptions() {
+  const select = $("singleVariant");
+  if (!select) return;
+  const previous = normalizeSingleVariantKey(select.value);
+  select.innerHTML = singleVariantPresets.map((variant) => (
+    `<option value="${variant.key}">${escapeHtml(variant.label)}</option>`
+  )).join("");
+  select.value = singleVariantPresets.some((variant) => variant.key === previous)
+    ? previous
+    : singleVariantPresets[0].key;
+}
+
+function buildStaticVisibilityControls() {
+  const wrap = $("singleStaticVisibility");
+  if (!wrap) return;
+  const enabled = state.mode === "single" && state.editSide !== "back";
+  wrap.hidden = !enabled;
+  if (!enabled) {
+    wrap.innerHTML = "";
+    return;
+  }
+  const layout = ensureLayout(currentLayoutKey());
+  const variantKey = currentSingleVariantKey();
+  const fields = layout.staticFields || [];
+  if (!fields.length) {
+    wrap.innerHTML = '<p class="hint">当前模板还没有静态字段。</p>';
+    return;
+  }
+  wrap.innerHTML = `
+    <div class="static-visibility-title">当前版式静态字段显示</div>
+    ${fields.map((field) => `
+      <label class="checkbox">
+        <input type="checkbox" data-static-visibility="${escapeHtml(field.key)}"${staticFieldVisibleInVariant(field, variantKey) ? " checked" : ""}>
+        ${escapeHtml(field.text || field.key)}
+      </label>
+    `).join("")}
+  `;
+  wrap.querySelectorAll("[data-static-visibility]").forEach((checkbox) => {
+    checkbox.addEventListener("change", () => {
+      const target = fields.find((field) => field.key === checkbox.dataset.staticVisibility);
+      if (!target) return;
+      setStaticFieldVariantVisibility(target, checkbox.checked, variantKey);
+      saveLayouts();
+      buildStyleEditor();
+      render();
+    });
+  });
+}
+
+function syncDuplexSetting() {
+  if (state.mode !== "single") return;
+  const layout = ensureLayout(currentLayoutKey());
+  if (!layout.duplex) layout.duplex = {};
+  layout.duplex.enabled = Boolean($("enableDuplex")?.checked);
+  if (!layout.duplex.enabled && state.editSide === "back") {
+    state.editSide = "front";
+    syncSideButtons();
+    buildFieldMapping();
+    buildStyleEditor();
+  }
+  saveLayouts();
 }
 
 function paperPresetForSize(width, height) {
@@ -375,7 +608,7 @@ function handleBackground(event) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = () => {
-    const layout = ensureLayout(currentLayoutKey());
+    const layout = currentEditableLayout();
     layout.background = String(reader.result || "");
     $("showBg").checked = true;
     saveLayouts();
@@ -436,6 +669,19 @@ function loadRows(rows) {
   updateDataHint();
   applySummaryDefault(true);
   render();
+}
+
+function loadSystemPlaquesFromFilters() {
+  const selectedType = $("systemPlaqueType").value;
+  if (selectedType === "LONGEVITY") {
+    loadSystemPlaques("blessing");
+    return;
+  }
+  if (selectedType === "REBIRTH" || selectedType === "DELIVERANCE") {
+    loadSystemPlaques("deliverance");
+    return;
+  }
+  loadSystemPlaques(currentDataGroup());
 }
 
 async function loadSystemPlaques(group) {
@@ -608,16 +854,351 @@ function matchesPlaqueSubtype(plaque, subtype) {
 
 function normalizeRow(row, group, index) {
   const rowId = row.__rowId || row.id || `${group}_${Date.now()}_${index}`;
-  return { ...row, __rowId: String(rowId) };
+  const normalized = { ...row, __rowId: String(rowId) };
+  normalized.__summaryVariant = detectSummaryVariantForGroup(normalized, group);
+  normalized.__singleVariant = group === "blessing"
+    ? normalizeSingleVariantKey(summaryVariantPresetForRow(normalized)?.key)
+    : singleVariantPresets[0].key;
+  return normalized;
+}
+
+function summaryVariantPresetsFor(group = currentDataGroup()) {
+  return summaryVariantPresets[group] || summaryVariantPresets.deliverance;
+}
+
+function currentSummaryVariantKey() {
+  return $("summaryVariant")?.value || summaryVariantPresetsFor()[0]?.key || "";
+}
+
+function isSummaryFieldKey(key) {
+  return typeof key === "string" && key.startsWith("summary_");
+}
+
+function summaryVariantStorageKey(key, variantKey = currentSummaryVariantKey()) {
+  if (!isSummaryFieldKey(key) || !variantKey) return key;
+  return `summary_variant_${variantKey}__${key}`;
+}
+
+function isSingleVariantFieldKey(key) {
+  return state.mode === "single" && !isBackSideActive() && typeof key === "string";
+}
+
+function shouldScopeSingleVariantField(key) {
+  return state.mode === "single"
+    && !isBackSideActive()
+    && typeof key === "string"
+    && Boolean(key);
+}
+
+function normalizeSingleVariantKey(key) {
+  return blessingSingleVariantAliases[key] || key || singleVariantPresets[0].key;
+}
+
+function currentSingleVariantBaseKey(row = null, forPrint = false) {
+  if (state.mode !== "single") return "";
+  if (forPrint && row && $("tabletType")?.value === "blessing") {
+    return normalizeSingleVariantKey(summaryVariantPresetForRow(row)?.key || singleVariantPresets[0].key);
+  }
+  return normalizeSingleVariantKey($("singleVariant")?.value || singleVariantPresets[0].key);
+}
+
+function blessingVariantKeyFromBase(baseKey = currentSingleVariantBaseKey()) {
+  return baseKey === "layout_two" ? "blessing_person" : "blessing_bodhisattva";
+}
+
+function currentSingleVariantKey(row = null, forPrint = false) {
+  if (state.mode !== "single") return "";
+  return currentSingleVariantBaseKey(row, forPrint);
+}
+
+function singleFieldsForVariant(variantKey = currentSingleVariantKey(), row = null, forPrint = false) {
+  const fields = currentTabletType().fields;
+  if (state.mode !== "single") return fields;
+  if ($("tabletType")?.value !== "blessing") return fields;
+  const key = blessingVariantKeyFromBase(forPrint && row ? currentSingleVariantKey(row, true) : variantKey);
+  const fieldKeys = key === "blessing_person"
+    ? ["subject", "birthday", "address"]
+    : ["subject", "believer", "address"];
+  const map = new Map(fields.map((field) => [field.key, field]));
+  return fieldKeys.map((fieldKey) => map.get(fieldKey)).filter(Boolean);
+}
+
+function staticFieldsForCurrentContext(layout, variantKey = currentSingleVariantKey()) {
+  const fields = layout?.staticFields || [];
+  if (state.mode === "single" && !isBackSideActive()) {
+    return fields.filter((field) => staticFieldVisibleInVariant(field, variantKey));
+  }
+  return fields;
+}
+
+function staticFieldVisibleInVariant(field, variantKey = currentSingleVariantKey()) {
+  if (!field || !variantKey) return true;
+  if (!field.variantVisibility || typeof field.variantVisibility !== "object") return true;
+  if (Object.prototype.hasOwnProperty.call(field.variantVisibility, variantKey)) {
+    return field.variantVisibility[variantKey] !== false;
+  }
+  if (variantKey === "layout_one" && Object.prototype.hasOwnProperty.call(field.variantVisibility, "blessing_bodhisattva")) {
+    return field.variantVisibility.blessing_bodhisattva !== false;
+  }
+  if (variantKey === "layout_two" && Object.prototype.hasOwnProperty.call(field.variantVisibility, "blessing_person")) {
+    return field.variantVisibility.blessing_person !== false;
+  }
+  return field.variantVisibility[variantKey] !== false;
+}
+
+function setStaticFieldVariantVisibility(field, visible, variantKey = currentSingleVariantKey()) {
+  if (!field.variantVisibility || typeof field.variantVisibility !== "object") field.variantVisibility = {};
+  field.variantVisibility[variantKey] = Boolean(visible);
+}
+
+function singleVariantStorageKey(key, variantKey = currentSingleVariantKey()) {
+  if (!shouldScopeSingleVariantField(key) || !variantKey) return key;
+  return `single_variant_${variantKey}__${key}`;
+}
+
+function getLayoutBucketValue(layout, bucket, key, variantKey = currentSummaryVariantKey()) {
+  if (!layout || !layout[bucket]) return undefined;
+  const scopedKey = state.mode === "single"
+    ? singleVariantStorageKey(key, variantKey)
+    : summaryVariantStorageKey(key, variantKey);
+  if (Object.prototype.hasOwnProperty.call(layout[bucket], scopedKey)) return layout[bucket][scopedKey];
+  if (state.mode === "single" && variantKey === "layout_one") {
+    const legacyKey = `single_variant_blessing_bodhisattva__${key}`;
+    if (Object.prototype.hasOwnProperty.call(layout[bucket], legacyKey)) return layout[bucket][legacyKey];
+  }
+  if (state.mode === "single" && variantKey === "layout_two") {
+    const legacyKey = `single_variant_blessing_person__${key}`;
+    if (Object.prototype.hasOwnProperty.call(layout[bucket], legacyKey)) return layout[bucket][legacyKey];
+  }
+  return layout[bucket][key];
+}
+
+function setLayoutBucketValue(layout, bucket, key, value, variantKey = currentSummaryVariantKey()) {
+  if (!layout[bucket] || typeof layout[bucket] !== "object") layout[bucket] = {};
+  const targetKey = state.mode === "single"
+    ? singleVariantStorageKey(key, variantKey)
+    : summaryVariantStorageKey(key, variantKey);
+  layout[bucket][targetKey] = value;
+  return layout[bucket][targetKey];
+}
+
+function mappingValueForField(layout, key, variantKey = currentSingleVariantKey()) {
+  if (!layout?.mappings) return undefined;
+  const scopedKey = shouldScopeSingleVariantField(key) ? singleVariantStorageKey(key, variantKey) : key;
+  if (Object.prototype.hasOwnProperty.call(layout.mappings, scopedKey)) return layout.mappings[scopedKey];
+  if (shouldScopeSingleVariantField(key) && variantKey === "layout_one") {
+    const legacyKey = `single_variant_blessing_bodhisattva__${key}`;
+    if (Object.prototype.hasOwnProperty.call(layout.mappings, legacyKey)) return layout.mappings[legacyKey];
+  }
+  if (shouldScopeSingleVariantField(key) && variantKey === "layout_two") {
+    const legacyKey = `single_variant_blessing_person__${key}`;
+    if (Object.prototype.hasOwnProperty.call(layout.mappings, legacyKey)) return layout.mappings[legacyKey];
+  }
+  return layout.mappings[key];
+}
+
+function setMappingValueForField(layout, key, value, variantKey = currentSingleVariantKey()) {
+  if (!layout.mappings || typeof layout.mappings !== "object") layout.mappings = {};
+  const targetKey = shouldScopeSingleVariantField(key) ? singleVariantStorageKey(key, variantKey) : key;
+  layout.mappings[targetKey] = value;
+}
+
+function firstRowValue(row, keys) {
+  for (const key of keys) {
+    const value = row?.[key];
+    if (String(value || "").trim()) return String(value).trim();
+  }
+  return "";
+}
+
+function detectSummaryVariantForGroup(row, group = currentDataGroup()) {
+  if (group === "blessing") {
+    const believer = firstRowValue(row, ["信人", "阳上", "阳上人", "believer", "yangshang", "yangShang"]);
+    return believer ? "bodhisattva" : "person";
+  }
+  return "default";
+}
+
+function summaryVariantPresetForRow(row) {
+  const presets = summaryVariantPresetsFor(currentDataGroup());
+  const detected = row ? detectSummaryVariantForGroup(row, currentDataGroup()) : "";
+  return presets.find((variant) => variant.match === detected) || presets[0];
+}
+
+function summaryFieldDefinitionsForGroup(group) {
+  if (group === "blessing") {
+    return [
+      { key: "summary_subject", label: "牌位主体", sourceKey: "subject" },
+      { key: "summary_believer", label: "信人", sourceKey: "believer" },
+      { key: "summary_birthday", label: "出生日期", sourceKey: "birthday" },
+      { key: "summary_address", label: "地址", sourceKey: "address" },
+    ];
+  }
+  return [
+    { key: "summary_subject", label: "牌位主体", sourceKey: "subject" },
+    { key: "summary_yangshang", label: "阳上", sourceKey: "yangshang" },
+    { key: "summary_address", label: "地址", sourceKey: "address" },
+  ];
+}
+
+function summaryFieldDefinitions(group = currentDataGroup()) {
+  if (group === "blessing") {
+    return [
+      { key: "summary_subject", label: "牌位主体", sourceKey: "subject" },
+      { key: "summary_believer", label: "信人", sourceKey: "believer" },
+      { key: "summary_birthday", label: "出生日期", sourceKey: "birthday" },
+      { key: "summary_address", label: "地址", sourceKey: "address" },
+    ];
+  }
+  return [
+    { key: "summary_subject", label: "牌位主体", sourceKey: "subject" },
+    { key: "summary_yangshang", label: "阳上", sourceKey: "yangshang" },
+    { key: "summary_address", label: "地址", sourceKey: "address" },
+  ];
+}
+
+function summaryFieldsForVariant(variantKey = currentSummaryVariantKey(), row = null) {
+  const preset = summaryVariantPresetsFor().find((item) => item.key === variantKey) || summaryVariantPresetForRow(row) || summaryVariantPresetsFor()[0];
+  const layout = ensureLayout(currentLayoutKey());
+  const toggles = layout.summaryFieldToggles?.[variantKey] || {};
+  const definitions = summaryFieldDefinitions();
+  const map = new Map(definitions.map((field) => [field.key, field]));
+  return (preset?.fields || [])
+    .map((key) => map.get(key))
+    .filter((field) => field && toggles[field.key] !== "off")
+    .filter(Boolean);
+}
+
+function summaryDefaultPosition(key, variantKey = currentSummaryVariantKey()) {
+  const fields = summaryFieldsForVariant(variantKey);
+  const index = Math.max(fields.findIndex((field) => field.key === key), 0);
+  const topMap = {
+    summary_subject: 10,
+    summary_believer: 32,
+    summary_birthday: 32,
+    summary_yangshang: 32,
+    summary_address: 50,
+  };
+  return { x: 10, y: topMap[key] ?? (10 + index * 20) };
+}
+
+function summaryDefaultSize(key) {
+  if (key === "summary_subject") return { w: 80, h: 18 };
+  if (key === "summary_address") return { w: 80, h: 28 };
+  return { w: 80, h: 14 };
+}
+
+function summaryDefaultStyle() {
+  return {
+    fontSize: 22,
+    color: "#16110d",
+    fontFamily: "SimSun, serif",
+    textAlign: "left",
+    verticalAlign: "center",
+  };
+}
+
+function summaryVariantPresetsForGroup(group) {
+  return summaryVariantPresets[group] || summaryVariantPresets.deliverance;
+}
+
+function summaryFieldsForVariantByGroup(group, variantKey) {
+  const preset = summaryVariantPresetsForGroup(group).find((item) => item.key === variantKey) || summaryVariantPresetsForGroup(group)[0];
+  const definitions = summaryFieldDefinitionsForGroup(group);
+  const map = new Map(definitions.map((field) => [field.key, field]));
+  return (preset?.fields || []).map((key) => map.get(key)).filter(Boolean);
+}
+
+function summaryTemplateDataGroup(templateId) {
+  const template = templates.find((item) => item.id === templateId);
+  const layout = state.layouts[templateId] || {};
+  return template?.dataGroup || layout.summary?.dataGroup || "deliverance";
+}
+
+function isSummaryTemplateId(templateId) {
+  const template = templates.find((item) => item.id === templateId);
+  if (template) return isSummaryTemplate(template);
+  return Boolean(state.layouts[templateId]?.summary);
+}
+
+function repairSummaryTemplateLayout(templateId) {
+  const layout = state.layouts[templateId];
+  if (!layout || !isSummaryTemplateId(templateId)) return false;
+  if (layout.summaryRepairVersion >= SUMMARY_LAYOUT_REPAIR_VERSION) return false;
+
+  if (!layout.positions) layout.positions = {};
+  if (!layout.sizes) layout.sizes = {};
+  if (!layout.styles) layout.styles = {};
+  if (!layout.staticFields) layout.staticFields = [];
+
+  const group = summaryTemplateDataGroup(templateId);
+  const summaryKeys = new Set(summaryFieldDefinitionsForGroup(group).map((field) => field.key));
+  let changed = false;
+
+  ["positions", "sizes", "styles"].forEach((bucket) => {
+    Object.keys(layout[bucket]).forEach((savedKey) => {
+      const baseKey = savedKey.includes("__") ? savedKey.split("__").pop() : savedKey;
+      if (!summaryKeys.has(baseKey)) return;
+      delete layout[bucket][savedKey];
+      changed = true;
+    });
+  });
+
+  summaryVariantPresetsForGroup(group).forEach((variant) => {
+    summaryFieldsForVariantByGroup(group, variant.key).forEach((field) => {
+      setLayoutBucketValue(layout, "positions", field.key, summaryDefaultPosition(field.key, variant.key), variant.key);
+      setLayoutBucketValue(layout, "sizes", field.key, summaryDefaultSize(field.key), variant.key);
+      setLayoutBucketValue(layout, "styles", field.key, summaryDefaultStyle(), variant.key);
+      changed = true;
+    });
+  });
+
+  layout.staticFields.forEach((field, index) => {
+    const pos = layout.positions[field.key];
+    const size = layout.sizes[field.key];
+    const style = layout.styles[field.key];
+    const invalidPos = !pos || !Number.isFinite(pos.x) || !Number.isFinite(pos.y) || pos.x < 0 || pos.x > 92 || pos.y < 0 || pos.y > 92;
+    const invalidSize = !size || !Number.isFinite(size.w) || !Number.isFinite(size.h) || size.w < 4 || size.w > 90 || size.h < 4 || size.h > 60;
+    if (invalidPos) {
+      layout.positions[field.key] = { x: 10, y: 10 + index * 16 };
+      changed = true;
+    }
+    if (invalidSize) {
+      layout.sizes[field.key] = { w: 24, h: 12 };
+      changed = true;
+    }
+    if (!style) {
+      layout.styles[field.key] = summaryDefaultStyle();
+      changed = true;
+    }
+  });
+
+  layout.summaryRepairVersion = SUMMARY_LAYOUT_REPAIR_VERSION;
+  return changed;
+}
+
+function refreshSummaryVariantOptions() {
+  const select = $("summaryVariant");
+  if (!select) return;
+  const variants = summaryVariantPresetsFor();
+  const previous = select.value;
+  select.innerHTML = variants.map((variant) => (
+    `<option value="${variant.key}">${escapeHtml(variant.label)}</option>`
+  )).join("");
+  select.value = variants.some((variant) => variant.key === previous)
+    ? previous
+    : (variants[0]?.key || "");
 }
 
 function plaqueToRow(plaque) {
   const subject = plaque.plaqueType === "LONGEVITY"
-    ? (plaque.holderName ? `${plaque.holderName}延生禄位` : "")
-    : (plaque.deceasedName ? `${plaque.deceasedName}超度莲位` : "");
+    ? (plaque.holderName || plaque.name || plaque.subject || "")
+    : plaque.plaqueType === "DELIVERANCE"
+      ? (plaque.dedicationType === "custom" ? plaque.customDedicationType : plaque.dedicationType) || plaque.deceasedName || plaque.name || plaque.subject || ""
+      : (plaque.deceasedName || plaque.holderName || plaque.name || plaque.subject || "");
   return {
-    "牌位主体": subject || plaque.holderName || plaque.deceasedName || "",
-    "信人": plaque.holderName || plaque.yangShang || "",
+    "牌位主体": subject || plaque.holderName || plaque.deceasedName || plaque.dedicationType || plaque.customDedicationType || "",
+    "信人": plaque.yangShang || "",
     "年龄": "",
     "生肖": plaque.zodiac || "",
     "生日年月日": plaque.birthDate || "",
@@ -629,6 +1210,7 @@ function plaqueToRow(plaque) {
     "祈福语": plaque.blessingText || "",
     "电话": plaque.phone || "",
     "牌位类型": plaque.plaqueType || "",
+    "分类细项": plaque.longevitySubtype || plaque.dedicationType || plaque.customDedicationType || "",
     "规格": plaque.size || "",
     "开始日期": plaque.startDate ? String(plaque.startDate).slice(0, 10) : "",
     "结束日期": plaque.endDate ? String(plaque.endDate).slice(0, 10) : "",
@@ -639,23 +1221,63 @@ function plaqueToRow(plaque) {
 }
 
 function buildFieldMapping() {
+  if (isEditingBackSide()) {
+    $("fieldMapping").innerHTML = '<p class="hint">背面固定页不使用动态字段。</p>';
+    return;
+  }
+  if (state.mode === "summary") {
+    $("fieldMapping").innerHTML = "";
+    buildSummaryFieldMapping();
+    return;
+  }
   const mapping = $("fieldMapping");
   const type = currentTabletType();
   const layout = ensureLayout(currentLayoutKey());
-  mapping.innerHTML = type.fields.map((field) => `
+  const fields = state.mode === "single" ? singleFieldsForVariant() : type.fields;
+  mapping.innerHTML = fields.map((field) => `
     <label>
       ${field.label}
       <select data-field-key="${field.key}">
-        ${fieldOptions(field.key, field.aliases, layout.mappings || {})}
+        ${fieldOptions(field.key, field.aliases, layout.mappings || {}, currentSingleVariantKey())}
       </select>
     </label>
   `).join("");
   mapping.querySelectorAll("select").forEach((select) => {
     select.addEventListener("input", () => {
       const nextLayout = ensureLayout(currentLayoutKey());
-      if (!nextLayout.mappings) nextLayout.mappings = {};
-      nextLayout.mappings[select.dataset.fieldKey] = select.value;
+      setMappingValueForField(nextLayout, select.dataset.fieldKey, select.value, currentSingleVariantKey());
       saveLayouts();
+      render();
+    });
+  });
+}
+
+function buildSummaryFieldMapping() {
+  const wrap = $("summaryFieldMapping");
+  if (!wrap) return;
+  const variantKey = currentSummaryVariantKey();
+  const layout = ensureLayout(currentLayoutKey());
+  const mappings = layout.summaryFieldToggles || {};
+  const variantToggles = mappings[variantKey] || {};
+  const variantFieldKeys = new Set(summaryFieldsForVariant(variantKey).map((field) => field.key));
+  const fields = summaryFieldDefinitions().filter((field) => variantFieldKeys.has(field.key));
+  wrap.innerHTML = fields.map((field) => `
+    <label>
+      ${field.label}
+      <select data-summary-toggle="${field.key}">
+        <option value="use"${variantToggles[field.key] !== "off" ? " selected" : ""}>使用</option>
+        <option value="off"${variantToggles[field.key] === "off" ? " selected" : ""}>不使用</option>
+      </select>
+    </label>
+  `).join("");
+  wrap.querySelectorAll("[data-summary-toggle]").forEach((select) => {
+    select.addEventListener("input", () => {
+      if (!layout.summaryFieldToggles) layout.summaryFieldToggles = {};
+      if (!layout.summaryFieldToggles[variantKey]) layout.summaryFieldToggles[variantKey] = {};
+      layout.summaryFieldToggles[variantKey][select.dataset.summaryToggle] = select.value === "off" ? "off" : "use";
+      saveLayouts();
+      buildSummaryFieldMapping();
+      buildStyleEditor();
       render();
     });
   });
@@ -663,68 +1285,182 @@ function buildFieldMapping() {
 
 function buildStyleEditor() {
   const select = $("styleField");
-  const previous = select.value;
-  const staticFields = ensureLayout(currentLayoutKey()).staticFields.map((field) => ({
-    key: field.key,
-    label: `静态：${field.text}`,
-  }));
-  select.innerHTML = currentTabletType().fields.concat(staticFields).map((field) => (
+  const previous = state.activeFieldKey || select.value;
+  const layout = currentEditableLayout();
+  const fields = state.mode === "summary"
+    ? summaryFieldsForVariant().concat(staticFieldsForCurrentContext(layout).map((field) => ({
+      key: field.key,
+      label: `静态：${field.text}`,
+    })))
+    : (isEditingBackSide() ? [] : singleFieldsForVariant()).concat(staticFieldsForCurrentContext(layout).map((field) => ({
+      key: field.key,
+      label: `静态：${field.text}`,
+    })));
+  select.innerHTML = fields.map((field) => (
     `<option value="${field.key}">${escapeHtml(field.label)}</option>`
   )).join("");
-  if (currentTabletType().fields.concat(staticFields).some((field) => field.key === previous)) {
+  if (fields.some((field) => field.key === previous)) {
     select.value = previous;
+  } else if (fields[0]) {
+    select.value = fields[0].key;
+  } else {
+    select.value = "";
   }
+  state.activeFieldKey = select.value || "";
+  syncAlignmentOptions();
   syncStyleInputs();
+  syncSelectedFieldHighlight();
 }
 
 function syncStyleInputs() {
-  const style = styleFor($("styleField").value || "subject");
+  const currentKey = $("styleField").value || "subject";
+  state.activeFieldKey = currentKey;
+  if (!currentKey) return;
+  const style = normalizeFieldStyle(styleFor(currentKey));
   $("fieldFontSize").value = style.fontSize;
   $("fieldColor").value = style.color;
   $("fieldFontFamily").value = style.fontFamily;
-  if ($("styleField").value === "subject") $("singleFont").value = style.fontSize;
+  syncAlignmentOptions();
+  $("fieldTextAlign").value = style.textAlign || "center";
+  $("fieldVerticalAlign").value = style.verticalAlign || "center";
+  $("fieldWrapMode").value = style.wrapMode || "anywhere";
+  if (currentKey === "subject") $("singleFont").value = style.fontSize;
+  syncSelectedFieldHighlight();
+}
+
+function syncSelectedFieldHighlight() {
+  document.querySelectorAll(".editable-field").forEach((element) => {
+    element.classList.toggle("is-selected", element.dataset.editKey === state.activeFieldKey);
+  });
+}
+
+function currentFieldIsVertical() {
+  if (state.mode === "summary") return $("summaryVertical")?.checked || false;
+  return $("singleVertical")?.checked || false;
+}
+
+function syncAlignmentOptions() {
+  const select = $("fieldTextAlign");
+  if (!select) return;
+  const currentValue = select.value || "center";
+  select.replaceChildren(
+    new Option("左对齐", "left"),
+    new Option("居中", "center"),
+    new Option("右对齐", "right"),
+  );
+  select.value = currentValue;
 }
 
 function updateSelectedFieldStyle() {
-  const key = $("styleField").value || "subject";
-  const layout = ensureLayout(currentLayoutKey());
-  if (!layout.styles) layout.styles = {};
-  layout.styles[key] = {
+  const key = $("styleField").value || "";
+  if (!key) return;
+  const layout = currentEditableLayout();
+  const nextStyle = {
     fontSize: Number($("fieldFontSize").value) || 18,
     color: $("fieldColor").value || "#16110d",
     fontFamily: $("fieldFontFamily").value || "SimSun, serif",
+    textAlign: $("fieldTextAlign").value || "center",
+    verticalAlign: $("fieldVerticalAlign").value || "center",
+    wrapMode: $("fieldWrapMode").value || "anywhere",
   };
-  if (key === "subject") $("singleFont").value = layout.styles[key].fontSize;
+  if ((state.mode === "summary" && isSummaryFieldKey(key)) || isSingleVariantFieldKey(key)) {
+    setLayoutBucketValue(layout, "styles", key, nextStyle, state.mode === "single" ? currentSingleVariantKey() : currentSummaryVariantKey());
+  } else {
+    if (!layout.styles) layout.styles = {};
+    layout.styles[key] = nextStyle;
+  }
+  if (key === "subject") $("singleFont").value = nextStyle.fontSize;
   saveLayouts();
+  syncStyleInputs();
+  render();
+}
+
+function normalizeFieldStyle(style = {}) {
+  return {
+    fontSize: style.fontSize || 18,
+    color: style.color || "#16110d",
+    fontFamily: style.fontFamily || "SimSun, serif",
+    textAlign: style.textAlign || "center",
+    verticalAlign: style.verticalAlign || "center",
+    wrapMode: style.wrapMode || "anywhere",
+  };
 }
 
 function syncSubjectFontSize() {
+  if (state.editSide === "back") return;
   const layout = ensureLayout(currentLayoutKey());
-  if (!layout.styles) layout.styles = {};
-  layout.styles.subject = {
+  const nextStyle = {
     ...styleFor("subject"),
     fontSize: Number($("singleFont").value) || 36,
   };
+  if (shouldScopeSingleVariantField("subject")) {
+    setLayoutBucketValue(layout, "styles", "subject", nextStyle, currentSingleVariantKey());
+  } else {
+    if (!layout.styles) layout.styles = {};
+    layout.styles.subject = nextStyle;
+  }
   if ($("styleField").value === "subject") syncStyleInputs();
   saveLayouts();
 }
 
 function addStaticField() {
-  if (state.mode !== "single") return;
   const text = $("staticFieldText").value.trim();
   if (!text) return;
 
-  const layout = ensureLayout(currentLayoutKey());
+  const layout = currentEditableLayout();
   const key = `static_${Date.now()}`;
-  layout.staticFields.push({ key, text });
-  layout.positions[key] = { x: 50, y: 50 };
-  layout.sizes[key] = { w: 24, h: 12 };
-  layout.styles[key] = {
+  const field = { key, text };
+  if (state.mode === "single" && state.editSide !== "back") {
+    field.variantVisibility = {};
+    singleVariantPresets.forEach((variant) => {
+      field.variantVisibility[variant.key] = variant.key === currentSingleVariantKey();
+    });
+  }
+  layout.staticFields.push(field);
+  const defaultPosition = { x: 50, y: 50 };
+  const defaultSize = { w: 24, h: 12 };
+  const defaultStyle = {
     fontSize: 18,
     color: "#16110d",
     fontFamily: "SimSun, serif",
+    textAlign: "center",
+    verticalAlign: "center",
+    wrapMode: "anywhere",
   };
+  if (state.mode === "single" && state.editSide !== "back") {
+    setLayoutBucketValue(layout, "positions", key, defaultPosition, currentSingleVariantKey());
+    setLayoutBucketValue(layout, "sizes", key, defaultSize, currentSingleVariantKey());
+    setLayoutBucketValue(layout, "styles", key, defaultStyle, currentSingleVariantKey());
+  } else {
+    layout.positions[key] = defaultPosition;
+    layout.sizes[key] = defaultSize;
+    layout.styles[key] = defaultStyle;
+  }
   $("staticFieldText").value = "";
+  saveLayouts();
+  buildStyleEditor();
+  buildStaticVisibilityControls();
+  $("styleField").value = key;
+  syncStyleInputs();
+  render();
+}
+
+function addSummaryStaticField() {
+  if (state.mode !== "summary") return;
+  const text = $("summaryStaticFieldText").value.trim();
+  if (!text) return;
+
+  const layout = currentEditableLayout();
+  const key = `static_${Date.now()}`;
+  layout.staticFields.push({ key, text });
+  layout.positions[key] = { x: 8, y: 8 };
+  layout.sizes[key] = { w: 28, h: 12 };
+  layout.styles[key] = {
+    fontSize: Number($("summaryFont").value) || 22,
+    color: "#16110d",
+    fontFamily: "SimSun, serif",
+  };
+  $("summaryStaticFieldText").value = "";
   saveLayouts();
   buildStyleEditor();
   $("styleField").value = key;
@@ -732,10 +1468,11 @@ function addStaticField() {
   render();
 }
 
-function fieldOptions(key, aliases, savedMappings = {}) {
+function fieldOptions(key, aliases, savedMappings = {}, variantKey = currentSingleVariantKey()) {
   const fields = currentFields();
-  const hasSaved = Object.prototype.hasOwnProperty.call(savedMappings, key);
-  const matched = hasSaved ? savedMappings[key] : aliases.find((name) => fields.includes(name)) || "";
+  const layout = { mappings: savedMappings };
+  const saved = mappingValueForField(layout, key, variantKey);
+  const matched = saved !== undefined ? saved : aliases.find((name) => fields.includes(name)) || "";
   const options = ['<option value="">不使用</option>'].concat(fields.map((field) => (
     `<option value="${escapeHtml(field)}"${field === matched ? " selected" : ""}>${escapeHtml(field)}</option>`
   )));
@@ -744,7 +1481,9 @@ function fieldOptions(key, aliases, savedMappings = {}) {
 
 function currentTabletType() {
   if (state.mode === "summary") {
-    return $("summaryDataGroup").value === "blessing" ? tabletTypes.blessing : tabletTypes.deliveranceSimple;
+    return $("summaryDataGroup").value === "blessing"
+      ? tabletTypes.blessing
+      : tabletTypes.deliveranceSimple;
   }
   const type = $("tabletType").value;
   if (type === "custom") {
@@ -770,15 +1509,17 @@ function renderTable() {
   }
   const selected = state.selectedRowIds[currentDataGroup()];
   const head = `<th class="select-col">选择</th>${fields.map((field) => `<th>${escapeHtml(field)}</th>`).join("")}`;
-  const body = rows.map((row) => (
+  const indexedHead = head.replace("</th>", "</th><th class=\"row-index-col\">序号</th>");
+  const body = rows.map((row, index) => (
     `<tr>
       <td class="select-col">
         <input type="checkbox" data-row-id="${escapeHtml(row.__rowId)}"${selected.has(row.__rowId) ? " checked" : ""}>
       </td>
+      <td class="row-index-col">${index + 1}</td>
       ${fields.map((field) => `<td>${escapeHtml(row[field] || "")}</td>`).join("")}
     </tr>`
   )).join("");
-  wrap.innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+  wrap.innerHTML = `<table><thead><tr>${indexedHead}</tr></thead><tbody>${body}</tbody></table>`;
   wrap.querySelectorAll("[data-row-id]").forEach((checkbox) => {
     checkbox.addEventListener("change", () => {
       if (checkbox.checked) selected.add(checkbox.dataset.rowId);
@@ -795,6 +1536,7 @@ function render() {
   syncPrintSize();
   if (state.mode === "single") renderSingle();
   if (state.mode === "summary") renderSummary();
+  renderDebugInfo();
 }
 
 function renderSingle() {
@@ -802,11 +1544,13 @@ function renderSingle() {
   const row = rows[state.pageIndex] || {};
   const total = Math.max(rows.length, 1);
   state.pageIndex = clamp(state.pageIndex, 0, total - 1);
-  $("preview").innerHTML = singleSheet(row);
+  $("preview").innerHTML = singleSheet(row, state.editSide);
+  syncSingleVariantControls();
   bindDragHandles();
   fitAllFields();
   $("statusText").textContent = rows.length ? `${currentTabletType().name}：${fieldValue(row, "subject") || `第 ${state.pageIndex + 1} 条`}` : "暂无数据";
   $("pageText").textContent = `第 ${state.pageIndex + 1} / ${total} 张`;
+  syncJumpPageInput(total);
 }
 
 function renderSummary() {
@@ -817,102 +1561,390 @@ function renderSummary() {
   state.pageIndex = clamp(state.pageIndex, 0, totalPages - 1);
   const start = state.pageIndex * pageSize;
   const pageRows = rows.slice(start, start + pageSize);
+  clampSummaryFieldsIntoView();
   $("preview").innerHTML = summarySheet(pageRows);
+  bindDragHandles();
+  fitAllFields();
   $("statusText").textContent = `${currentDataGroupName()}汇总：共 ${rows.length} 条`;
   $("pageText").textContent = `第 ${state.pageIndex + 1} / ${totalPages} 页`;
+  syncJumpPageInput(totalPages);
 }
 
-function singleSheet(row) {
+function syncJumpPageInput(total) {
+  const input = $("jumpPageInput");
+  if (!input) return;
+  input.max = String(Math.max(total, 1));
+  input.value = String(state.pageIndex + 1);
+}
+
+function isBackSideActive() {
+  return state.mode === "single" && (state.renderSide || state.editSide) === "back";
+}
+
+function isEditingBackSide() {
+  return state.mode === "single" && state.editSide === "back";
+}
+
+function currentEditableLayout() {
+  if (isEditingBackSide()) return backLayoutFor(currentLayoutKey());
+  return ensureLayout(currentLayoutKey());
+}
+
+function backLayoutFor(layoutKey) {
+  const layout = ensureLayout(layoutKey);
+  if (!layout.backSide || typeof layout.backSide !== "object") {
+    layout.backSide = createBlankSideLayout();
+  }
+  normalizeSideLayout(layout.backSide);
+  return layout.backSide;
+}
+
+function createBlankSideLayout() {
+  return {
+    positions: {},
+    styles: {},
+    sizes: {},
+    background: "",
+    staticFields: [],
+  };
+}
+
+function normalizeSideLayout(layout) {
+  if (!layout.positions) layout.positions = {};
+  if (!layout.styles) layout.styles = {};
+  if (!layout.sizes) layout.sizes = {};
+  if (!layout.staticFields) layout.staticFields = [];
+  return layout;
+}
+
+function clampSummaryFieldsIntoView() {
+  if (state.mode !== "summary") return;
+  const layout = ensureLayout(currentLayoutKey());
+  const variantKey = currentSummaryVariantKey();
+  const summaryKeys = summaryFieldsForVariant(variantKey)
+    .map((field) => field.key)
+    .concat((layout.staticFields || []).map((field) => field.key));
+  if (!summaryKeys.length) return;
+  let changed = false;
+  summaryKeys.forEach((key) => {
+    const pos = positionFor(key, variantKey);
+    const size = sizeFor(key, variantKey);
+    if (!pos || !size) return;
+    const nextX = clamp(pos.x, 0, Math.max(0, 100 - (size.w || 0)));
+    const nextY = clamp(pos.y, 0, Math.max(0, 100 - (size.h || 0)));
+    if (nextX !== pos.x || nextY !== pos.y) {
+      if (isSummaryFieldKey(key)) {
+        setLayoutBucketValue(layout, "positions", key, { ...pos, x: nextX, y: nextY }, variantKey);
+      } else {
+        layout.positions[key] = { ...pos, x: nextX, y: nextY };
+      }
+      changed = true;
+    }
+  });
+  if (changed) saveLayouts();
+}
+
+function singleSheet(row, side = state.editSide, forPrint = false) {
+  const previousRenderSide = state.renderSide;
+  const previousSingleVariant = state.renderSingleVariant;
+  state.renderSide = side;
+  state.renderSingleVariant = side === "front" ? currentSingleVariantKey(row, forPrint) : "";
   const vertical = $("singleVertical").checked ? " vertical-text" : "";
   const type = $("tabletType").value;
-  const fields = currentTabletType().fields;
-  const layout = ensureLayout(currentLayoutKey());
+  const fields = singleFieldsForVariant(state.renderSingleVariant, row, forPrint);
+  const layout = side === "back" ? backLayoutFor(currentLayoutKey()) : ensureLayout(currentLayoutKey());
   const background = layout.background && $("showBg").checked
     ? `<img class="template-bg" src="${layout.background}" alt="">`
     : "";
+  if (side === "back") {
+    const staticFields = staticFieldsForCurrentContext(layout).map((field) => (
+      draggableField(field.key, `tablet-meta static-field${vertical}`, field.text)
+    )).join("");
+    const html = `
+      <article class="sheet duplex-back-sheet" style="${sheetVars()} --single-font:${Number($("singleFont").value) || 36}px; --offset-y:${Number($("singleOffsetY").value) || 0};">
+        ${background}
+        <div class="tablet tablet-${type}" data-drag-surface="1">
+          ${staticFields || (forPrint ? "" : '<div class="empty back-empty">背面固定页：可上传底图或添加静态字段</div>')}
+        </div>
+      </article>
+    `;
+    state.renderSide = previousRenderSide;
+    state.renderSingleVariant = previousSingleVariant;
+    return html;
+  }
   const details = fields
     .filter((field) => field.key !== "subject")
     .map((field, index) => {
       const content = fieldValue(row, field.key);
       const display = content
-        ? escapeHtml(content)
+        ? content
         : `<span class="field-placeholder">${escapeHtml(field.label)}</span>`;
       return draggableField(field.key, `tablet-meta meta-${field.key} meta-${index}${vertical}`, display, !content);
     }).join("");
   const subjectContent = fieldValue(row, "subject");
   const subjectLabel = fields.find((field) => field.key === "subject")?.label || "牌位主体";
-  const staticFields = layout.staticFields.map((field) => (
-    draggableField(field.key, `tablet-meta static-field${vertical}`, escapeHtml(field.text))
+  const staticFields = staticFieldsForCurrentContext(layout, state.renderSingleVariant || currentSingleVariantKey()).map((field) => (
+    draggableField(field.key, `tablet-meta static-field${vertical}`, field.text)
   )).join("");
-  return `
+  const html = `
     <article class="sheet" style="${sheetVars()} --single-font:${Number($("singleFont").value) || 36}px; --offset-y:${Number($("singleOffsetY").value) || 0};">
       ${background}
-      <div class="tablet tablet-${type}">
-        ${draggableField("subject", `single-field single-name${vertical}`, escapeHtml(subjectContent || subjectLabel), !subjectContent)}
+      <div class="tablet tablet-${type}" data-drag-surface="1">
+        ${draggableField("subject", `single-field single-name${vertical}`, subjectContent || subjectLabel, !subjectContent)}
         ${details}
         ${staticFields}
       </div>
     </article>
   `;
+  state.renderSide = previousRenderSide;
+  state.renderSingleVariant = previousSingleVariant;
+  return html;
 }
 
-function draggableField(key, className, content, placeholder = false) {
-  const pos = positionFor(key);
-  const style = styleFor(key);
-  const size = sizeFor(key);
+function formatFieldDisplay(text, style, placeholder = false) {
+  if (placeholder) return text;
+  const raw = String(text || "");
+  if ((style?.wrapMode || "anywhere") !== "break-word") {
+    return escapeHtml(raw);
+  }
+  const normalized = raw
+    .replace(/\s+/g, " ")
+    .replace(/([京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼港澳使领])\s+([A-Z])/g, "$1$2");
+  const plateRegex = /([京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼港澳使领][A-Z][A-Z0-9]{5,6})/g;
+  const tokenRegex = /([A-Za-z0-9]+(?:[-./:][A-Za-z0-9]+)*(?:\s*[号幢栋棟座层樓楼室单元單元弄梯区區户戶号楼樓巷]*)?)/g;
+  const fragments = [];
+  let cursor = 0;
+  let plateMatch;
+  while ((plateMatch = plateRegex.exec(normalized)) !== null) {
+    const [plate] = plateMatch;
+    const start = plateMatch.index;
+    if (start > cursor) {
+      fragments.push({ type: "text", value: normalized.slice(cursor, start) });
+    }
+    fragments.push({ type: "plate", value: plate });
+    cursor = start + plate.length;
+  }
+  if (cursor < normalized.length) {
+    fragments.push({ type: "text", value: normalized.slice(cursor) });
+  }
+
+  let lastIndex = 0;
+  let result = "";
+  fragments.forEach((fragment) => {
+    if (fragment.type === "plate") {
+      result += `<span class="no-break-token license-token">${escapeHtml(fragment.value)}</span><wbr>`;
+      return;
+    }
+    let match;
+    lastIndex = 0;
+    while ((match = tokenRegex.exec(fragment.value)) !== null) {
+      const [fullMatch] = match;
+      const start = match.index;
+      if (start > lastIndex) {
+        result += escapeHtml(fragment.value.slice(lastIndex, start));
+      }
+      if (/[A-Za-z0-9]/.test(fullMatch)) {
+        result += `<span class="no-break-token">${escapeHtml(fullMatch.replace(/\s+/g, ""))}</span>`;
+      } else {
+        result += escapeHtml(fullMatch);
+      }
+      lastIndex = start + fullMatch.length;
+    }
+    if (lastIndex < fragment.value.length) {
+      result += escapeHtml(fragment.value.slice(lastIndex));
+    }
+    tokenRegex.lastIndex = 0;
+  });
+  return result;
+}
+
+function draggableField(key, className, content, placeholder = false, variantKey = "") {
+  const pos = positionFor(key, variantKey);
+  const style = normalizeFieldStyle(styleFor(key, variantKey));
+  const size = sizeFor(key, variantKey);
   const placeholderClass = placeholder ? " is-placeholder" : "";
+  const align = alignmentStyle(style, className.includes("vertical-text"));
+  const wrapStyle = wrapModeStyle(style?.wrapMode, className.includes("vertical-text"));
+  const displayContent = formatFieldDisplay(content, style, placeholder);
   return `
-    <div class="${className} editable-field${placeholderClass}" data-edit-key="${key}" data-base-font="${style.fontSize}" style="left:${pos.x}%; top:${pos.y}%; width:${size.w}%; height:${size.h}%; font-size:${style.fontSize}px; color:${style.color}; font-family:${style.fontFamily};">
-      <div class="field-content">${content}</div>
+    <div class="${className} editable-field${placeholderClass}" data-edit-key="${key}" data-wrap-mode="${style.wrapMode || "anywhere"}" data-base-font="${style.fontSize}" style="left:${pos.x}%; top:${pos.y}%; width:${size.w}%; height:${size.h}%; font-size:${style.fontSize}px; color:${style.color}; font-family:${style.fontFamily}; text-align:${align.textAlign};">
+      <div class="field-content" style="text-align:${align.textAlign}; justify-content:${align.justifyContent}; align-items:${align.alignItems}; white-space:${wrapStyle.whiteSpace}; overflow-wrap:${wrapStyle.overflowWrap}; word-break:${wrapStyle.wordBreak};"><span class="field-flow">${displayContent}</span></div>
       <span class="resize-handle" data-resize-key="${key}" aria-hidden="true"></span>
     </div>
   `;
 }
 
-function summarySheet(pageRows) {
+function alignmentStyle(style, vertical = false) {
+  const textAlign = style?.textAlign || "center";
+  const verticalAlign = style?.verticalAlign || "center";
+  const horizontalAlign = textAlign === "left" ? "flex-start" : (textAlign === "right" ? "flex-end" : "center");
+  const verticalBlockAlign = verticalAlign === "start" ? "flex-start" : (verticalAlign === "end" ? "flex-end" : "center");
+  if (vertical) {
+    const verticalHorizontalAlign = textAlign === "left" ? "flex-end" : (textAlign === "right" ? "flex-start" : "center");
+    return {
+      textAlign: "center",
+      justifyContent: verticalBlockAlign,
+      alignItems: verticalHorizontalAlign,
+    };
+  }
+  return {
+    textAlign,
+    justifyContent: horizontalAlign,
+    alignItems: verticalBlockAlign,
+  };
+}
+
+function wrapModeStyle(mode, vertical = false) {
+  if (vertical) {
+    if (mode === "nowrap") {
+      return {
+        whiteSpace: "nowrap",
+        overflowWrap: "normal",
+        wordBreak: "normal",
+      };
+    }
+    if (mode === "normal") {
+      return {
+        whiteSpace: "pre-wrap",
+        overflowWrap: "normal",
+        wordBreak: "keep-all",
+      };
+    }
+    return {
+      whiteSpace: "normal",
+      overflowWrap: mode === "anywhere" ? "anywhere" : "normal",
+      wordBreak: mode === "break-word" ? "keep-all" : "normal",
+    };
+  }
+  if (mode === "nowrap") {
+    return {
+      whiteSpace: "nowrap",
+      overflowWrap: "normal",
+      wordBreak: "normal",
+    };
+  }
+  if (mode === "normal") {
+    return {
+      whiteSpace: "pre-wrap",
+      overflowWrap: "normal",
+      wordBreak: "keep-all",
+    };
+  }
+  if (mode === "break-word") {
+    return {
+      whiteSpace: "normal",
+      overflowWrap: "break-word",
+      wordBreak: "keep-all",
+    };
+  }
+  return {
+    whiteSpace: "normal",
+    overflowWrap: "anywhere",
+    wordBreak: "normal",
+  };
+}
+
+function summarySheet(pageRows, forPrint = false) {
   const columns = Number($("columnCount").value) || 3;
   const layout = ensureLayout(currentLayoutKey());
+  const verticalClass = $("summaryVertical").checked ? " vertical-text" : "";
+  const pageMargin = Number($("pageMargin").value) || 0;
+  const columnGap = Number($("columnGap").value) || 0;
   const background = layout.background && $("showBg").checked
     ? `<img class="template-bg" src="${layout.background}" alt="">`
     : "";
+  const selectedVariantKey = currentSummaryVariantKey();
+  const preferredEditorRow = pageRows.find((row) => row && (summaryVariantPresetForRow(row)?.key || "") === selectedVariantKey) || pageRows[0] || null;
   const columnHtml = Array.from({ length: columns }, (_, columnIndex) => {
-    const row = pageRows[columnIndex];
-    return `<div class="summary-column">${row ? formatSummaryColumn(row) : ""}</div>`;
+    const row = forPrint
+      ? (pageRows[columnIndex] || null)
+      : (columnIndex === 0 ? preferredEditorRow : null);
+    const variantKey = forPrint
+      ? (row ? (summaryVariantPresetForRow(row)?.key || selectedVariantKey) : selectedVariantKey)
+      : selectedVariantKey;
+    const staticFields = layout.staticFields.map((field) => ({
+      key: field.key,
+      label: `静态：${field.text}`,
+      text: field.text,
+    }));
+    const fields = (forPrint || columnIndex === 0)
+      ? summaryFieldsForVariant(variantKey, row).concat(staticFields).map((field) => {
+      const staticField = layout.staticFields.find((item) => item.key === field.key);
+      const text = staticField ? staticField.text : (row ? fieldValue(row, field.sourceKey) : "");
+      const content = text
+        ? escapeHtml(text)
+        : `<span class="field-placeholder">${escapeHtml(field.label)}</span>`;
+      return draggableField(field.key, `summary-field${verticalClass}`, content, !text, variantKey);
+    }).join("")
+      : "";
+    const variantLabel = summaryVariantPresetsFor().find((item) => item.key === variantKey)?.label || "";
+    return `
+      <div class="summary-column summary-cell${row ? "" : " empty"}${!forPrint && columnIndex > 0 ? " summary-guide-column" : ""}${!forPrint && columnIndex === 0 ? " summary-editor-surface" : ""}"${!forPrint && columnIndex === 0 ? ' data-drag-surface="1"' : ""}>
+        ${!forPrint && columnIndex === 0 && variantLabel ? `<div class="summary-variant-badge">${escapeHtml(variantLabel)}</div>` : ""}
+        ${forPrint && row && variantLabel ? "" : ""}
+        ${fields}
+      </div>
+    `;
   }).join("");
-  const vertical = $("summaryVertical").checked ? " vertical-summary" : "";
   return `
-    <article class="sheet" style="${sheetVars()} --columns:${columns}; --rows-per-column:${Number($("rowsPerColumn").value) || 18}; --page-margin:${Number($("pageMargin").value) || 0}; --column-gap:${Number($("columnGap").value) || 0}; --line-gap:${Number($("summaryLineGap").value) || 0}; --summary-font:${Number($("summaryFont").value) || 22}px;">
+    <article class="sheet" style="${sheetVars()} --columns:${columns}; --page-margin:${pageMargin}; --column-gap:${columnGap}; --summary-font:${Number($("summaryFont").value) || 22}px;">
       ${background}
-      <div class="summary-page${vertical}">${columnHtml}</div>
+      <div class="summary-page summary-layout-grid${forPrint ? "" : " summary-edit-mode"}">${columnHtml}</div>
     </article>
   `;
 }
 
-function printAll() {
+async function printAll() {
+  await printRangeFrom(0);
+}
+
+async function printFromPage() {
+  const target = Number($("jumpPageInput")?.value) || state.pageIndex + 1;
+  const startIndex = Math.max(target - 1, 0);
+  await printRangeFrom(startIndex);
+}
+
+async function printRangeFrom(startIndex = 0) {
   syncPrintSize();
   state.restorePageIndex = state.pageIndex;
   if (state.mode === "single") {
-    const rows = currentRows().length ? currentRows() : [{}];
-    $("preview").innerHTML = rows.map(singleSheet).join("");
+    const allRows = currentRows().length ? currentRows() : [{}];
+    const rows = allRows.slice(clamp(startIndex, 0, Math.max(allRows.length - 1, 0)));
+    const layout = ensureLayout(currentLayoutKey());
+    $("preview").innerHTML = rows.map((row) => {
+      const front = singleSheet(row, "front", true);
+      return layout.duplex?.enabled ? front + singleSheet(row, "back", true) : front;
+    }).join("");
   } else {
     const rows = currentRows();
     const columns = Number($("columnCount").value) || 3;
     const pageSize = columns;
     const totalPages = Math.max(Math.ceil(rows.length / pageSize), 1);
-    const pages = Array.from({ length: totalPages }, (_, pageIndex) => {
-      const start = pageIndex * pageSize;
-      return summarySheet(rows.slice(start, start + pageSize));
+    const startPage = clamp(startIndex, 0, totalPages - 1);
+    const pages = Array.from({ length: totalPages - startPage }, (_, offset) => {
+      const start = (startPage + offset) * pageSize;
+      return summarySheet(rows.slice(start, start + pageSize), true);
     });
     $("preview").innerHTML = pages.join("");
   }
   bindDragHandles();
-  fitAllFields();
+  await fitAllFields();
+  await waitForPrintPreviewReady();
   window.addEventListener("afterprint", restoreAfterPrint, { once: true });
   window.print();
 }
 
 function restoreAfterPrint() {
   state.pageIndex = state.restorePageIndex;
+  render();
+}
+
+function jumpToPage() {
+  const target = Number($("jumpPageInput")?.value) || 1;
+  const maxIndex = state.mode === "summary"
+    ? Math.max(Math.ceil(currentRows().length / (Number($("columnCount").value) || 3)), 1) - 1
+    : Math.max(currentRows().length, 1) - 1;
+  state.pageIndex = clamp(target - 1, 0, maxIndex);
   render();
 }
 
@@ -992,6 +2024,7 @@ function updateDataHint() {
 }
 
 function applySummaryDefault(force = false) {
+  if (state.mode === "summary") refreshSummaryVariantOptions();
   const nextDefault = defaultSummaryFormat();
   if (force || !$("summaryFormat").value.trim() || $("summaryFormat").value === state.lastSummaryDefault) {
     $("summaryFormat").value = nextDefault;
@@ -1000,20 +2033,45 @@ function applySummaryDefault(force = false) {
 }
 
 function defaultSummaryFormat() {
-  const fields = currentTabletType().fields.map((field) => `{{${field.label}}}`);
+  const fields = summaryFieldDefinitions().map((field) => `{{${field.label}}}`);
   return fields.join("\n");
 }
 
-function fieldValue(row, key) {
+function resolveFieldNameForKey(key) {
   const select = document.querySelector(`[data-field-key="${key}"]`);
-  return select ? value(row, select.value) : "";
+  if (select) return select.value || "";
+  const layout = ensureLayout(currentLayoutKey());
+  const variantKey = state.renderSingleVariant || currentSingleVariantKey();
+  const savedMapping = mappingValueForField(layout, key, variantKey);
+  if (savedMapping !== undefined) {
+    return savedMapping || "";
+  }
+  const field = singleFieldsForVariant().find((item) => item.key === key) || currentTabletType().fields.find((item) => item.key === key);
+  if (!field) return "";
+  const fields = currentFields();
+  return field.aliases.find((name) => fields.includes(name)) || field.label;
+}
+
+function fieldValue(row, key) {
+  if (isSummaryFieldKey(key)) {
+    const definition = summaryFieldDefinitions().find((field) => field.key === key);
+    return definition ? fieldValue(row, definition.sourceKey) : "";
+  }
+  const fieldName = resolveFieldNameForKey(key);
+  return fieldName ? value(row, fieldName) : "";
 }
 
 function currentFieldMappings() {
-  return Array.from(document.querySelectorAll("[data-field-key]")).reduce((mappings, select) => {
-    mappings[select.dataset.fieldKey] = select.value;
-    return mappings;
-  }, {});
+  const layout = ensureLayout(currentLayoutKey());
+  const mappings = { ...(layout.mappings || {}) };
+  Array.from(document.querySelectorAll("[data-field-key]")).forEach((select) => {
+    const key = select.dataset.fieldKey;
+    const targetKey = shouldScopeSingleVariantField(key)
+      ? singleVariantStorageKey(key, currentSingleVariantKey())
+      : key;
+    mappings[targetKey] = select.value;
+  });
+  return mappings;
 }
 
 function loadLayouts() {
@@ -1075,6 +2133,9 @@ function setBusy(message) {
   $("statusText").textContent = message;
 }
 
+function renderDebugInfo() {
+}
+
 async function loadServerTemplates() {
   if (!authToken()) return;
   try {
@@ -1108,7 +2169,25 @@ function importServerTemplate(template) {
     $("templateSelect").appendChild(option);
   }
   if (data.defaults) templateDefaults[localTemplate.id] = data.defaults;
-  if (data.layout) state.layouts[localTemplate.id] = data.layout;
+  if (data.layout) {
+    const existingLayout = state.layouts[localTemplate.id];
+    const existingRemoteId = state.remoteTemplateIds[localTemplate.id];
+    if (!existingLayout || !existingRemoteId || existingRemoteId === template.id) {
+      state.layouts[localTemplate.id] = data.layout;
+    } else {
+      state.layouts[localTemplate.id] = {
+        ...data.layout,
+        ...existingLayout,
+        positions: existingLayout.positions || data.layout.positions || {},
+        styles: existingLayout.styles || data.layout.styles || {},
+        sizes: existingLayout.sizes || data.layout.sizes || {},
+        mappings: existingLayout.mappings || data.layout.mappings || {},
+        staticFields: existingLayout.staticFields || data.layout.staticFields || [],
+        summaryFieldToggles: existingLayout.summaryFieldToggles || data.layout.summaryFieldToggles || {},
+        summary: existingLayout.summary || data.layout.summary,
+      };
+    }
+  }
   state.remoteTemplateIds[localTemplate.id] = template.id;
 }
 
@@ -1198,6 +2277,7 @@ function migrateStoredLayouts() {
         changed = true;
       }
     }
+    if (repairSummaryTemplateLayout(id)) changed = true;
   });
 
   if (changed) saveLayouts();
@@ -1225,6 +2305,8 @@ function ensureLayout(type) {
       sizes: clone(templateDefaults[type]?.sizes || {}),
       background: "",
       mappings: {},
+      duplex: { enabled: false },
+      backSide: createBlankSideLayout(),
     };
   }
   if (!state.layouts[type].positions) state.layouts[type].positions = {};
@@ -1232,20 +2314,45 @@ function ensureLayout(type) {
   if (!state.layouts[type].sizes) state.layouts[type].sizes = clone(templateDefaults[type]?.sizes || {});
   if (!state.layouts[type].mappings) state.layouts[type].mappings = {};
   if (!state.layouts[type].staticFields) state.layouts[type].staticFields = [];
+  if (!state.layouts[type].duplex) state.layouts[type].duplex = { enabled: false };
+  if (state.layouts[type].backSide) normalizeSideLayout(state.layouts[type].backSide);
+  if (isSummaryTemplateId(type) && repairSummaryTemplateLayout(type)) saveLayouts();
   return state.layouts[type];
 }
 
-function positionFor(key) {
+function positionFor(key, variantKey = currentSummaryVariantKey()) {
+  if (isBackSideActive()) {
+    const layout = backLayoutFor(currentLayoutKey());
+    if (layout.positions[key]) return layout.positions[key];
+    layout.positions[key] = { x: 50, y: 50 };
+    return layout.positions[key];
+  }
   const type = currentLayoutKey();
   const layout = ensureLayout(type);
-  if (!layout.positions[key]) {
-    layout.positions[key] = clone(templateDefaults[type]?.positions?.[key] || { x: 50, y: 50 });
+  if (isSingleVariantFieldKey(key)) {
+    const singleVariant = state.renderSingleVariant || currentSingleVariantKey();
+    const saved = getLayoutBucketValue(layout, "positions", key, singleVariant);
+    if (saved) return saved;
+    const fallback = clone(templateDefaults[type]?.positions?.[key] || { x: 50, y: 50 });
+    return setLayoutBucketValue(layout, "positions", key, fallback, singleVariant);
   }
+  const saved = getLayoutBucketValue(layout, "positions", key, variantKey);
+  if (saved) return saved;
+  const fallback = clone(
+    state.mode === "summary" && isSummaryFieldKey(key)
+      ? summaryDefaultPosition(key, variantKey)
+      : (templateDefaults[type]?.positions?.[key] || { x: 50, y: 50 })
+  );
+  if (state.mode === "summary" && isSummaryFieldKey(key)) {
+    return setLayoutBucketValue(layout, "positions", key, fallback, variantKey);
+  }
+  layout.positions[key] = fallback;
   return layout.positions[key];
 }
 
 async function saveCurrentLayout() {
-  const layout = ensureLayout(currentLayoutKey());
+  const layoutKey = currentLayoutKey();
+  const layout = ensureLayout(layoutKey);
   layout.paper = {
     width: Number($("paperWidth").value) || 210,
     height: Number($("paperHeight").value) || 297,
@@ -1254,16 +2361,27 @@ async function saveCurrentLayout() {
   if (state.mode === "summary") {
     layout.summary = currentSummarySettings();
   }
+  layout.duplex = {
+    ...(layout.duplex || {}),
+    enabled: Boolean($("enableDuplex")?.checked),
+  };
+  if (layout.backSide) normalizeSideLayout(layout.backSide);
   layout.mappings = currentFieldMappings();
+  state.layouts[layoutKey] = layout;
   saveLayouts();
-  if (currentLayoutKey().startsWith("custom_")) saveCustomTemplatesToStorage();
-  try {
-    await syncCurrentTemplateToServer();
-    $("statusText").textContent = authToken() ? "模板已保存到服务器" : "模板已保存到本机";
-  } catch (error) {
-    console.error("同步服务器模板失败:", error);
-    $("statusText").textContent = "模板已保存到本机，服务器同步失败";
-  }
+  if (layoutKey.startsWith("custom_")) saveCustomTemplatesToStorage();
+  $("statusText").textContent = authToken() ? "模板已保存，正在同步服务器..." : "模板已保存到本机";
+  if (!authToken()) return;
+  syncCurrentTemplateToServer()
+    .then(() => {
+      state.layouts[layoutKey] = layout;
+      saveLayouts();
+      $("statusText").textContent = "模板已保存到服务器";
+    })
+    .catch((error) => {
+      console.error("同步服务器模板失败:", error);
+      $("statusText").textContent = "模板已保存到本机，服务器同步失败";
+    });
 }
 
 function resetCurrentLayout() {
@@ -1275,6 +2393,8 @@ function resetCurrentLayout() {
     background: "",
     mappings: {},
     staticFields: [],
+    duplex: { enabled: false },
+    backSide: createBlankSideLayout(),
   };
   const template = templates.find((item) => item.id === $("templateSelect").value) || templates[0];
   $("paperWidth").value = template.width;
@@ -1285,38 +2405,164 @@ function resetCurrentLayout() {
   render();
 }
 
-function styleFor(key) {
+function styleFor(key, variantKey = currentSummaryVariantKey()) {
+  if (isBackSideActive()) {
+    const layout = backLayoutFor(currentLayoutKey());
+    if (layout.styles[key]) return layout.styles[key];
+    layout.styles[key] = { fontSize: 18, color: "#16110d", fontFamily: "SimSun, serif", textAlign: "center", verticalAlign: "center", wrapMode: "anywhere" };
+    return layout.styles[key];
+  }
   const type = currentLayoutKey();
   const layout = ensureLayout(type);
-  if (!layout.styles[key]) {
-    layout.styles[key] = clone(templateDefaults[type]?.styles?.[key] || { fontSize: 18, color: "#16110d", fontFamily: "SimSun, serif" });
+  if (isSingleVariantFieldKey(key)) {
+    const singleVariant = state.renderSingleVariant || currentSingleVariantKey();
+    const saved = getLayoutBucketValue(layout, "styles", key, singleVariant);
+    if (saved) return saved;
+    const fallback = clone(templateDefaults[type]?.styles?.[key] || { fontSize: 18, color: "#16110d", fontFamily: "SimSun, serif", textAlign: "center", verticalAlign: "center", wrapMode: "anywhere" });
+    return setLayoutBucketValue(layout, "styles", key, fallback, singleVariant);
   }
+  const saved = getLayoutBucketValue(layout, "styles", key, variantKey);
+  if (saved) return saved;
+  const fallback = clone(
+    state.mode === "summary" && isSummaryFieldKey(key)
+      ? { fontSize: Number($("summaryFont").value) || 22, color: "#16110d", fontFamily: "SimSun, serif", textAlign: "left", verticalAlign: "center", wrapMode: "anywhere" }
+      : (templateDefaults[type]?.styles?.[key] || { fontSize: 18, color: "#16110d", fontFamily: "SimSun, serif", textAlign: "center", verticalAlign: "center", wrapMode: "anywhere" })
+  );
+  if (state.mode === "summary" && isSummaryFieldKey(key)) {
+    return setLayoutBucketValue(layout, "styles", key, fallback, variantKey);
+  }
+  layout.styles[key] = fallback;
   return layout.styles[key];
 }
 
-function sizeFor(key) {
+function sizeFor(key, variantKey = currentSummaryVariantKey()) {
+  if (isBackSideActive()) {
+    const layout = backLayoutFor(currentLayoutKey());
+    if (layout.sizes[key]) return layout.sizes[key];
+    layout.sizes[key] = { w: 24, h: 12 };
+    return layout.sizes[key];
+  }
   const type = currentLayoutKey();
   const layout = ensureLayout(type);
-  if (!layout.sizes[key]) {
-    layout.sizes[key] = clone(templateDefaults[type]?.sizes?.[key] || { w: 20, h: 20 });
+  if (isSingleVariantFieldKey(key)) {
+    const singleVariant = state.renderSingleVariant || currentSingleVariantKey();
+    const saved = getLayoutBucketValue(layout, "sizes", key, singleVariant);
+    if (saved) return saved;
+    const fallback = clone(templateDefaults[type]?.sizes?.[key] || { w: 20, h: 20 });
+    return setLayoutBucketValue(layout, "sizes", key, fallback, singleVariant);
   }
+  const saved = getLayoutBucketValue(layout, "sizes", key, variantKey);
+  if (saved) return saved;
+  const fallback = clone(
+    state.mode === "summary" && isSummaryFieldKey(key)
+      ? summaryDefaultSize(key)
+      : (templateDefaults[type]?.sizes?.[key] || { w: 20, h: 20 })
+  );
+  if (state.mode === "summary" && isSummaryFieldKey(key)) {
+    return setLayoutBucketValue(layout, "sizes", key, fallback, variantKey);
+  }
+  layout.sizes[key] = fallback;
   return layout.sizes[key];
 }
 
 function bindDragHandles() {
   document.querySelectorAll("[data-edit-key]").forEach((element) => {
+    element.addEventListener("click", selectFieldFromCanvas);
     element.addEventListener("pointerdown", startDrag);
+    element.addEventListener("contextmenu", handleFieldContextMenu);
+    element.addEventListener("dblclick", handleFieldDoubleClick);
   });
   document.querySelectorAll("[data-resize-key]").forEach((handle) => {
     handle.addEventListener("pointerdown", startResize);
   });
 }
 
+function selectFieldFromCanvas(event) {
+  const key = event.currentTarget?.dataset?.editKey || "";
+  if (!key) return;
+  state.activeFieldKey = key;
+  if ($("styleField")) {
+    $("styleField").value = key;
+    syncStyleInputs();
+  } else {
+    syncSelectedFieldHighlight();
+  }
+  renderDebugInfo();
+}
+
+function currentSelectedFieldKey() {
+  const highlightedFieldKey = document.querySelector(".editable-field.is-selected")?.dataset?.editKey || "";
+  if (highlightedFieldKey) return highlightedFieldKey;
+  const styleFieldValue = $("styleField")?.value || "";
+  if (styleFieldValue) return styleFieldValue;
+  return state.activeFieldKey || "";
+}
+
+function currentSelectedStaticField() {
+  const layout = currentEditableLayout();
+  const staticFields = layout.staticFields || [];
+  const candidates = [
+    $("styleField")?.value || "",
+    state.activeFieldKey || "",
+    document.querySelector(".editable-field.is-selected")?.dataset?.editKey || "",
+  ].filter(Boolean);
+  const key = candidates.find((candidate) => staticFields.some((field) => field.key === candidate));
+  return key ? staticFields.find((field) => field.key === key) || null : null;
+}
+
+function isStaticFieldKey(key) {
+  if (!key) return false;
+  const layout = currentEditableLayout();
+  return (layout.staticFields || []).some((field) => field.key === key);
+}
+
+function handleFieldContextMenu(event) {
+  event.preventDefault();
+  const key = event.currentTarget?.dataset?.editKey || "";
+  if (!key) return;
+  state.activeFieldKey = key;
+  if (!isStaticFieldKey(key)) return;
+  deleteFieldByKey(key);
+}
+
+function handleFieldDoubleClick(event) {
+  const key = event.currentTarget?.dataset?.editKey || "";
+  if (!isStaticFieldKey(key)) return;
+  editStaticFieldText(key);
+}
+
+function editSelectedStaticField() {
+  const field = currentSelectedStaticField();
+  if (!field) {
+    alert("请先选中静态字段");
+    return;
+  }
+  state.activeFieldKey = field.key;
+  editStaticFieldText(field.key);
+}
+
+function deleteSelectedStaticField() {
+  const field = currentSelectedStaticField();
+  if (!field) {
+    alert("请先选中静态字段");
+    return;
+  }
+  state.activeFieldKey = field.key;
+  deleteFieldByKey(field.key);
+}
+
 function startDrag(event) {
   if (event.target.closest(".resize-handle")) return;
   const element = event.currentTarget;
-  const tablet = element.closest(".tablet");
+  const tablet = element.closest("[data-drag-surface]");
   if (!tablet) return;
+  state.activeFieldKey = element.dataset.editKey || "";
+  if ($("styleField")) {
+    $("styleField").value = state.activeFieldKey;
+    syncStyleInputs();
+  } else {
+    syncSelectedFieldHighlight();
+  }
   element.setPointerCapture(event.pointerId);
   const tabletRect = tablet.getBoundingClientRect();
   const elementRect = element.getBoundingClientRect();
@@ -1334,13 +2580,14 @@ function startDrag(event) {
   element.addEventListener("pointermove", moveField);
   element.addEventListener("pointerup", endInteraction, { once: true });
   element.addEventListener("pointercancel", endInteraction, { once: true });
+  renderDebugInfo();
 }
 
 function startResize(event) {
   event.stopPropagation();
   const handle = event.currentTarget;
   const element = handle.closest("[data-edit-key]");
-  const tablet = element?.closest(".tablet");
+  const tablet = element?.closest("[data-drag-surface]");
   if (!element || !tablet) return;
   handle.setPointerCapture(event.pointerId);
   const rect = tablet.getBoundingClientRect();
@@ -1377,8 +2624,17 @@ function moveField(event) {
   );
   state.interaction.element.style.left = `${x}%`;
   state.interaction.element.style.top = `${y}%`;
-  const layout = ensureLayout(currentLayoutKey());
-  layout.positions[state.interaction.key] = { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
+  const layout = currentEditableLayout();
+  const nextPos = { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
+  if (isEditingBackSide()) {
+    layout.positions[state.interaction.key] = nextPos;
+  } else if (isSingleVariantFieldKey(state.interaction.key)) {
+    setLayoutBucketValue(layout, "positions", state.interaction.key, nextPos, currentSingleVariantKey());
+  } else if (state.mode === "summary" && isSummaryFieldKey(state.interaction.key)) {
+    setLayoutBucketValue(layout, "positions", state.interaction.key, nextPos);
+  } else {
+    layout.positions[state.interaction.key] = nextPos;
+  }
 }
 
 function resizeField(event) {
@@ -1390,8 +2646,17 @@ function resizeField(event) {
   const height = clamp(state.interaction.startH + deltaH, 4, 96);
   state.interaction.element.style.width = `${width}%`;
   state.interaction.element.style.height = `${height}%`;
-  const layout = ensureLayout(currentLayoutKey());
-  layout.sizes[state.interaction.key] = { w: Math.round(width * 10) / 10, h: Math.round(height * 10) / 10 };
+  const layout = currentEditableLayout();
+  const nextSize = { w: Math.round(width * 10) / 10, h: Math.round(height * 10) / 10 };
+  if (isEditingBackSide()) {
+    layout.sizes[state.interaction.key] = nextSize;
+  } else if (isSingleVariantFieldKey(state.interaction.key)) {
+    setLayoutBucketValue(layout, "sizes", state.interaction.key, nextSize, currentSingleVariantKey());
+  } else if (state.mode === "summary" && isSummaryFieldKey(state.interaction.key)) {
+    setLayoutBucketValue(layout, "sizes", state.interaction.key, nextSize);
+  } else {
+    layout.sizes[state.interaction.key] = nextSize;
+  }
   fitField(state.interaction.element);
 }
 
@@ -1415,6 +2680,7 @@ function inferTemplateDataGroup(templateData) {
 function currentSummarySettings() {
   return {
     dataGroup: $("summaryDataGroup").value || "deliverance",
+    variantKey: currentSummaryVariantKey(),
     format: $("summaryFormat").value,
     columnCount: Number($("columnCount").value) || 3,
     rowsPerColumn: Number($("rowsPerColumn").value) || 18,
@@ -1437,6 +2703,9 @@ function applySavedSummarySettings(settings) {
   if (settings.pageMargin !== undefined) $("pageMargin").value = settings.pageMargin;
   if (settings.columnGap !== undefined) $("columnGap").value = settings.columnGap;
   if (settings.vertical !== undefined) $("summaryVertical").checked = settings.vertical;
+  if (settings.variantKey && Array.from($("summaryVariant")?.options || []).some((option) => option.value === settings.variantKey)) {
+    $("summaryVariant").value = settings.variantKey;
+  }
   state.lastSummaryDefault = $("summaryFormat").value;
 }
 
@@ -1461,22 +2730,122 @@ function endInteraction(event) {
   state.interaction = null;
 }
 
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Delete" && event.key !== "Backspace") return;
+  const tag = document.activeElement?.tagName || "";
+  if (["INPUT", "TEXTAREA", "SELECT"].includes(tag)) return;
+  const key = currentSelectedFieldKey();
+  if (!key) return;
+  event.preventDefault();
+  state.activeFieldKey = key;
+  deleteFieldByKey(key);
+});
+
+function deleteFieldByKey(key) {
+  if (!key) return;
+  const layout = currentEditableLayout();
+  const staticIndex = layout.staticFields.findIndex((field) => field.key === key);
+  if (staticIndex >= 0) {
+    layout.staticFields.splice(staticIndex, 1);
+  }
+  if (layout.positions?.[key]) delete layout.positions[key];
+  if (layout.sizes?.[key]) delete layout.sizes[key];
+  if (layout.styles?.[key]) delete layout.styles[key];
+  if (isSingleVariantFieldKey(key)) {
+    singleVariantPresets.forEach((variant) => {
+      const scoped = singleVariantStorageKey(key, variant.key);
+      if (layout.positions?.[scoped]) delete layout.positions[scoped];
+      if (layout.sizes?.[scoped]) delete layout.sizes[scoped];
+      if (layout.styles?.[scoped]) delete layout.styles[scoped];
+    });
+    ["blessing_bodhisattva", "blessing_person"].forEach((variantKey) => {
+      const scoped = `single_variant_${variantKey}__${key}`;
+      if (layout.positions?.[scoped]) delete layout.positions[scoped];
+      if (layout.sizes?.[scoped]) delete layout.sizes[scoped];
+      if (layout.styles?.[scoped]) delete layout.styles[scoped];
+    });
+  }
+  if (state.mode === "summary" && isSummaryFieldKey(key)) {
+    const scoped = summaryVariantStorageKey(key);
+    if (layout.positions?.[scoped]) delete layout.positions[scoped];
+    if (layout.sizes?.[scoped]) delete layout.sizes[scoped];
+    if (layout.styles?.[scoped]) delete layout.styles[scoped];
+  }
+  state.activeFieldKey = "";
+  saveLayouts();
+  buildStyleEditor();
+  buildStaticVisibilityControls();
+  render();
+}
+
+function editStaticFieldText(key) {
+  const layout = currentEditableLayout();
+  const target = layout.staticFields.find((field) => field.key === key);
+  if (!target) return;
+  const nextText = window.prompt("修改静态字段", target.text || "");
+  if (nextText === null) return;
+  target.text = String(nextText).trim();
+  state.activeFieldKey = key;
+  if (state.mode === "summary") {
+    if ($("summaryStaticFieldText")) $("summaryStaticFieldText").value = target.text;
+  } else if ($("staticFieldText")) {
+    $("staticFieldText").value = target.text;
+  }
+  saveLayouts();
+  buildStyleEditor();
+  buildStaticVisibilityControls();
+  if ($("styleField")) {
+    $("styleField").value = key;
+    syncStyleInputs();
+  }
+  render();
+}
+
 function fitAllFields() {
-  requestAnimationFrame(() => {
-    document.querySelectorAll(".editable-field").forEach(fitField);
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      document.querySelectorAll(".editable-field").forEach(fitField);
+      resolve();
+    });
   });
+}
+
+function waitForNextFrame() {
+  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+async function waitForPrintPreviewReady() {
+  await waitForNextFrame();
+  await waitForNextFrame();
+  if (document.fonts?.ready) {
+    try {
+      await document.fonts.ready;
+    } catch {
+    }
+  }
 }
 
 function fitField(field) {
   const content = field.querySelector(".field-content");
+  const flow = field.querySelector(".field-flow");
   if (!content) return;
+  if (flow) {
+    flow.style.transform = "";
+    flow.style.transformOrigin = "center center";
+  }
   const baseFont = Number(field.dataset.baseFont) || Number.parseFloat(field.style.fontSize) || 18;
   let fontSize = baseFont;
   field.style.fontSize = `${fontSize}px`;
-  const minFont = Math.max(8, Math.round(baseFont * 0.55));
+  const minFont = 1;
   while (fontSize > minFont && isOverflowing(content)) {
     fontSize -= 1;
     field.style.fontSize = `${fontSize}px`;
+  }
+  if (flow && isOverflowing(content)) {
+    const scaleX = content.clientWidth > 0 && content.scrollWidth > 0 ? content.clientWidth / content.scrollWidth : 1;
+    const scaleY = content.clientHeight > 0 && content.scrollHeight > 0 ? content.clientHeight / content.scrollHeight : 1;
+    const scale = Math.max(0.05, Math.min(scaleX, scaleY, 1));
+    flow.style.transform = `scale(${scale})`;
   }
   field.classList.toggle("auto-shrunk", fontSize < baseFont);
 }
@@ -1503,13 +2872,13 @@ function formatSummaryColumn(row) {
 
 function sheetVars() {
   const width = Number($("paperWidth").value) || 210;
-  const height = Number($("paperHeight").value) || 297;
+  const height = Math.max(Number($("paperHeight").value) || 297, 1);
   return `--paper-w:${width}mm; --paper-h:${height}mm;`;
 }
 
 function syncPrintSize() {
   const width = Number($("paperWidth").value) || 210;
-  const height = Number($("paperHeight").value) || 297;
+  const height = Math.max(Number($("paperHeight").value) || 297, 1);
   document.documentElement.style.setProperty("--print-w", `${width}mm`);
   document.documentElement.style.setProperty("--print-h", `${height}mm`);
 
@@ -1605,6 +2974,8 @@ function createCustomTemplate() {
       background: "",
       paper: { width, height, vertical: false },
       summary: currentSummarySettings(),
+      duplex: { enabled: false },
+      backSide: createBlankSideLayout(),
     };
 
     const option = document.createElement("option");
@@ -1650,6 +3021,17 @@ function createCustomTemplate() {
     styles: {},
     sizes: {}
   };
+  state.layouts[id] = {
+    positions: {},
+    styles: {},
+    sizes: {},
+    background: "",
+    mappings: {},
+    staticFields: [],
+    duplex: { enabled: false },
+    backSide: createBlankSideLayout(),
+    paper: { width, height, vertical },
+  };
 
   const defaultX = 50;
   const defaultY = 30;
@@ -1670,6 +3052,9 @@ function createCustomTemplate() {
       w: 20,
       h: 20
     };
+    state.layouts[id].positions[fieldKey] = clone(templateDefaults[id].positions[fieldKey]);
+    state.layouts[id].styles[fieldKey] = clone(templateDefaults[id].styles[fieldKey]);
+    state.layouts[id].sizes[fieldKey] = clone(templateDefaults[id].sizes[fieldKey]);
     yOffset += 8;
   });
 
@@ -1701,6 +3086,8 @@ function saveCustomTemplatesToStorage() {
         vertical: layout?.paper?.vertical ?? t.vertical,
         summary: layout?.summary,
         staticFields: layout?.staticFields || [],
+        duplex: layout?.duplex,
+        backSide: layout?.backSide,
         fields: Object.keys(templateDefaults[t.id]?.positions || {})
           .filter(key => !key.startsWith("static_"))
           .map(key => ({
@@ -1754,16 +3141,23 @@ function loadCustomTemplatesFromStorage() {
           const layout = ensureLayout(ct.id);
           layout.staticFields = ct.staticFields;
         }
+        if (ct.duplex || ct.backSide) {
+          const layout = ensureLayout(ct.id);
+          layout.duplex = ct.duplex || { enabled: false };
+          layout.backSide = normalizeSideLayout(ct.backSide || createBlankSideLayout());
+        }
 
         if (mode === "summary") {
           const normalizedSummary = normalizeSummarySettings(ct.summary);
           if (JSON.stringify(normalizedSummary) !== JSON.stringify(ct.summary || {})) changed = true;
+          const existingLayout = state.layouts[ct.id] || {};
           state.layouts[ct.id] = {
-            ...(state.layouts[ct.id] || {}),
-            positions: {},
-            styles: {},
-            sizes: {},
-            background: state.layouts[ct.id]?.background || "",
+            ...existingLayout,
+            positions: existingLayout.positions || {},
+            styles: existingLayout.styles || {},
+            sizes: existingLayout.sizes || {},
+            background: existingLayout.background || "",
+            staticFields: existingLayout.staticFields || ct.staticFields || [],
             paper: {
               width: Number(ct.width) || 210,
               height: Number(ct.height) || 297,
@@ -1771,6 +3165,7 @@ function loadCustomTemplatesFromStorage() {
             },
             summary: normalizedSummary,
           };
+          if (repairSummaryTemplateLayout(ct.id)) changed = true;
         }
 
         const option = document.createElement("option");
@@ -1780,6 +3175,7 @@ function loadCustomTemplatesFromStorage() {
       }
     });
     if (changed) saveCustomTemplatesToStorage();
+    if (changed) saveLayouts();
   } catch (e) {
     console.error("加载自定义模板失败:", e);
   }

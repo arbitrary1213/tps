@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Temple OS Desktop</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">Temple OS</div>
+        <button class="nav active" data-view="dashboard">工作台</button>
+        <button class="nav" data-view="registrations">登记处理</button>
+        <button class="nav" data-view="plaques">牌位管理</button>
+        <button class="nav" data-view="devotees">信众管理</button>
+        <button class="nav" data-view="print">本地打印</button>
+        <button class="nav" data-view="calendar">佛事日程</button>
+        <button class="nav" data-view="diagnostics">连接诊断</button>
+        <button class="nav" data-view="settings">连接设置</button>
+      </aside>
+
+      <main>
+        <header>
+          <div>
+            <h1 id="viewTitle">工作台</h1>
+            <p id="serverStatus">未连接服务器</p>
+          </div>
+          <div class="actions">
+            <button id="syncBtn">同步</button>
+            <button id="webAdminBtn">网页后台</button>
+            <button id="setupBtn">连接设置</button>
+            <button id="logoutBtn">退出登录</button>
+          </div>
+        </header>
+
+        <section id="loginPanel" class="panel">
+          <h2>服务器登录</h2>
+          <div class="grid">
+            <label>服务器地址<input id="serverUrl" placeholder="https://xiandingsi.cn" /></label>
+            <label>用户名<input id="username" /></label>
+            <label>密码<input id="password" type="password" /></label>
+          </div>
+          <button id="loginBtn">登录</button>
+          <p class="hint">本地程序只通过 HTTPS API 读取服务器数据，不直连数据库。</p>
+        </section>
+
+        <section id="content" class="content"></section>
+      </main>
+    </div>
+
+    <template id="dashboardTemplate">
+      <div class="cards">
+        <div class="card"><span>待审批登记</span><strong data-stat="requests">-</strong></div>
+        <div class="card"><span>最近牌位</span><strong data-stat="plaques">-</strong></div>
+        <div class="card"><span>打印任务</span><strong data-stat="jobs">-</strong></div>
+        <div class="card"><span>待回传</span><strong data-stat="reports">-</strong></div>
+      </div>
+      <div class="panel">
+        <h2>本地程序职责</h2>
+        <p>这里是寺院本地工作台，负责日常处理、牌位查看、本地打印和离线缓存。网页后台只作为未迁移功能的辅助入口。</p>
+      </div>
+      <div id="buddhistCalendar" class="calendar-panel"></div>
+    </template>
+  </body>
+  <script src="./renderer.js"></script>
+</html>

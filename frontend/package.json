@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && node scripts/copy-standalone-static.js",
     "start": "next start",
     "lint": "next lint"
   },
@@ -13,6 +13,7 @@
     "clsx": "^2.1.0",
     "dayjs": "^1.11.0",
     "next": "^16.2.4",
+    "pdfjs-dist": "^3.11.174",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "xlsx": "^0.18.5",

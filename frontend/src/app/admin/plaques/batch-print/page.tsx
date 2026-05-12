@@ -19,6 +19,15 @@ interface Plaque {
   templateId?: string
 }
 
+function normalizeTemplateElements(template: PlaqueTemplate | null | undefined) {
+  if (!template) return []
+  const raw = template.elements as any
+  if (Array.isArray(raw)) return raw
+  if (raw?.template?.elements && Array.isArray(raw.template.elements)) return raw.template.elements
+  if (raw?.layout?.elements && Array.isArray(raw.layout.elements)) return raw.layout.elements
+  return []
+}
+
 const paperSizes = [
   { value: 'A4', label: 'A4 (210×297mm)', width: 210, height: 297 },
   { value: 'A3', label: 'A3 (297×420mm)', width: 297, height: 420 },
@@ -200,7 +209,7 @@ export default function BatchPrintPage() {
 
     return (
       <div className="relative w-full h-full">
-        {template.elements.map((el: TemplateElement) => {
+        {normalizeTemplateElements(template).map((el: TemplateElement) => {
           const style: React.CSSProperties = {
             position: 'absolute',
             left: `${(el.x / 400) * 100}%`,

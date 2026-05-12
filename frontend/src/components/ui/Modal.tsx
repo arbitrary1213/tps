@@ -9,7 +9,7 @@ interface ModalProps {
   onClose: () => void
   title?: string
   children: React.ReactNode
-  size?: 'sm' | 'md' | 'lg' | 'xl'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'half'
   footer?: React.ReactNode
 }
 
@@ -38,15 +38,9 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }: M
       <div className="fixed inset-0 bg-ink/60 backdrop-blur-sm" />
       <div
         className={clsx(
-          'relative bg-white rounded-lg shadow-classic-lg w-full mx-4',
-          'max-h-[90vh] overflow-hidden flex flex-col',
-          'max-w-[calc(100vw-32px)] sm:max-w-none',
-          {
-            'max-w-sm': size === 'sm',
-            'max-w-md': size === 'md',
-            'max-w-2xl': size === 'lg',
-            'max-w-4xl': size === 'xl',
-          }
+          'relative bg-white rounded-lg shadow-classic-lg mx-4',
+          'w-[800px] h-[800px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-32px)]',
+          'overflow-hidden flex flex-col'
         )}
       >
         {title && (

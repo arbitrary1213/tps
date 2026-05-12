@@ -20,7 +20,10 @@ dist/
 backup/
 docker/backup/
 docker/logs/
+wechat-platform/data/
 frontend-deploy/
+frontend-runtime/
+releases/
 
 # Debug
 npm-debug.log*
@@ -28,7 +31,12 @@ yarn-debug.log*
 yarn-error.log*
 
 # Local env files
+.env
+.env.*
+!.env.example
 .env*.local
+backend/.env
+docker/.env
 
 # Vercel
 .vercel

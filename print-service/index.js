@@ -7,9 +7,13 @@ const PORT = process.env.PORT || 3001
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const publicDir = path.join(__dirname, 'public')
+const pdfjsDir = path.join(__dirname, 'node_modules', 'pdfjs-dist', 'build')
 
 app.disable('x-powered-by')
 app.use(express.json({ limit: '2mb' }))
+app.use('/vendor/pdfjs', express.static(pdfjsDir, {
+  maxAge: '7d',
+}))
 
 app.get('/health', (req, res) => {
   res.json({ ok: true, service: 'tablet-print', version: '1.0.0' })

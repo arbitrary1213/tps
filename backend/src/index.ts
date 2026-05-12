@@ -12,7 +12,8 @@ app.use(cors({
   origin: process.env.ALLOWED_ORIGIN || 'https://temple.example.com',
   credentials: true
 }))
-app.use(express.json({ limit: '10mb' }))
+app.use(express.json({ limit: '80mb' }))
+app.use('/api/plaque-template-assets', express.static('/opt/temple-os/storage/plaque-template-assets'))
 app.use(rateLimiter)
 
 import { requestLog } from './middleware/requestLogger'
@@ -33,6 +34,12 @@ app.use('/api/registration', registrationRoutes)
 
 import businessRoutes from './routes/business'
 app.use('/api', businessRoutes)
+
+import calendarEventRoutes from './routes/calendarEvents'
+app.use('/api', calendarEventRoutes)
+
+import wechatIntegrationRoutes from './routes/wechatIntegration'
+app.use('/api', wechatIntegrationRoutes)
 
 import wechatRoutes from './routes/wechat'
 app.use('/wechat', wechatRoutes)

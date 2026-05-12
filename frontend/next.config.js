@@ -22,6 +22,25 @@ const nextConfig = {
 
   headers: async () => [
     {
+      source: '/:path*',
+      headers: [
+        {
+          key: 'Content-Security-Policy',
+          value: [
+            "default-src 'self'",
+            "base-uri 'self'",
+            "object-src 'none'",
+            "frame-ancestors 'none'",
+            "img-src 'self' data: blob:",
+            "font-src 'self' data:",
+            "style-src 'self' 'unsafe-inline'",
+            "script-src 'self' 'unsafe-inline'",
+            "connect-src 'self' http: https: ws: wss:",
+          ].join('; '),
+        },
+      ],
+    },
+    {
       source: '/:all*(svg|jpg|png|ico|woff2)',
       headers: [
         { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },

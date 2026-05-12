@@ -132,6 +132,27 @@ html {
 body {
   overflow-x: hidden;
 }
+
+/* Desktop shell adjustments for Electron */
+.desktop-admin {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.desktop-admin .desktop-toolbar {
+  position: sticky;
+  top: 0;
+}
+
+.desktop-admin .desktop-content {
+  height: calc(100vh - 4rem - 2rem);
+  overflow: auto;
+}
+
+.desktop-admin .desktop-statusbar {
+  flex-shrink: 0;
+  user-select: none;
+}
 /* Mobile-safe table scrolling */
 .table-scroll-wrapper {
   overflow-x: auto;

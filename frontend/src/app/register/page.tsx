@@ -80,22 +80,24 @@ const fieldDefs: Record<string, FieldDef> = {
   ]},
   birthLunar:      { type: 'checkbox', label: '农历', options:[{ label:'农历',value:'1' }] },
   blessingText:    { type: 'text', label: '祈福祝福语', placeholder:'如：心想事成 万事如意' },
+  startDate:       { type: 'date', label: '开始日期' },
+  endDate:         { type: 'date', label: '结束日期' },
 
   // --- 往生莲位 ---
   deceasedName:    { type: 'text', label: '亡者姓名' },
   deathDate:       { type: 'date', label: '忌日' },
   deathLunar:      { type: 'checkbox', label: '农历', options:[{ label:'农历',value:'1' }] },
-  yangShang:       { type: 'text', label: '阳上人（建档人）', required: true },
+  yangShang:       { type: 'text', label: '信人' },
 
   // --- 超度牌位 ---
-  dedicationType:   { type: 'select', label: '超度类型', options:[
+  dedicationType:   { type: 'select', label: '牌位主体', options:[
     { label:'冤亲债主',value:'冤亲债主' },{ label:'堕胎婴灵',value:'堕胎婴灵' },
     { label:'历代宗亲',value:'历代宗亲' },{ label:'无缘殊胜',value:'无缘殊胜' },
     { label:'生日超度',value:'生日超度' },{ label:'忌日超度',value:'忌日超度' },
     { label:'新建地基主',value:'新建地基主' },{ label:'地基主',value:'地基主' },
     { label:'自定义',value:'custom' },
   ]},
-  customDedicationType: { type: 'text', label: '新增超度类型', placeholder:'请输入新的超度类型名称' },
+  customDedicationType: { type: 'text', label: '新增牌位主体', placeholder:'请输入新的牌位主体名称' },
   deceasedName2: { type: 'text', label: '第二亡者姓名' },
   birthDate2: { type: 'date', label: '第二亡者出生日期' },
   birthLunar2: { type: 'checkbox', label: '农历', options:[{ label:'农历',value:'1' }] },
@@ -208,7 +210,7 @@ export default function RegisterPage() {
 
   const [tasks, setTasks] = useState<Task[]>([])
   const [activeTask, setActiveTask] = useState<Task | null>(null)
-  const [plaqueType, setPlaqueType] = useState<'LONGEVITY' | 'DELIVERANCE'>('LONGEVITY')
+  const [plaqueType, setPlaqueType] = useState<'LONGEVITY' | 'REBIRTH' | 'DELIVERANCE'>('LONGEVITY')
   const [formData, setFormData] = useState<Record<string, any>>({})
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -259,7 +261,7 @@ export default function RegisterPage() {
           name: '牌位登记',
           taskType: 'PLAQUE',
           description: '延生禄位、往生莲位、超度牌位',
-          formConfig: ['holderName', 'longevitySubtype', 'size', 'gender', 'birthDate', 'birthLunar', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'blessingText', 'startDate', 'dedicationType'],
+          formConfig: ['holderName', 'longevitySubtype', 'size', 'gender', 'birthDate', 'birthLunar', 'deceasedName', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'blessingText', 'startDate', 'endDate', 'dedicationType', 'customDedicationType', 'deceasedName2', 'birthDate2', 'birthLunar2', 'deathDate2', 'deathLunar2'],
         })
         setFormData({})
         return
@@ -366,7 +368,7 @@ export default function RegisterPage() {
     setFormData({})
     setSubmitted(false)
     // Reset plaque type when switching away from PLAQUE tab
-    if (!['LONGEVITY','DELIVERANCE','PLAQUE'].includes(task.taskType)) {
+    if (!['LONGEVITY','REBIRTH','DELIVERANCE','PLAQUE'].includes(task.taskType)) {
       setPlaqueType('LONGEVITY')
       setIsPlaqueMode(false)
     }
@@ -377,7 +379,7 @@ export default function RegisterPage() {
     }
     // REBIRTH tasks now use DELIVERANCE plaque type
     if (task.taskType === 'REBIRTH') {
-      setPlaqueType('DELIVERANCE')
+      setPlaqueType('REBIRTH')
       setIsPlaqueMode(true)
     }
   }
@@ -389,6 +391,7 @@ export default function RegisterPage() {
     const requiredFieldsByTaskType: Record<string, string[]> = {
       VOLUNTEER: ['name', 'phone'],
       LONGEVITY: ['holderName', 'phone'],
+      REBIRTH: ['deceasedName', 'yangShang', 'phone'],
       DELIVERANCE_GENERAL: ['dedicationType', 'yangShang', 'phone'],
       DELIVERANCE_SPECIFIC: ['yangShang', 'phone'],
       RITUAL: ['ritualId', 'name', 'phone'],
@@ -400,16 +403,22 @@ export default function RegisterPage() {
     let taskTypeKey = activeTask.taskType
     if (isPlaqueMode) {
       if (activeTask.taskType === 'PLAQUE' || activeTask.taskType === 'LONGEVITY') {
-        taskTypeKey = 'LONGEVITY'
-      } else if (activeTask.taskType === 'DELIVERANCE' || activeTask.taskType === 'REBIRTH') {
-        taskTypeKey = plaqueType === 'DELIVERANCE' && formData.deceasedType === 'specific' ? 'DELIVERANCE_SPECIFIC' : 'DELIVERANCE_GENERAL'
+        taskTypeKey = plaqueType === 'REBIRTH'
+          ? 'REBIRTH'
+          : plaqueType === 'DELIVERANCE'
+            ? (formData.deceasedType === 'specific' ? 'DELIVERANCE_SPECIFIC' : 'DELIVERANCE_GENERAL')
+            : 'LONGEVITY'
+      } else if (activeTask.taskType === 'DELIVERANCE') {
+        taskTypeKey = formData.deceasedType === 'specific' ? 'DELIVERANCE_SPECIFIC' : 'DELIVERANCE_GENERAL'
+      } else if (activeTask.taskType === 'REBIRTH') {
+        taskTypeKey = 'REBIRTH'
       }
     }
 
     const requiredFields = requiredFieldsByTaskType[taskTypeKey] || []
     for (const field of requiredFields) {
       if (!formData[field] || formData[field] === '') {
-        alert('请输入 ' + (fieldDefs[field]?.label || field))
+        alert('请填写' + (fieldDefs[field]?.label || field))
         return
       }
     }
@@ -419,11 +428,10 @@ export default function RegisterPage() {
       let taskId = activeTask.id
       let taskType = activeTask.taskType
 
-      // PLAQUE 类型的任务直接使用 activeTask
       if (isPlaqueMode && activeTask.taskType !== 'PLAQUE') {
         const plaqueTask = tasks.find(t => t.taskType === plaqueType)
         if (!plaqueTask) {
-          alert('未找到对应的登记任务')
+          alert('未找到对应的牌位登记任务')
           setSubmitting(false)
           return
         }
@@ -431,16 +439,14 @@ export default function RegisterPage() {
         taskType = plaqueType
       }
 
-      // 当 activeTask.id 为 'PLAQUE' (fake ID from URL) 时，从 tasks 列表查找真实的 PLAQUE 任务
       if (taskId === 'PLAQUE') {
         const realPlaqueTask = tasks.find(t => t.taskType === 'PLAQUE')
         if (realPlaqueTask) {
           taskId = realPlaqueTask.id
-          taskType = plaqueType // 使用 plaqueType 作为 taskType (LONGEVITY 或 DELIVERANCE)
+          taskType = plaqueType
         }
       }
 
-      // 只提交当前 formConfig.fields 中包含的字段
       const fieldsToSubmit = activeTask.formConfig || []
       const filteredData: Record<string, any> = {}
       for (const key of fieldsToSubmit) {
@@ -453,8 +459,38 @@ export default function RegisterPage() {
         filteredData.plaqueType = plaqueType
       }
 
+      if (taskType === 'RITUAL') {
+        const ritualPlaqueType = formData.plaqueType || 'LONGEVITY'
+        const ritualPlaqueFields = ['plaqueType', 'holderName', 'deceasedName', 'dedicationType', 'customDedicationType', 'yangShang', 'longevitySubtype', 'size', 'gender', 'birthDate', 'birthLunar', 'deathDate', 'deathLunar', 'deceasedName2', 'birthDate2', 'birthLunar2', 'deathDate2', 'deathLunar2', 'address', 'blessingText', 'startDate', 'endDate']
+        for (const key of ritualPlaqueFields) {
+          if (formData[key] !== undefined && formData[key] !== '') {
+            filteredData[key] = formData[key]
+          }
+        }
+        const ritualPlaqueRequired = ritualPlaqueType === 'LONGEVITY'
+          ? ['holderName']
+          : ritualPlaqueType === 'REBIRTH'
+            ? ['deceasedName', 'yangShang']
+            : ['dedicationType', 'yangShang']
+        for (const field of ritualPlaqueRequired) {
+          if (!formData[field] || formData[field] === '') {
+            alert('请填写' + (fieldDefs[field]?.label || field))
+            setSubmitting(false)
+            return
+          }
+        }
+        if (ritualPlaqueType === 'DELIVERANCE' && formData.dedicationType === 'custom' && !formData.customDedicationType) {
+          alert('请填写' + (fieldDefs.customDedicationType?.label || '自定义牌位主体'))
+          setSubmitting(false)
+          return
+        }
+        filteredData.plaqueType = ritualPlaqueType
+      }
+
       const getSubmitterName = () => {
-        if (taskType === 'LONGEVITY' || taskType === 'LAMP') return formData.blessingName || formData.holderName || ''
+        if (taskType === 'LONGEVITY') return formData.holderName || formData.blessingName || ''
+        if (taskType === 'REBIRTH') return formData.yangShang || formData.name || ''
+        if (taskType === 'LAMP') return formData.name || formData.blessingName || ''
         if (taskType === 'DELIVERANCE') return formData.yangShang || ''
         if (taskType === 'DINING') return formData.contactName || ''
         return formData.name || ''
@@ -463,6 +499,7 @@ export default function RegisterPage() {
         if (taskType === 'DINING') return formData.contactPhone || ''
         return formData.phone || ''
       }
+
       await registrationAPI.submitRequest({
         taskId,
         submitterName: getSubmitterName(),
@@ -472,23 +509,19 @@ export default function RegisterPage() {
       setSubmitted(true)
     } catch (error) {
       console.error('提交失败:', error)
-      alert('提交失败，请重试')
+      alert('提交失败，请稍后再试')
     } finally {
       setSubmitting(false)
     }
   }
 
-  // ============================================================
-  // 动态渲染单个字段
-  // ============================================================
   const renderField = (fieldKey: string) => {
     const def = fieldDefs[fieldKey]
     if (!def) return null
 
-    let { type, label, options, placeholder, hint } = def
+    const { type, label, options, placeholder, hint } = def
     const value = formData[fieldKey] ?? ''
 
-    // 动态超度类型选项
     let fieldOptions = options || []
     if (fieldKey === 'dedicationType' && settings?.dedicationTypes) {
       fieldOptions = settings.dedicationTypes.split(',').map((t: string) => ({ label: t, value: t }))
@@ -497,17 +530,13 @@ export default function RegisterPage() {
 
     if (type === 'select') {
       return (
-        <div key={fieldKey} className=''>
+        <div key={fieldKey}>
           <label className="block text-sm font-medium text-tea mb-1 tracking-wide">
             {label}
             {def.required && <span className="text-red-500 ml-1">*</span>}
             {hint && <span className="text-xs text-tea/60 ml-1">{hint}</span>}
           </label>
-          <select
-            className="w-full h-11 px-4 border border-[#E8E0D0] rounded bg-white focus:outline-none focus:border-vermilion text-base"
-            value={value}
-            onChange={(e) => setFormData(prev => ({ ...prev, [fieldKey]: e.target.value }))}
-          >
+          <select className="w-full h-11 px-4 border border-[#E8E0D0] rounded bg-white focus:outline-none focus:border-vermilion text-base" value={value} onChange={(e) => setFormData(prev => ({ ...prev, [fieldKey]: e.target.value }))}>
             <option value="">请选择</option>
             {fieldOptions.map(opt => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -517,30 +546,38 @@ export default function RegisterPage() {
       )
     }
 
+    if (type === 'date') {
+      const lunarMap: Record<string, string> = { birthDate: 'birthLunar', deathDate: 'deathLunar', birthDate2: 'birthLunar2', deathDate2: 'deathLunar2' }
+      const lunarKey = lunarMap[fieldKey]
+      const isLunar = lunarKey && formData[lunarKey]?.includes?.('1')
+      if (isLunar) {
+        return (
+          <div key={fieldKey}>
+            <label className="block text-sm font-medium text-tea mb-1 tracking-wide">{label}{def.required && <span className="text-red-500 ml-1">*</span>}</label>
+            <input type="text" className="w-full h-11 px-4 border border-[#E8E0D0] rounded bg-white focus:outline-none focus:border-vermilion text-base" value={value} onChange={(e) => setFormData(prev => ({ ...prev, [fieldKey]: e.target.value }))} placeholder="如：2024年正月十五" />
+          </div>
+        )
+      }
+      return (
+        <div key={fieldKey}>
+          <label className="block text-sm font-medium text-tea mb-1 tracking-wide">{label}{def.required && <span className="text-red-500 ml-1">*</span>}{hint && <span className="text-xs text-tea/60 ml-1">{hint}</span>}</label>
+          <input type="date" className="w-full h-11 px-4 border border-[#E8E0D0] rounded bg-white focus:outline-none focus:border-vermilion text-base" value={value} onChange={(e) => setFormData(prev => ({ ...prev, [fieldKey]: e.target.value }))} />
+        </div>
+      )
+    }
+
     if (type === 'checkbox') {
       return (
-        <div key={fieldKey} className=''>
-          <label className="block text-sm font-medium text-tea mb-2 tracking-wide">
-            {label}
-            {def.required && <span className="text-red-500 ml-1">*</span>}
-          </label>
+        <div key={fieldKey}>
+          <label className="block text-sm font-medium text-tea mb-2 tracking-wide">{label}{def.required && <span className="text-red-500 ml-1">*</span>}</label>
           <div className="flex flex-wrap gap-2">
             {(options || []).map(opt => (
               <label key={opt.value} className="flex items-center gap-2 text-sm text-tea cursor-pointer py-1 px-2 border border-[#E8E0D0] rounded hover:bg-paper-dark">
-                <input
-                  type="checkbox"
-                  value={opt.value}
-                  checked={(value || []).includes(opt.value)}
-                  onChange={(e) => {
-                    const curr: string[] = value || []
-                    if (e.target.checked) {
-                      setFormData(prev => ({ ...prev, [fieldKey]: [...curr, opt.value] }))
-                    } else {
-                      setFormData(prev => ({ ...prev, [fieldKey]: curr.filter(v => v !== opt.value) }))
-                    }
-                  }}
-                  className="w-4 h-4 text-vermilion border-[#E8E0D0] rounded"
-                />
+                <input type="checkbox" value={opt.value} checked={(value || []).includes(opt.value)} onChange={(e) => {
+                  const curr: string[] = value || []
+                  if (e.target.checked) setFormData(prev => ({ ...prev, [fieldKey]: [...curr, opt.value] }))
+                  else setFormData(prev => ({ ...prev, [fieldKey]: curr.filter(v => v !== opt.value) }))
+                }} className="w-4 h-4 text-vermilion border-[#E8E0D0] rounded" />
                 {opt.label}
               </label>
             ))}
@@ -551,331 +588,109 @@ export default function RegisterPage() {
 
     if (type === 'textarea') {
       return (
-        <div key={fieldKey} className=''>
-          <label className="block text-sm font-medium text-tea mb-1 tracking-wide">
-            {label}
-            {def.required && <span className="text-red-500 ml-1">*</span>}
-            {hint && <span className="text-xs text-tea/60 ml-1">{hint}</span>}
-          </label>
-          <textarea
-            className="w-full px-4 py-3 border border-[#E8E0D0] rounded bg-white focus:outline-none focus:border-vermilion text-base min-h-[80px] resize-y"
-            value={value}
-            onChange={(e) => setFormData(prev => ({ ...prev, [fieldKey]: e.target.value }))}
-            rows={3}
-          />
+        <div key={fieldKey}>
+          <label className="block text-sm font-medium text-tea mb-1 tracking-wide">{label}{def.required && <span className="text-red-500 ml-1">*</span>}{hint && <span className="text-xs text-tea/60 ml-1">{hint}</span>}</label>
+          <textarea className="w-full px-4 py-3 border border-[#E8E0D0] rounded bg-white focus:outline-none focus:border-vermilion text-base min-h-[80px] resize-y" value={value} onChange={(e) => setFormData(prev => ({ ...prev, [fieldKey]: e.target.value }))} rows={3} />
         </div>
       )
     }
 
-    // text, tel, date
+    const inputType = type === 'tel' ? 'tel' : 'text'
     return (
-      <div key={fieldKey} className=''>
-        <label className="block text-sm font-medium text-tea mb-1 tracking-wide">
-          {label}
-          {def.required && <span className="text-red-500 ml-1">*</span>}
-          {hint && <span className="text-xs text-tea/60 ml-1">{hint}</span>}
-        </label>
-        <input
-          type={type === 'tel' ? 'tel' : type === 'date' ? 'date' : 'text'}
-          className="w-full h-11 px-4 border border-[#E8E0D0] rounded bg-white focus:outline-none focus:border-vermilion text-base"
-          value={value}
-          placeholder={placeholder}
-          onChange={(e) => setFormData(prev => ({ ...prev, [fieldKey]: e.target.value }))}
-        />
+      <div key={fieldKey}>
+        <label className="block text-sm font-medium text-tea mb-1 tracking-wide">{label}{def.required && <span className="text-red-500 ml-1">*</span>}{hint && <span className="text-xs text-tea/60 ml-1">{hint}</span>}</label>
+        <input type={inputType} className="w-full h-11 px-4 border border-[#E8E0D0] rounded bg-white focus:outline-none focus:border-vermilion text-base" value={value} placeholder={placeholder} onChange={(e) => setFormData(prev => ({ ...prev, [fieldKey]: e.target.value }))} />
       </div>
     )
   }
 
-  // ============================================================
-  // 根据 taskType 渲染不同表单布局
-  // ============================================================
   const renderFormByTaskType = () => {
     if (!activeTask) return null
     const { taskType, formConfig } = activeTask
     const fields: string[] = formConfig || []
 
-    // ---- VOLUNTEER: 分组渲染 ----
     if (taskType === 'VOLUNTEER') {
       return (
         <>
           {fields.includes('volunteerTaskId') && (
             <div className="mb-6 p-4 bg-paper-dark rounded border border-[#E8E0D0]">
               <h3 className="text-sm font-medium text-tea mb-3">选择义工任务</h3>
-              <select
-                className="w-full h-11 px-4 border border-[#E8E0D0] rounded bg-white focus:outline-none focus:border-vermilion text-base"
-                value={formData.volunteerTaskId || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, volunteerTaskId: e.target.value }))}
-              >
+              <select className="w-full h-11 px-4 border border-[#E8E0D0] rounded bg-white focus:outline-none focus:border-vermilion text-base" value={formData.volunteerTaskId || ''} onChange={(e) => setFormData(prev => ({ ...prev, volunteerTaskId: e.target.value }))}>
                 <option value="">请选择义工任务</option>
-                {(fieldDefs.volunteerTaskId.options || []).map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
+                {(fieldDefs.volunteerTaskId.options || []).map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
               </select>
             </div>
           )}
           {VOLUNTEER_GROUPS.map(group => {
-            // 只渲染 formConfig 中出现的字段
             const groupFields = group.fields.filter(f => fields.includes(f))
             if (groupFields.length === 0) return null
-
-            // 承诺区单独处理
             if (group.title === '本人承诺') {
-              return (
-                <div key={group.title} className="pt-4 border-t border-[#E8E0D0]">
-                  <h3 className="text-sm font-medium text-tea mb-3 tracking-wide">{group.title}</h3>
-                  <div className="bg-paper-dark p-4 rounded text-xs text-tea/80 leading-relaxed space-y-1">
-                    <p>义工工作服务要求及注意事项：</p>
-                    <p>1.本人承诺以上填写的所有信息内容属实。</p>
-                    <p>2.本人具有相应民事行为能力，身体健康，无不良嗜好。</p>
-                    <p>3.做到爱国爱教，拥护中国共产党的领导，遵守国家相关法律、法规。</p>
-                    <p>4.自愿参加仙顶寺义工服务，并能遵守义工相关规则，有自利利他、慈悲喜舍的精神。</p>
-                    <p>5.入寺后需学习佛门礼仪并遵守。</p>
-                    <p>6.爱惜寺院公共财产，节约水电、随手关灯、不乱涂乱画，保持环境整洁。</p>
-                    <p>7.行为端正，不随意走动，不进人他人房间，不拿别人物品。</p>
-                    <p>8.严格遵守"不准拍摄寺院佛像、佛事，尊重他人肖像权，未经他人同意不拍摄他人"等相关规定。不随意添加僧人及其他人联系方式。</p>
-                    <p>9.早晚课诵、二时供斋、出坡不随众者罚，不服者责离寺院。</p>
-                    <p>10.服从安排，完成本职工作。</p>
-                  </div>
-                  <div className="mt-4 space-y-3">
-                    {groupFields.map(f => renderField(f))}
-                  </div>
-                </div>
-              )
+              return <div key={group.title} className="pt-4 border-t border-[#E8E0D0]"><h3 className="text-sm font-medium text-tea mb-3 tracking-wide">{group.title}</h3><div className="mt-4 space-y-3">{groupFields.map(f => renderField(f))}</div></div>
             }
-
-            // 义工经历的条件显示
             if (group.title === '义工经历') {
               const hasExp = formData['hasVolunteerExperience']
-              return (
-                <div key={group.title} className="pt-4 border-t border-[#E8E0D0]">
-                  <h3 className="text-sm font-medium text-tea mb-3 tracking-wide">{group.title}</h3>
-                  <div className="space-y-4">
-                    {renderField('hasVolunteerExperience')}
-                    {hasExp === '是' && (
-                      <>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          {['volunteerTimes', 'lastVolunteerDate', 'lastVolunteerLocation'].map(f => renderField(f))}
-                        </div>
-                        {renderField('lastVolunteerContent')}
-                      </>
-                    )}
-                  </div>
-                </div>
-              )
+              return <div key={group.title} className="pt-4 border-t border-[#E8E0D0]"><h3 className="text-sm font-medium text-tea mb-3 tracking-wide">{group.title}</h3><div className="space-y-4">{renderField('hasVolunteerExperience')}{hasExp === '是' && <><div className="grid grid-cols-1 md:grid-cols-3 gap-4">{['volunteerTimes', 'lastVolunteerDate', 'lastVolunteerLocation'].map(f => renderField(f))}</div>{renderField('lastVolunteerContent')}</>}</div></div>
             }
-
-            // 基本信息两列布局
-            const twoCol = ['基本信息', '补充信息', '学佛经历', '服务时间'].includes(group.title)
-            return (
-              <div key={group.title} className="pt-4 border-t border-[#E8E0D0]">
-                <h3 className="text-sm font-medium text-tea mb-3 tracking-wide">{group.title}</h3>
-                <div className={twoCol ? 'grid grid-cols-1 md:grid-cols-2 gap-4' : 'space-y-4'}>
-                  {groupFields.map(f => renderField(f))}
-                </div>
-              </div>
-            )
+            const twoCol = ['基本信息', '补充信息', '健康状况', '学佛经历'].includes(group.title)
+            return <div key={group.title} className="pt-4 border-t border-[#E8E0D0]"><h3 className="text-sm font-medium text-tea mb-3 tracking-wide">{group.title}</h3><div className={twoCol ? 'grid grid-cols-1 md:grid-cols-2 gap-4' : 'space-y-4'}>{groupFields.map(f => renderField(f))}</div></div>
           })}
         </>
       )
     }
 
-    // ---- PLAQUE (延生 / 超度): 合并为一个登记页 ----
-    if (isPlaqueMode || ['LONGEVITY','DELIVERANCE'].includes(taskType)) {
-      const PLAQUE_SUBTYPES = [
-        {
-          value: 'LONGEVITY',
-          label: '延生禄位',
-          desc: '法喜充满 六时吉祥',
-          fields: ['holderName', 'longevitySubtype', 'size', 'gender', 'birthDate', 'birthLunar', 'phone', 'address', 'blessingText', 'startDate'],
-        },
-        {
-          value: 'DELIVERANCE',
-          label: '超度牌位',
-          desc: '超度冤亲债主、堕胎婴灵、历代宗亲',
-          fields: ['dedicationType', 'size', 'yangShang', 'phone', 'address', 'startDate'],
-        },
-      ]
-      const isDeliveranceWithName = plaqueType === 'DELIVERANCE' && formData.deceasedType === 'specific'
-      const currentSubtype = PLAQUE_SUBTYPES.find(s => s.value === plaqueType) || PLAQUE_SUBTYPES[0]
+    if (isPlaqueMode || ['LONGEVITY', 'REBIRTH', 'DELIVERANCE'].includes(taskType)) {
+      return <div className="space-y-4">{fields.map(f => renderField(f))}</div>
+    }
+
+    if (taskType === 'LAMP') {
+      return <div className="space-y-4">{fields.filter(f => f !== 'location').map(f => renderField(f))}</div>
+    }
+
+    if (taskType === 'RITUAL') {
+      const ritualPlaqueType = formData.plaqueType || 'LONGEVITY'
       return (
-        <div className="space-y-4">
-          {/* 牌位类型选择 */}
-          <div className="bg-paper-dark p-4 rounded border border-[#E8E0D0]">
-            <label className="block text-sm font-medium text-tea mb-2 tracking-wide">牌位类型</label>
-            <div className="flex gap-3">
-              {PLAQUE_SUBTYPES.map(st => (
-                <label key={st.value} className={`flex items-center gap-2 text-sm cursor-pointer py-2 px-4 border rounded transition-all ${
-                  plaqueType === st.value
-                    ? 'border-vermilion bg-white text-ink font-medium'
-                    : 'border-[#E8E0D0] bg-white text-tea hover:border-vermilion/50'
-                }`}>
-                  <input
-                    type="radio"
-                    name="plaqueType"
-                    value={st.value}
-                    checked={plaqueType === st.value}
-                    onChange={() => { setPlaqueType(st.value as typeof plaqueType); setFormData({}) }}
-                    className="sr-only"
-                  />
-                  {st.label}
-                </label>
-              ))}
+        <div className="space-y-6">
+          <div className="p-4 bg-paper-dark rounded border border-[#E8E0D0]">
+            <h3 className="text-sm font-medium text-tea mb-3 tracking-wide">法会信息</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {renderField('ritualId')}
+              {renderField('name')}
+              {renderField('phone')}
             </div>
           </div>
-          {/* 超度牌位 - 子类型选择：具体亡者 / 一般超度 */}
-          {plaqueType === 'DELIVERANCE' && (
-            <div className="bg-paper-dark p-4 rounded border border-[#E8E0D0]">
-              <label className="block text-sm font-medium text-tea mb-2 tracking-wide">超度类型</label>
-              <div className="flex gap-3">
-                <label className={`flex items-center gap-2 text-sm cursor-pointer py-2 px-4 border rounded transition-all ${
-                  formData.deceasedType !== 'specific' ? 'border-vermilion bg-white text-ink font-medium' : 'border-[#E8E0D0] bg-white text-tea hover:border-vermilion/50'
-                }`}>
-                  <input
-                    type="radio"
-                    name="deceasedType"
-                    value="general"
-                    checked={formData.deceasedType !== 'specific'}
-                    onChange={() => setFormData(prev => ({ ...prev, deceasedType: 'general', deceasedName: undefined, gender: undefined, birthDate: undefined, birthLunar: undefined, deathDate: undefined, deathLunar: undefined, showSecondDeceased: undefined }))}
-                    className="sr-only"
-                  />
-                  无记名超度
-                </label>
-                <label className={`flex items-center gap-2 text-sm cursor-pointer py-2 px-4 border rounded transition-all ${
-                  formData.deceasedType === 'specific' ? 'border-vermilion bg-white text-ink font-medium' : 'border-[#E8E0D0] bg-white text-tea hover:border-vermilion/50'
-                }`}>
-                  <input
-                    type="radio"
-                    name="deceasedType"
-                    value="specific"
-                    checked={formData.deceasedType === 'specific'}
-                    onChange={() => setFormData(prev => ({ ...prev, deceasedType: 'specific', dedicationType: undefined }))}
-                    className="sr-only"
-                  />
-                  记名超度
-                </label>
+          <div className="p-4 bg-white rounded border border-[#E8E0D0] space-y-4">
+            <div>
+              <h3 className="text-sm font-medium text-tea mb-1 tracking-wide">随喜牌位</h3>
+              <p className="text-xs text-tea/60">法会登记需要同时登记牌位，请选择牌位类型并填写对应信息。</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-tea mb-2 tracking-wide">牌位类型</label>
+              <div className="flex flex-wrap gap-3">
+                {[{ value: 'LONGEVITY', label: '延生禄位' }, { value: 'REBIRTH', label: '往生莲位' }, { value: 'DELIVERANCE', label: '超度牌位' }].map(option => (
+                  <label key={option.value} className={`flex items-center gap-2 text-sm cursor-pointer py-2 px-4 border rounded transition-all ${ritualPlaqueType === option.value ? 'border-vermilion bg-white text-ink font-medium' : 'border-[#E8E0D0] bg-paper-dark text-tea hover:border-vermilion/50'}`}>
+                    <input type="radio" name="ritualPlaqueType" value={option.value} checked={ritualPlaqueType === option.value} onChange={() => setFormData(prev => ({ ...prev, plaqueType: option.value }))} className="sr-only" />
+                    {option.label}
+                  </label>
+                ))}
               </div>
             </div>
-          )}
-          {/* 渲染超度牌位字段 */}
-          {plaqueType === 'DELIVERANCE' && formData.deceasedType === 'specific' && (
-            <>
-              {['deceasedName', 'gender', 'birthDate', 'birthLunar', 'deathDate', 'deathLunar'].map(f => renderField(f))}
-              <button
-                type="button"
-                onClick={() => setFormData(prev => ({ ...prev, showSecondDeceased: true }))}
-                className="text-sm text-vermilion hover:text-vermilion-dark flex items-center gap-1"
-              >
-                <span>+</span> 增加第二亡者
-              </button>
-            </>
-          )}
-          {plaqueType === 'DELIVERANCE' && formData.deceasedType !== 'specific' && (
-            <>
-              {renderField('dedicationType')}
-              {formData.dedicationType === 'custom' && renderField('customDedicationType')}
-            </>
-          )}
-          {plaqueType === 'DELIVERANCE' && formData.deceasedType === 'specific' && (
-            <>
-              {renderField('size')}
-              {renderField('yangShang')}
-              {renderField('phone')}
-              {renderField('address')}
-              {renderField('startDate')}
-            </>
-          )}
-          {plaqueType === 'DELIVERANCE' && formData.deceasedType !== 'specific' && (
-            <>
-              {renderField('yangShang')}
-              {renderField('phone')}
-              {renderField('address')}
-              {renderField('startDate')}
-            </>
-          )}
-          {/* 超度牌位 - 第二亡者 */}
-          {plaqueType === 'DELIVERANCE' && formData.deceasedType === 'specific' && formData.showSecondDeceased && (
-            <div className="pt-4 border-t border-[#E8E0D0] space-y-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-tea">第二亡者</p>
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => {
-                    const n = { ...prev }
-                    delete n.showSecondDeceased
-                    delete n.deceasedName2
-                    delete n.birthDate2
-                    delete n.birthLunar2
-                    delete n.deathDate2
-                    delete n.deathLunar2
-                    return n
-                  })}
-                  className="text-sm text-tea/60 hover:text-vermilion"
-                >
-                  移除
-                </button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {renderField('deceasedName2')}
-                {renderField('birthDate2')}
-                {renderField('birthLunar2')}
-                {renderField('deathDate2')}
-                {renderField('deathLunar2')}
-              </div>
-            </div>
-          )}
-          {/* 延生禄位字段 */}
-          {plaqueType === 'LONGEVITY' && currentSubtype.fields.map(f => renderField(f))}
+            <div className="space-y-4">{['holderName','deceasedName','dedicationType','customDedicationType','yangShang','longevitySubtype','size','gender','birthDate','birthLunar','deathDate','deathLunar','deceasedName2','birthDate2','birthLunar2','deathDate2','deathLunar2','address','blessingText','startDate','endDate'].map(f => (ritualPlaqueType === 'LONGEVITY' && ['deceasedName','dedicationType','customDedicationType','deathDate','deathLunar','deceasedName2','birthDate2','birthLunar2','deathDate2','deathLunar2'].includes(f)) ? null : (ritualPlaqueType === 'REBIRTH' && ['holderName','longevitySubtype'].includes(f)) ? null : (ritualPlaqueType === 'DELIVERANCE' && ['holderName','deceasedName','deathDate','deathLunar','deceasedName2','birthDate2','birthLunar2','deathDate2','deathLunar2','longevitySubtype','birthDate','birthLunar','gender','blessingText'].includes(f)) ? null : (f === 'customDedicationType' && formData.dedicationType !== 'custom') ? null : renderField(f))}</div>
+          </div>
         </div>
       )
     }
 
-    // ---- LAMP (供灯) ----
-    if (taskType === 'LAMP') {
-      return (
-        <div className="space-y-4">
-          {fields.filter(f => f !== 'location').map(f => renderField(f))}
-        </div>
-      )
-    }
-
-    // ---- RITUAL (法会) ----
-    if (taskType === 'RITUAL') {
-      return (
-        <div className="space-y-4">
-          {fields.map(f => renderField(f))}
-        </div>
-      )
-    }
-
-    // ---- ACCOMMODATION (住宿) ----
     if (taskType === 'ACCOMMODATION') {
-      return (
-        <div className="space-y-4">
-          {fields.map(f => renderField(f))}
-        </div>
-      )
+      return <div className="space-y-4">{fields.map(f => renderField(f))}</div>
     }
 
-    // ---- DINING (用餐) ----
     if (taskType === 'DINING') {
-      return (
-        <div className="space-y-4">
-          {fields.map(f => renderField(f))}
-        </div>
-      )
+      return <div className="space-y-4">{fields.map(f => renderField(f))}</div>
     }
 
-    // ---- 默认: 按 fields 顺序渲染 ----
-    return (
-      <div className="space-y-4">
-        {fields.map(f => renderField(f))}
-      </div>
-    )
+    return <div className="space-y-4">{fields.map(f => renderField(f))}</div>
   }
 
-  // ============================================================
-  // 提交成功页
-  // ============================================================
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-paper px-4">

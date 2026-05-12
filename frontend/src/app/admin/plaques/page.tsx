@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect, useRef } from 'react'
 import { useAuthStore } from '@/stores/authStore'
@@ -75,6 +75,8 @@ interface Plaque {
   status: string
   remarks?: string
   templateId?: string
+  devoteeId?: string
+  ritualId?: string
   createdAt: string
 }
 
@@ -87,9 +89,15 @@ export default function PlaquesPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('')
+  const [filterSubtype, setFilterSubtype] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
+  const [filterSize, setFilterSize] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Plaque | null>(null)
+  const [printModalOpen, setPrintModalOpen] = useState(false)
+  const [printTargetIds, setPrintTargetIds] = useState<string[]>([])
+  const [printTargetType, setPrintTargetType] = useState('')
+  const [selectedTemplateId, setSelectedTemplateId] = useState('')
   const [showSecondDeceased, setShowSecondDeceased] = useState(false)
   const [devoteeSearchModalOpen, setDevoteeSearchModalOpen] = useState(false)
   const [devoteeSearchQuery, setDevoteeSearchQuery] = useState('')
@@ -107,8 +115,9 @@ export default function PlaquesPage() {
   const [filterDevotee, setFilterDevotee] = useState('')
   const [filterRitual, setFilterRitual] = useState('')
   const [batchModalOpen, setBatchModalOpen] = useState(false)
-  const [batchAction, setBatchAction] = useState<'extend' | 'cancel' | 'delete'>('extend')
+  const [batchAction, setBatchAction] = useState<'extend' | 'associate' | 'clear' | 'archive' | 'delete'>('extend')
   const [batchExtendDate, setBatchExtendDate] = useState('')
+  const [batchRitualId, setBatchRitualId] = useState('')
 
   // 导入相关
   const [importModalOpen, setImportModalOpen] = useState(false)
@@ -163,6 +172,7 @@ export default function PlaquesPage() {
   useEffect(() => {
     loadDevotees()
     loadRituals()
+    loadTemplates()
   }, [])
 
   const loadDedicationTypes = async () => {
@@ -180,7 +190,13 @@ export default function PlaquesPage() {
     try {
       const params: any = {}
       if (filterType) params.plaqueType = filterType
+      if (filterSubtype) {
+        if (filterType === 'LONGEVITY') params.longevitySubtype = filterSubtype
+        else if (filterType === 'DELIVERANCE') params.dedicationType = filterSubtype
+        else params.subtype = filterSubtype
+      }
       if (filterStatus) params.status = filterStatus
+      if (filterSize) params.size = filterSize
       if (filterDevotee) params.devoteeId = filterDevotee
       if (filterRitual) params.ritualId = filterRitual
       const data = await businessAPI.getPlaques(token!, params)
@@ -220,12 +236,29 @@ export default function PlaquesPage() {
     }
   }
 
+  const downloadWorkbook = (wb: XLSX.WorkBook, filename: string) => {
+    const array = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([array], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+  }
+
     // 延生禄位导入模板
   const downloadLongevityTemplate = () => {
     const templateData = [
       {
         '牌位类型': '延生禄位',
-        '姓名': '持名者姓名 (必填)',
+        '牌位主体': '牌位主体 (必填)',
+        '禄位类型': '普通/祈福/化太岁/财神/文殊',
+        '规格': '小/中/大',
         '性别': '男/女',
         '出生日期': '',
         '农历': '是/否',
@@ -239,7 +272,9 @@ export default function PlaquesPage() {
       },
       {
         '牌位类型': '延生禄位',
-        '姓名': '王淑琴',
+        '牌位主体': '王淑琴',
+        '禄位类型': '祈福',
+        '规格': '中',
         '性别': '女',
         '出生日期': '1982-06-05',
         '农历': '是',
@@ -260,25 +295,27 @@ export default function PlaquesPage() {
       { wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 20 },
     ]
     ws['!cols'] = colWidths
-    XLSX.writeFile(wb, '延生禄位导入模板.xlsx')
+    downloadWorkbook(wb, '延生禄位导入模板.xlsx')
   }
 
-  // 往生莲位+超度牌位导入模板
+  // 往生莲位导入模板
   const downloadRebirthTemplate = () => {
     const templateData = [
       {
-        '牌位类型': '往生莲位/超度牌位 (必填)',
-        '亡者姓名': '往生莲位必填',
+        '牌位类型': '往生莲位',
+        '亡者姓名': '亡者姓名 (必填)',
+        '规格': '小/中/大',
         '性别': '男/女',
         '出生日期': '',
         '亡者农历': '是/否',
         '忌日': '',
         '忌日农历': '是/否',
         '第二亡者': '',
+        '第二亡者生日': '',
+        '第二亡者忌日': '',
         '阳上': '',
         '电话': '',
         '地址': '',
-        '超度类型': '超度牌位必填',
         '开始日期': 'YYYY-MM-DD',
         '结束日期': 'YYYY-MM-DD',
         '备注': '',
@@ -286,33 +323,55 @@ export default function PlaquesPage() {
       {
         '牌位类型': '往生莲位',
         '亡者姓名': '陈五喜',
-        '性别': '',
+        '规格': '中',
+        '性别': '男',
         '出生日期': '',
         '亡者农历': '否',
         '忌日': '',
         '忌日农历': '否',
-        '第二亡者': '',
+        '第二亡者': '李某某',
+        '第二亡者生日': '',
+        '第二亡者忌日': '',
         '阳上': '王淑琴',
         '电话': '',
         '地址': '浙江省湖州市亿丰建材城1号楼301室',
-        '超度类型': '',
         '开始日期': '',
         '结束日期': '',
         '备注': '先外公',
       },
+    ]
+    const ws = XLSX.utils.json_to_sheet(templateData)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, '往生莲位导入模板')
+    ws['!cols'] = [
+      { wch: 12 }, { wch: 14 }, { wch: 8 }, { wch: 8 }, { wch: 14 }, { wch: 10 },
+      { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 14 },
+      { wch: 14 }, { wch: 30 }, { wch: 14 }, { wch: 14 }, { wch: 20 },
+    ]
+    downloadWorkbook(wb, '往生莲位导入模板.xlsx')
+  }
+
+  // 超度牌位导入模板
+  const downloadDeliveranceTemplate = () => {
+    const templateData = [
       {
         '牌位类型': '超度牌位',
-        '亡者姓名': '',
-        '性别': '',
-        '出生日期': '',
-        '亡者农历': '否',
-        '忌日': '',
-        '忌日农历': '否',
-        '第二亡者': '',
+        '牌位主体': '牌位主体 (必填)',
+        '规格': '小/中/大',
+        '阳上': '',
+        '电话': '',
+        '地址': '',
+        '开始日期': 'YYYY-MM-DD',
+        '结束日期': 'YYYY-MM-DD',
+        '备注': '',
+      },
+      {
+        '牌位类型': '超度牌位',
+        '牌位主体': '冤亲债主',
+        '规格': '中',
         '阳上': '马紫祥',
         '电话': '',
         '地址': '',
-        '超度类型': '冤亲债主',
         '开始日期': '',
         '结束日期': '',
         '备注': '',
@@ -320,14 +379,11 @@ export default function PlaquesPage() {
     ]
     const ws = XLSX.utils.json_to_sheet(templateData)
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, '往生超度导入模板')
-    const colWidths = [
-      { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 15 }, { wch: 10 },
-      { wch: 15 }, { wch: 10 }, { wch: 12 }, { wch: 15 }, { wch: 15 },
-      { wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 },
+    XLSX.utils.book_append_sheet(wb, ws, '超度牌位导入模板')
+    ws['!cols'] = [
+      { wch: 12 }, { wch: 18 }, { wch: 8 }, { wch: 14 }, { wch: 14 }, { wch: 30 }, { wch: 14 }, { wch: 14 }, { wch: 20 },
     ]
-    ws['!cols'] = colWidths
-    XLSX.writeFile(wb, '往生超度导入模板.xlsx')
+    downloadWorkbook(wb, '超度牌位导入模板.xlsx')
   }
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -372,15 +428,25 @@ export default function PlaquesPage() {
 
   useEffect(() => {
     loadPlaques()
-  }, [filterType, filterStatus, filterDevotee, filterRitual])
+  }, [filterType, filterSubtype, filterStatus, filterSize, filterDevotee, filterRitual])
 
   const filteredPlaques = plaques.filter(p => {
     const searchLower = search.toLowerCase()
-    return (
+    const matchesSearch = !searchLower || (
       p.holderName?.toLowerCase().includes(searchLower) ||
       p.deceasedName?.toLowerCase().includes(searchLower) ||
       p.yangShang?.toLowerCase().includes(searchLower)
     )
+    const matchesType = !filterType || p.plaqueType === filterType
+    const matchesSubtype = !filterSubtype ||
+      (filterType === 'LONGEVITY' && p.longevitySubtype === filterSubtype) ||
+      (filterType === 'DELIVERANCE' && (p.dedicationType === filterSubtype || p.customDedicationType === filterSubtype))
+    const matchesStatus = !filterStatus || p.status === filterStatus
+    const matchesSize = !filterSize || p.size === filterSize
+    const matchesDevotee = !filterDevotee || p.devoteeId === filterDevotee
+    const matchesRitual = !filterRitual || p.ritualId === filterRitual
+
+    return matchesSearch && matchesType && matchesSubtype && matchesStatus && matchesSize && matchesDevotee && matchesRitual
   })
 
   const handleSubmit = async () => {
@@ -457,8 +523,8 @@ export default function PlaquesPage() {
       startDate: plaque.startDate ? plaque.startDate.split('T')[0] : '',
       endDate: plaque.endDate ? plaque.endDate.split('T')[0] : '',
       remarks: plaque.remarks || '',
-      devoteeId: '',
-      ritualId: '',
+      devoteeId: plaque.devoteeId || '',
+      ritualId: plaque.ritualId || '',
       templateId: plaque.templateId || '',
     })
     setShowSecondDeceased(!!plaque.deceasedName2)
@@ -466,12 +532,12 @@ export default function PlaquesPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('确定要作废此牌位吗？')) return
+    if (!confirm('确定要删除此牌位吗？')) return
     try {
       await businessAPI.deletePlaque(token!, id)
       loadPlaques()
     } catch (error) {
-      console.error('作废失败:', error)
+      console.error('删除失败:', error)
     }
   }
 
@@ -488,15 +554,54 @@ export default function PlaquesPage() {
 
   const openPrintTool = (params?: Record<string, string>) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    window.location.href = `/admin/plaque-templates${query}`
+    window.open(`/print-api/index.html${query}`, '_blank')
   }
 
   const handlePreview = (plaque: Plaque) => {
-    openPrintTool({ plaqueId: plaque.id, type: plaque.plaqueType })
+    openPrintTemplateModal([plaque.id], plaque.plaqueType, plaque.templateId || '')
   }
 
   const handlePrint = (plaque: Plaque) => {
-    openPrintTool({ plaqueId: plaque.id, type: plaque.plaqueType })
+    openPrintTemplateModal([plaque.id], plaque.plaqueType, plaque.templateId || '')
+  }
+
+  const openPrintTemplateModal = async (ids: string[], plaqueType?: string, preferredTemplateId?: string) => {
+    if (!ids.length) {
+      alert('请先选择要打印的牌位')
+      return
+    }
+    if (!templates.length) await loadTemplates()
+    setPrintTargetIds(ids)
+    setPrintTargetType(plaqueType || filterType || '')
+    setSelectedTemplateId(preferredTemplateId || '')
+    setPrintModalOpen(true)
+  }
+
+  const handleLocalPrint = async (ids: string[], plaqueType?: string) => {
+    openPrintTemplateModal(ids, plaqueType)
+  }
+
+  const confirmPrintWithTemplate = () => {
+    if (!printTargetIds.length) return
+    const params: Record<string, string> = {
+      type: printTargetType || '',
+      preview: '1',
+      ...(selectedTemplateId ? { templateId: selectedTemplateId } : {}),
+    }
+    if (printTargetIds.length === 1) params.plaqueId = printTargetIds[0]
+    else params.plaqueIds = printTargetIds.join(',')
+    setPrintModalOpen(false)
+    openPrintTool({
+      ...params,
+    })
+  }
+
+  const openNewTemplateForPrint = () => {
+    if (window.templeDesktop?.openTemplateDesigner) {
+      window.templeDesktop.openTemplateDesigner()
+    } else {
+      openPrintTool(printTargetType ? { type: printTargetType } : undefined)
+    }
   }
 
   const resetForm = () => {
@@ -542,10 +647,24 @@ export default function PlaquesPage() {
     return d ? `${d.name} ${d.phone || ''}` : ''
   }
 
-  const getDedicationTypeOptions = () => [
-    { value: '', label: '请选择' },
-    ...dedicationTypes.map(t => ({ value: t, label: t })),
-    { value: 'custom', label: '+ 新增...' }
+  const getDedicationTypeOptions = () => {
+    const currentType = formData.dedicationType === 'custom'
+      ? formData.customDedicationType
+      : formData.dedicationType
+    const mergedTypes = currentType && !dedicationTypes.includes(currentType)
+      ? [currentType, ...dedicationTypes]
+      : dedicationTypes
+    return [
+      { value: '', label: '请选择' },
+      ...mergedTypes.map(t => ({ value: t, label: t })),
+      { value: 'custom', label: '+ 新增...' }
+    ]
+  }
+
+  const subtypeFilterOptions = [
+    { value: '', label: '\u5168\u90e8\u5b50\u7c7b\u578b' },
+    ...(filterType === 'LONGEVITY' ? longevitySubtypeOptions : []),
+    ...(filterType === 'DELIVERANCE' ? dedicationTypes.map(t => ({ value: t, label: t })) : []),
   ]
   
   const ritualOptions = [
@@ -557,6 +676,37 @@ export default function PlaquesPage() {
     { value: '', label: '请选择' },
     ...templates.map(t => ({ value: t.id, label: t.name }))
   ]
+
+  const printableTemplates = templates.filter((template: any) => {
+    if (!printTargetType) return true
+    const templateType = template.type || template.elements?.template?.dataGroup
+    if (templateType === 'ALL') return true
+    if (templateType === printTargetType) return true
+    if (printTargetType === 'LONGEVITY' && templateType === 'blessing') return true
+    if ((printTargetType === 'REBIRTH' || printTargetType === 'DELIVERANCE') && templateType === 'deliverance') return true
+    return false
+  })
+
+  const templatePreview = (template: any) => {
+    const payload = template.elements && !Array.isArray(template.elements) ? template.elements : null
+    const paper = payload?.layout?.paper || {}
+    const background = paper.background || payload?.layout?.background || template.backgroundImage || payload?.defaults?.background || ''
+    const paperWidth = Number(paper.width || payload?.template?.width || template.paperWidth || 90)
+    const paperHeight = Number(paper.height || payload?.template?.height || template.paperHeight || 260)
+    const type = template.type || payload?.template?.dataGroup || 'ALL'
+    return {
+      background,
+      ratio: `${Math.max(paperWidth, 1)} / ${Math.max(paperHeight, 1)}`,
+      typeLabel: type === 'LONGEVITY' || type === 'blessing'
+        ? '延生禄位'
+        : type === 'REBIRTH'
+          ? '往生莲位'
+          : type === 'DELIVERANCE' || type === 'deliverance'
+            ? '超度牌位'
+            : '通用模板',
+      sizeLabel: `${paperWidth} × ${paperHeight} mm`,
+    }
+  }
 
   const columns = [
     {
@@ -591,8 +741,12 @@ export default function PlaquesPage() {
     { key: 'plaqueType', title: '类型', render: (row: Plaque) => (
       <Badge variant="info">{plaqueTypeOptions.find(t => t.value === row.plaqueType)?.label || row.plaqueType}</Badge>
     )},
-    { key: 'subtype', title: '子类型', render: (row: Plaque) => row.longevitySubtype || row.dedicationType || '-' },
-    { key: 'name', title: '姓名', render: (row: Plaque) => row.holderName || row.deceasedName || '-' },
+    { key: 'subtype', title: '牌位主体', render: (row: Plaque) => {
+      if (row.plaqueType === 'LONGEVITY') return row.holderName || '-'
+      if (row.plaqueType === 'DELIVERANCE') return row.dedicationType === 'custom' ? (row.customDedicationType || '-') : (row.dedicationType || '-')
+      if (row.plaqueType === 'REBIRTH') return row.deceasedName ? `${row.deceasedName}往生莲位` : '-'
+      return '-'
+    } },
     { key: 'yangShang', title: '阳上', render: (row: Plaque) => row.yangShang || '-' },
     { key: 'size', title: '规格', render: (row: Plaque) => row.size || '-' },
     { key: 'dates', title: '有效期', render: (row: Plaque) => (
@@ -611,9 +765,7 @@ export default function PlaquesPage() {
         <Button size="sm" variant="ghost" onClick={() => handlePrint(row)} className="active:scale-[0.98] transition-all duration-200">打印</Button>
         <Button size="sm" variant="ghost" onClick={() => handleEdit(row)} className="active:scale-[0.98] transition-all duration-200">编辑</Button>
         <Button size="sm" variant="secondary" onClick={() => handleExtend(row)} className="active:scale-[0.98] transition-all duration-200">延期</Button>
-        {row.status !== 'CANCELLED' && (
-          <Button size="sm" variant="danger" onClick={() => handleDelete(row.id)} className="active:scale-[0.98] transition-all duration-200">作废</Button>
-        )}
+          <Button size="sm" variant="danger" onClick={() => handleDelete(row.id)} className="active:scale-[0.98] transition-all duration-200">删除</Button>
       </div>
     )},
   ]
@@ -633,7 +785,10 @@ export default function PlaquesPage() {
             批量导出
           </Button>
           <Button variant="secondary" onClick={() => openPrintTool(filterType ? { type: filterType } : undefined)} className="active:scale-[0.98] transition-all duration-200">
-            批量打印
+            打印工具
+          </Button>
+          <Button variant="secondary" onClick={() => handleLocalPrint(filteredPlaques.map((plaque) => plaque.id), filterType || undefined)} className="active:scale-[0.98] transition-all duration-200">
+            打印当前列表
           </Button>
           <Button onClick={() => { resetForm(); setEditing(null); setModalOpen(true); }} className="active:scale-[0.98] transition-all duration-200">
             新建牌位
@@ -642,39 +797,70 @@ export default function PlaquesPage() {
       </div>
 
       <Card>
-        <div className="flex flex-wrap gap-4 mb-4">
+        <div className="flex items-center gap-2 mb-4 overflow-x-auto whitespace-nowrap pb-1">
           <SearchBar
             value={search}
             onChange={setSearch}
             placeholder="搜索姓名或阳上..."
-            className="w-full sm:w-auto"
+            className="w-56 min-w-56 shrink-0"
           />
           <Select
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            options={[{ value: '', label: '全部类型' }, ...plaqueTypeOptions]}
+            onChange={(e) => {
+              setFilterType(e.target.value)
+              setFilterSubtype('')
+            }}
+            options={[{ value: '', label: '\u5168\u90e8\u7c7b\u578b' }, ...plaqueTypeOptions]}
+            containerClassName="!w-[132px] shrink-0"
+            className="h-10 px-3 pr-9 text-sm"
           />
+          {(filterType === 'LONGEVITY' || filterType === 'DELIVERANCE') && (
+            <Select
+              value={filterSubtype}
+              onChange={(e) => setFilterSubtype(e.target.value)}
+              options={subtypeFilterOptions}
+              containerClassName="!w-[150px] shrink-0"
+              className="h-10 px-3 pr-9 text-sm"
+            />
+          )}
           <Select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
             options={[{ value: '', label: '全部状态' }, ...statusOptions]}
+            containerClassName="!w-[120px] shrink-0"
+            className="h-10 px-3 pr-9 text-sm"
+          />
+          <Select
+            value={filterSize}
+            onChange={(e) => setFilterSize(e.target.value)}
+            options={[{ value: '', label: '全部规格' }, ...sizeOptions]}
+            containerClassName="!w-[112px] shrink-0"
+            className="h-10 px-3 pr-9 text-sm"
           />
           <Select
             value={filterDevotee}
             onChange={(e) => setFilterDevotee(e.target.value)}
             options={[{ value: '', label: '全部信众' }, ...devotees.map(d => ({ value: d.id, label: d.name }))]}
+            containerClassName="!w-[140px] shrink-0"
+            className="h-10 px-3 pr-9 text-sm"
           />
           <Select
             value={filterRitual}
             onChange={(e) => setFilterRitual(e.target.value)}
             options={[{ value: '', label: '全部法会' }, ...rituals.map(r => ({ value: r.id, label: r.name }))]}
+            containerClassName="!w-[140px] shrink-0"
+            className="h-10 px-3 pr-9 text-sm"
           />
         </div>
         {selectedIds.size > 0 && (
-          <div className="flex items-center gap-2 mb-4 p-2 bg-amber-50 rounded">
+          <div className="flex flex-wrap items-center gap-2 mb-4 p-2 bg-amber-50 rounded">
             <span className="text-sm text-amber-800">已选择 {selectedIds.size} 项</span>
+            <Button size="sm" variant="secondary" onClick={() => { setBatchAction('associate'); setBatchRitualId(''); setBatchModalOpen(true); }} className="active:scale-[0.98] transition-all duration-200">关联法会</Button>
+            <Button size="sm" variant="secondary" onClick={() => { setBatchAction('clear'); setBatchModalOpen(true); }} className="active:scale-[0.98] transition-all duration-200">清空法会</Button>
+            <Button size="sm" variant="secondary" onClick={() => { setBatchAction('archive'); setBatchExtendDate(''); setBatchModalOpen(true); }} className="active:scale-[0.98] transition-all duration-200">批量归档</Button>
             <Button size="sm" variant="secondary" onClick={() => { setBatchAction('extend'); setBatchExtendDate(''); setBatchModalOpen(true); }} className="active:scale-[0.98] transition-all duration-200">批量延期</Button>
-            <Button size="sm" variant="danger" onClick={() => { setBatchAction('cancel'); setBatchModalOpen(true); }} className="active:scale-[0.98] transition-all duration-200">批量作废</Button>
+            <Button size="sm" variant="secondary" onClick={() => handleLocalPrint(Array.from(selectedIds), filterType || undefined)} className="active:scale-[0.98] transition-all duration-200">打印选中</Button>
+            <Button size="sm" variant="danger" onClick={() => { setBatchAction('delete'); setBatchModalOpen(true); }} className="active:scale-[0.98] transition-all duration-200">批量删除</Button>
             <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} className="active:scale-[0.98] transition-all duration-200">取消选择</Button>
           </div>
         )}
@@ -997,17 +1183,17 @@ export default function PlaquesPage() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <Select
-                label="超度类型 *"
+                label="牌位主体 *"
                 value={formData.dedicationType}
                 onChange={(e) => setFormData({ ...formData, dedicationType: e.target.value })}
                 options={getDedicationTypeOptions()}
               />
               {formData.dedicationType === 'custom' && (
                 <Input
-                  label="新增超度类型"
+                  label="新增牌位主体"
                   value={formData.customDedicationType}
                   onChange={(e) => setFormData({ ...formData, customDedicationType: e.target.value })}
-                  placeholder="请输入新的超度类型名称"
+                  placeholder="请输入新的牌位主体名称"
                 />
               )}
               <Select
@@ -1096,6 +1282,88 @@ export default function PlaquesPage() {
         </div>
       </Modal>
 
+      {/* 打印模板选择弹窗 */}
+      <Modal
+        open={printModalOpen}
+        onClose={() => setPrintModalOpen(false)}
+        title="选择打印模板"
+        size="half"
+      >
+        <div className="space-y-4">
+          <div className="text-sm text-tea">
+            已选择 {printTargetIds.length} 个牌位。
+          </div>
+
+          {printableTemplates.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1">
+              {printableTemplates.map((template: any) => {
+                const preview = templatePreview(template)
+                return (
+                  <label
+                    key={template.id}
+                    className={`block border rounded-lg p-3 cursor-pointer transition-colors ${
+                      selectedTemplateId === template.id
+                        ? 'border-vermilion bg-vermilion-light/20'
+                        : 'border-[#E8E0D0] hover:border-vermilion'
+                    }`}
+                  >
+                    <div className="flex gap-3">
+                      <div
+                        className="w-20 h-28 shrink-0 rounded border border-[#E8E0D0] bg-paper overflow-hidden flex items-center justify-center"
+                        style={{ aspectRatio: preview.ratio }}
+                      >
+                        {preview.background ? (
+                          <img src={preview.background} alt={`${template.name}缩略图`} className="w-full h-full object-contain bg-white" />
+                        ) : (
+                          <div className="w-full h-full bg-white flex flex-col items-center justify-center gap-2 px-2">
+                            <div className="h-12 w-1.5 bg-vermilion/70 rounded" />
+                            <div className="h-8 w-1 bg-tea/30 rounded" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start gap-2">
+                          <input
+                            type="radio"
+                            name="printTemplate"
+                            checked={selectedTemplateId === template.id}
+                            onChange={() => setSelectedTemplateId(template.id)}
+                            className="mt-1"
+                          />
+                          <div className="min-w-0">
+                            <div className="font-medium text-ink truncate">{template.name}</div>
+                            <div className="text-xs text-tea/60 mt-1">{preview.typeLabel}</div>
+                            <div className="text-xs text-tea/50 mt-1">{preview.sizeLabel}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              当前类型还没有可用模板，请先新增模板。
+            </div>
+          )}
+
+          <div className="flex justify-between gap-3 pt-2">
+            <Button variant="secondary" onClick={openNewTemplateForPrint}>
+              新建模板
+            </Button>
+            <div className="flex gap-3">
+              <Button variant="secondary" onClick={() => setPrintModalOpen(false)}>
+                取消
+              </Button>
+              <Button onClick={confirmPrintWithTemplate} disabled={printableTemplates.length > 0 && !selectedTemplateId}>
+                预览
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
       {/* 信众搜索弹窗 */}
       <Modal
         open={devoteeSearchModalOpen}
@@ -1148,34 +1416,41 @@ export default function PlaquesPage() {
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
             <p className="text-sm text-amber-800 font-medium mb-2">导入说明</p>
             <ul className="text-xs text-amber-700 space-y-1 list-disc list-inside">
-              <li>牌位类型：延生禄位 / 往生莲位 / 超度牌位</li>
-              <li>延生禄位必填"姓名"，往生莲位必填"亡者姓名"，超度牌位必填"超度类型"</li>
+              <li>模板已拆分为：延生禄位 / 往生莲位 / 超度牌位 3 份，请按类型分别下载</li>
+              <li>延生禄位必填"牌位主体"，往生莲位必填"亡者姓名"，超度牌位必填"牌位主体"</li>
+              <li>往生莲位如填写"第二亡者"，可继续填写"第二亡者生日"和"第二亡者忌日"</li>
               <li>日期格式：YYYY-MM-DD，如 2024-01-15</li>
               <li>农历列填写"是"或"否"</li>
               <li>规格填写：大 / 中 / 小</li>
             </ul>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             <Button variant="secondary" onClick={downloadLongevityTemplate} className="active:scale-[0.98] transition-all duration-200">
               下载延生禄位模板
             </Button>
             <Button variant="secondary" onClick={downloadRebirthTemplate} className="active:scale-[0.98] transition-all duration-200">
-              下载往生/超度模板
+              下载往生莲位模板
             </Button>
-            <label className="flex-1">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls"
-                className="hidden"
-                onChange={handleImport}
-                disabled={importing}
-              />
-              <Button className="w-full" loading={importing} disabled={importing}>
-                {importing ? '导入中...' : '选择文件'}
-              </Button>
-            </label>
+            <Button variant="secondary" onClick={downloadDeliveranceTemplate} className="active:scale-[0.98] transition-all duration-200">
+              下载超度牌位模板
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={handleImport}
+              disabled={importing}
+            />
+            <Button
+              className="flex-1 min-w-[160px]"
+              loading={importing}
+              disabled={importing}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {importing ? '导入中...' : '选择文件'}
+            </Button>
           </div>
 
           {importResult && (
@@ -1208,11 +1483,26 @@ export default function PlaquesPage() {
       </Modal>
 
       {/* 批量操作弹窗 */}
-      <Modal open={batchModalOpen} onClose={() => setBatchModalOpen(false)} title="批量操作" size="sm">
+      <Modal
+        open={batchModalOpen}
+        onClose={() => setBatchModalOpen(false)}
+        title={batchAction === 'associate' ? '批量关联法会' : batchAction === 'clear' ? '批量清空法会' : batchAction === 'archive' ? '批量归档' : batchAction === 'delete' ? '批量删除' : '批量延期'}
+        size="sm"
+      >
         <div className="space-y-4">
+          {batchAction === 'associate' && (
+            <div>
+              <p className="text-sm text-tea mb-3">将 {selectedIds.size} 个牌位关联到以下法会：</p>
+              <Select
+                value={batchRitualId}
+                onChange={(e) => setBatchRitualId(e.target.value)}
+                options={ritualOptions}
+              />
+            </div>
+          )}
           {batchAction === 'extend' && (
             <div>
-              <p className="text-sm text-tea mb-3">将为 {selectedIds.size} 个牌位设置新的结束日期</p>
+              <p className="text-sm text-tea mb-3">为 {selectedIds.size} 个牌位设置新的结束日期：</p>
               <Input
                 label="新的结束日期"
                 type="date"
@@ -1221,9 +1511,25 @@ export default function PlaquesPage() {
               />
             </div>
           )}
-          {batchAction === 'cancel' && (
+          {batchAction === 'archive' && (
             <div>
-              <p className="text-sm text-tea mb-3">确定要作废选中的 {selectedIds.size} 个牌位吗？</p>
+              <p className="text-sm text-tea mb-3">归档后牌位状态会变为“已过期”，并保留原法会关联。可选填写归档日期；留空时会优先使用法会日期。</p>
+              <Input
+                label="归档日期（可选）"
+                type="date"
+                value={batchExtendDate}
+                onChange={(e) => setBatchExtendDate(e.target.value)}
+              />
+            </div>
+          )}
+          {batchAction === 'clear' && (
+            <div>
+              <p className="text-sm text-tea mb-3">将清空 {selectedIds.size} 个牌位的法会关联，牌位本身不会删除。</p>
+            </div>
+          )}
+          {batchAction === 'delete' && (
+            <div>
+              <p className="text-sm text-tea mb-3">确定删除 {selectedIds.size} 个牌位吗？此操作不可恢复。</p>
             </div>
           )}
           <div className="flex justify-end gap-3">
@@ -1231,22 +1537,24 @@ export default function PlaquesPage() {
             <Button
               onClick={async () => {
                 try {
-                  for (const id of selectedIds) {
-                    if (batchAction === 'extend') {
-                      await businessAPI.updatePlaque(token!, id, { endDate: batchExtendDate, status: 'ACTIVE' })
-                    } else if (batchAction === 'cancel') {
-                      await businessAPI.updatePlaque(token!, id, { status: 'CANCELLED' })
-                    }
-                  }
+                  await businessAPI.batchUpdatePlaques(token!, {
+                    ids: Array.from(selectedIds),
+                    action: batchAction,
+                    ritualId: batchAction === 'associate' ? batchRitualId : undefined,
+                    endDate: batchAction === 'extend' || batchAction === 'archive' ? (batchExtendDate || undefined) : undefined,
+                  })
                   setBatchModalOpen(false)
                   setSelectedIds(new Set())
+                  setBatchExtendDate('')
+                  setBatchRitualId('')
                   loadPlaques()
                 } catch (error) {
                   console.error('批量操作失败:', error)
                   alert('批量操作失败')
                 }
               }}
-             className="active:scale-[0.98] transition-all duration-200">
+              className="active:scale-[0.98] transition-all duration-200"
+            >
               确认
             </Button>
           </div>
@@ -1255,5 +1563,3 @@ export default function PlaquesPage() {
     </div>
   )
 }
-
-

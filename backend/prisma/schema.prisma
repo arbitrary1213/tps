@@ -30,6 +30,7 @@ model User {
   approvedRegistrations RegistrationRequest[] @relation("ApprovedBy")
   operationLogs          OperationLog[]
   donations               Donation[]
+  printJobs               PrintJob[]
 
   @@map("users")
 }
@@ -395,6 +396,30 @@ model RitualParticipant {
   @@map("ritual_participants")
 }
 
+/// 佛事日程 / 寺院日历
+model BuddhistCalendarEvent {
+  id           String   @id @default(cuid())
+  title        String
+  type         String   @default("寺院日程") // 寺院日程 / 法会 / 纪念日 / 斋日 / 其他
+  calendarType String   @default("solar") // solar / lunar
+  date         DateTime?
+  lunarMonth   Int?
+  lunarDay     Int?
+  note         String?
+  enabled      Boolean  @default(true)
+  sort         Int      @default(0)
+  createdById  String?
+  createdByName String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([enabled])
+  @@index([calendarType])
+  @@index([date])
+  @@index([lunarMonth, lunarDay])
+  @@map("buddhist_calendar_events")
+}
+
 /// 殿堂
 model Hall {
   id          String   @id @default(cuid())
@@ -660,4 +685,167 @@ model OperationLog {
   @@index([targetType, targetId])
   @@index([createdAt])
   @@map("operation_logs")
+}
+
+model PrintClient {
+  id            String   @id @default(cuid())
+  clientCode    String   @unique
+  name          String
+  machineName   String?
+  machineToken  String   @unique
+  status        String   @default("OFFLINE") // OFFLINE / ONLINE / DISABLED
+  lastSeenAt    DateTime?
+  lastIp        String?
+  defaultPrinter String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  jobs          PrintJob[]
+
+  @@index([status])
+  @@map("print_clients")
+}
+
+model PrintJob {
+  id               String   @id @default(cuid())
+  jobNo            String   @unique
+  sourceType       String   @default("PLAQUE")
+  status           String   @default("PENDING") // PENDING / DISPATCHED / PRINTING / COMPLETED / FAILED / CANCELLED
+  templateId       String?
+  templateName     String?
+  templateSnapshot Json?
+  plaqueType       String?
+  paperWidthMm     Float?
+  paperHeightMm    Float?
+  totalCount       Int      @default(0)
+  printedCount     Int      @default(0)
+  failedCount      Int      @default(0)
+  createdById      String?
+  createdByName    String?
+  printClientId    String?
+  remarks          String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  createdBy        User?        @relation(fields: [createdById], references: [id])
+  printClient      PrintClient? @relation(fields: [printClientId], references: [id])
+  items            PrintJobItem[]
+
+  @@index([status])
+  @@index([sourceType, status])
+  @@index([printClientId])
+  @@map("print_jobs")
+}
+
+model PrintJobItem {
+  id            String   @id @default(cuid())
+  jobId         String
+  seqNo         Int
+  plaqueId      String?
+  subject       String?
+  payload       Json
+  status        String   @default("PENDING") // PENDING / PRINTING / COMPLETED / FAILED / SKIPPED
+  printedAt     DateTime?
+  errorMessage  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  job           PrintJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, seqNo])
+  @@index([jobId, status])
+  @@index([plaqueId])
+  @@map("print_job_items")
+}
+
+model WechatIntegration {
+  id                 String   @id @default(cuid())
+  templeCode         String   @unique
+  templeName         String?
+  serverUrl          String?
+  authorizerAppId    String?  @unique
+  authorizerNickName String?
+  status             String   @default("UNBOUND") // UNBOUND / ACTIVE / DISABLED
+  syncToken          String   @unique
+  boundAt            DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  messages           WechatMessageRecord[]
+  articles           WechatArticle[]
+  templateMessages   WechatTemplateMessage[]
+
+  @@index([status])
+  @@map("wechat_integrations")
+}
+
+model WechatMessageRecord {
+  id              String   @id @default(cuid())
+  integrationId   String
+  authorizerAppId String?
+  openId          String?
+  direction       String   @default("INBOUND") // INBOUND / OUTBOUND
+  msgType         String   @default("text")
+  eventType       String?
+  content         String?
+  rawPayload      Json?
+  aiSuggestion    String?
+  status          String   @default("RECEIVED") // RECEIVED / AI_SUGGESTED / REPLIED / FAILED
+  repliedAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  integration     WechatIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@index([integrationId, createdAt])
+  @@index([authorizerAppId])
+  @@index([openId])
+  @@map("wechat_message_records")
+}
+
+model WechatArticle {
+  id              String   @id @default(cuid())
+  integrationId   String
+  authorizerAppId String?
+  title           String
+  author          String?
+  digest          String?
+  content         String
+  thumbMediaId    String?
+  remoteDraftId   String?
+  remotePublishId String?
+  status          String   @default("DRAFT") // DRAFT / READY / PUBLISHED / FAILED
+  lastError       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  publishedAt     DateTime?
+
+  integration     WechatIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@index([integrationId, status])
+  @@index([authorizerAppId])
+  @@map("wechat_articles")
+}
+
+model WechatTemplateMessage {
+  id              String   @id @default(cuid())
+  integrationId   String
+  authorizerAppId String?
+  openId          String
+  businessType    String   // RITUAL_REMINDER / PLAQUE_REMINDER / CUSTOM
+  templateId      String?
+  title           String?
+  payload         Json?
+  status          String   @default("PENDING") // PENDING / SENT / FAILED
+  remoteMsgId     String?
+  errorMessage    String?
+  sentAt          DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  integration     WechatIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@index([integrationId, status])
+  @@index([openId])
+  @@map("wechat_template_messages")
 }

@@ -1,131 +1,130 @@
-# 仙顶寺智慧管理系统
+# Temple OS
 
-> 基于禅意设计理念的寺院数字化管理平台
+寺院业务管理系统，当前采用“单客户独立服务器部署”模式：一个客户对应一台服务器、一套数据库、一套配置和一套文件存储。
 
-## 技术栈
+## Tech Stack
 
-| 层级 | 技术 |
-|------|------|
-| 前端 | Next.js 14 + React + TailwindCSS |
-| 后端 | Node.js + Express + Prisma ORM |
-| 数据库 | PostgreSQL 15 |
-| 打印服务 | Express.js + Puppeteer |
-| 网关 | Nginx |
-| 部署 | Docker Compose |
+| Layer | Tech |
+| --- | --- |
+| Frontend | Next.js 16, React 18, Tailwind CSS |
+| Backend | Node.js, Express, TypeScript, Prisma |
+| Database | PostgreSQL 15 |
+| Print Tool | Node.js, Express, browser-side print/template UI |
+| Gateway | Nginx |
+| Deploy | Docker, systemd, GitHub Actions, package upload |
 
-## 项目结构
+## Main Directories
 
-```
-temple-os/
-├── frontend/          # Next.js 前端应用
-│   ├── src/
-│   │   ├── app/      # App Router 页面
-│   │   ├── components/  # 公共组件
-│   │   ├── lib/      # 工具函数
-│   │   └── stores/   # Zustand 状态管理
-│   └── package.json
-│
-├── backend/          # Express 后端 API
-│   ├── src/
-│   │   ├── routes/   # API 路由
-│   │   ├── middleware/  # 中间件
-│   │   └── utils/    # 工具函数
-│   ├── prisma/      # 数据库模型
-│   └── package.json
-│
-├── print-service/    # 打印服务
-│   └── src/
-│
-├── docker/          # Docker 配置
-│   ├── docker-compose.yml
-│   └── nginx.conf
-│
-└── README.md
+```text
+backend/          API service and Prisma schema
+frontend/         Public site and admin panel
+print-service/    Current web print/template tool
+desktop-app/      Electron local client
+wechat-platform/  Central WeChat official-account platform skeleton
+docker/           Compose, Nginx example, env template
+docs/             Project documentation
+img/              Source images
+scripts/          Local release tools
 ```
 
-## 功能模块
+## Important Docs
 
-### 佛事管理
-- 牌位管理（延生禄位/往生莲位/超度牌位）
-- 法会管理
-- 殿堂管理
-- 供灯祈福
-
-### 人员管理
-- 僧众管理
-- 义工管理
-- 信众管理
-
-### 财务管理
-- 功德管理
-- 库房管理
-
-### 后勤管理
-- 住宿管理
-- 斋堂管理
-- 来访管理
-
-### 系统管理
-- 用户权限管理
-- 系统设置
-- 操作日志
-
-## 快速部署
-
-### 1. 安装 Docker
-
-```bash
-curl -fsSL https://get.docker.com | sh
+```text
+docs/PROJECT_OVERVIEW.md          Full project overview
+docs/MODULE_MAP.md                Module map
+docs/MAINTENANCE_AUDIT.md         Risks and cleanup plan
+docs/LOCAL_WORKFLOW.md            Local development and release workflow
+docs/single-server-deployment.md  Single-customer server deployment
+docs/desktop-printing-plan.md     Desktop app and local printing direction
+docs/git-auto-deploy.md           GitHub Actions deployment
+docs/project-operations.md        Production operations notes
+docs/wechat-platform-plan.md      WeChat center platform and customer server integration
 ```
 
-### 2. 启动服务
+## Runtime
 
-```bash
-cd /opt/temple-os/docker
-docker-compose up -d
+```text
+Nginx
+  /           -> frontend:3000
+  /api/       -> backend:3002
+  /print-api/ -> print-service:3001, protected by backend auth
 ```
 
-### 3. 初始化数据库
+Production server path:
 
-```bash
-docker exec temple-backend npx prisma db push
-docker exec temple-backend node scripts/init-db.js
+```text
+/opt/temple-os
 ```
 
-## 默认账号
+Local working path:
 
-- 用户名: admin
-- 密码: admin123
-- 邮箱: admin@xiandingsi.cn
-
-## 访问地址
-
-| 服务 | 地址 |
-|------|------|
-| 落地页 | https://xiandingsi.cn |
-| 管理后台 | https://xiandingsi.cn/admin |
-| API | https://xiandingsi.cn/api |
-| 打印服务 | https://xiandingsi.cn/print-api |
-
-## 开发
-
-### 前端开发
-
-```bash
-cd frontend
-npm install
-npm run dev
+```text
+C:\Users\28557\Documents\New project\temple-os
 ```
 
-### 后端开发
+## Development
+
+One-click desktop start on Windows:
+
+```powershell
+.\start-desktop.bat
+```
+
+Backend:
 
 ```bash
 cd backend
-npm install
+npm ci
 npx prisma generate
-npx prisma db push
-npm run dev
+npm run build
+npm test
 ```
+
+Frontend:
+
+```bash
+cd frontend
+npm ci
+npm run build
+```
+
+Print service:
+
+```bash
+cd print-service
+npm ci
+node --check index.js
+node --check public/app.js
+```
+
+Desktop app:
+
+```bash
+cd desktop-app
+npm install
+npm run check
+npm start
+```
+
+WeChat platform skeleton:
+
+```bash
+cd wechat-platform
+npm install
+npm run check
+npm start
+```
+
+The WeChat platform service is a center service for multi-official-account authorization, message intake, article draft/publish, and template-message dispatch. Customer servers use `WECHAT_PLATFORM_BASE_URL` and `WECHAT_PLATFORM_API_TOKEN` to call it.
+
+## Release Package
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\make-release.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-release.ps1 -ZipPath .\releases\<release>.zip
+```
+
+Release packages must not contain real `.env` files, dependencies, build output, backups, logs, or runtime directories.
 
 ## License
 

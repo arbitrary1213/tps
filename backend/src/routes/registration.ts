@@ -6,6 +6,133 @@ import { prisma } from '../lib/prisma'
 
 const router = Router()
 
+const PLAQUE_TASK_TYPES = new Set(['PLAQUE', 'LONGEVITY', 'DELIVERANCE', 'REBIRTH'])
+const LAMP_TASK_TYPES = new Set(['LAMP', 'LAMPOFFERING'])
+
+function normalizeVolunteerPayload(data: any) {
+  const payload: Record<string, any> = {
+    name: data.name,
+    dharmaName: data.dharmaName,
+    gender: data.gender,
+    phone: data.phone,
+    address: data.address,
+    ethnicity: data.ethnicity,
+    education: data.education,
+    emergencyContact: data.emergencyContact,
+    currentOccupation: data.currentOccupation,
+    healthStatus: data.healthStatus,
+    hasInfectiousDisease: data.hasInfectiousDisease,
+    hasAllergy: data.hasAllergy,
+    hasSpecialNeeds: data.hasSpecialNeeds,
+    firstContactBuddhism: data.firstContactBuddhism,
+    hasTakenRefuge: data.hasTakenRefuge,
+    willingToLearn: data.willingToLearn,
+    guidanceHope: data.guidanceHope,
+    hasVolunteerExperience: data.hasVolunteerExperience,
+    lastVolunteerLocation: data.lastVolunteerLocation,
+    lastVolunteerContent: data.lastVolunteerContent,
+    serviceDuration: data.serviceDuration,
+    signature: data.signature,
+  }
+
+  const arrayFields = ['preceptsHeld', 'skills']
+  for (const key of arrayFields) {
+    if (Array.isArray(data[key]) && data[key].length > 0) payload[key] = data[key]
+    else if (typeof data[key] === 'string' && data[key] !== '') payload[key] = [data[key]]
+  }
+
+  const intFields = ['volunteerTimes']
+  for (const key of intFields) {
+    const value = data[key]
+    if (value !== undefined && value !== null && value !== '') {
+      const parsed = Number(value)
+      if (!Number.isNaN(parsed)) payload[key] = parsed
+    }
+  }
+
+  const dateFields = ['birthDate', 'refugeTime', 'lastVolunteerDate', 'serviceStartDate', 'serviceEndDate']
+  for (const key of dateFields) {
+    const value = data[key]
+    if (typeof value === 'string' && !['', 'undefined', 'null'].includes(value)) {
+      const parsed = new Date(value)
+      if (!Number.isNaN(parsed.getTime())) payload[key] = parsed
+    }
+  }
+
+  for (const [key, value] of Object.entries(payload)) {
+    if (value === undefined || value === null || value === '') delete payload[key]
+  }
+
+  return payload
+}
+
+function parseOptionalDate(value: unknown, fallback?: Date | null) {
+  if (typeof value === 'string' && !['', 'undefined', 'null'].includes(value)) {
+    const parsed = new Date(value)
+    if (!Number.isNaN(parsed.getTime())) return parsed
+  }
+  return fallback ?? undefined
+}
+
+function shouldCreateRitualPlaque(data: Record<string, any>) {
+  return Boolean(
+    data.plaqueType ||
+    data.holderName ||
+    data.deceasedName ||
+    data.deceasedName2 ||
+    data.dedicationType ||
+    data.customDedicationType ||
+    data.longevitySubtype ||
+    data.yangShang
+  )
+}
+
+function buildPlaquePayload(
+  data: Record<string, any>,
+  taskType: string,
+  submitterName: string,
+  submitterPhone: string,
+  fallbackEndDate?: Date | null,
+) {
+  const plaqueType = data.plaqueType || (taskType === 'REBIRTH' ? 'REBIRTH' : taskType === 'DELIVERANCE' ? 'DELIVERANCE' : 'LONGEVITY')
+  const dedicationType = data.dedicationType === 'custom'
+    ? (data.customDedicationType || data.dedicationType)
+    : data.dedicationType
+
+  const startDate = parseOptionalDate(data.startDate, fallbackEndDate || new Date())
+  const defaultEndDate = fallbackEndDate
+    ? new Date(fallbackEndDate)
+    : new Date((startDate || new Date()).getTime() + 365 * 24 * 60 * 60 * 1000)
+  const endDate = parseOptionalDate(data.endDate, defaultEndDate)
+
+  return {
+    plaqueType,
+    holderName: data.holderName,
+    deceasedName: data.deceasedName,
+    deceasedName2: data.deceasedName2,
+    birthDate2: data.birthDate2,
+    deathDate2: data.deathDate2,
+    zodiac2: data.zodiac2,
+    gender2: data.gender2,
+    gender: data.gender,
+    zodiac: data.zodiac,
+    birthDate: data.birthDate,
+    birthLunar: Array.isArray(data.birthLunar) ? data.birthLunar.includes('1') : Boolean(data.birthLunar),
+    deathDate: data.deathDate,
+    deathLunar: Array.isArray(data.deathLunar) ? data.deathLunar.includes('1') : Boolean(data.deathLunar),
+    yangShang: data.yangShang || submitterName,
+    phone: data.phone || submitterPhone,
+    address: data.address,
+    dedicationType,
+    longevitySubtype: data.longevitySubtype,
+    size: data.size,
+    blessingText: data.blessingText,
+    startDate,
+    endDate,
+    ritualId: data.ritualId || null,
+  }
+}
+
 // 获取登记任务列表（公开，获取已启用的）
 router.get('/tasks', async (req: Request, res: Response) => {
   try {
@@ -242,14 +369,49 @@ router.put('/requests/:id/approve', authMiddleware, async (req: AuthRequest, res
     const data = formData as any
 
     const result = await prisma.$transaction(async (tx) => {
-      switch (taskType) {
-        case 'VOLUNTEER':
+      if (PLAQUE_TASK_TYPES.has(taskType)) {
+        await tx.memorialPlaque.create({
+          data: buildPlaquePayload(data, taskType, request.submitterName, request.submitterPhone)
+        })
+      } else if (LAMP_TASK_TYPES.has(taskType)) {
+        await tx.lampOffering.create({
+          data: {
+            name: data.name || request.submitterName,
+            phone: data.phone || request.submitterPhone,
+            lampType: data.lampType,
+            location: data.location,
+            blessingName: data.blessingName,
+            blessingType: data.blessingType,
+            amount: data.amount || 0,
+            startDate: data.startDate ? new Date(data.startDate) : new Date(),
+            endDate: data.endDate ? new Date(data.endDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+          }
+        })
+      } else {
+        switch (taskType) {
+        case 'VOLUNTEER': {
+          const volunteerPayload = normalizeVolunteerPayload({
+            ...data,
+            name: data.name || request.submitterName,
+            phone: data.phone || request.submitterPhone,
+          })
+
+          let volunteer = null
+          if (volunteerPayload.phone && volunteerPayload.name) {
+            volunteer = await tx.volunteer.upsert({
+              where: { phone: volunteerPayload.phone },
+              update: volunteerPayload,
+              create: volunteerPayload as any,
+            })
+          }
+
           if (data.volunteerTaskId) {
             await tx.volunteerSignup.create({
               data: {
                 taskId: data.volunteerTaskId,
-                volunteerName: data.name || request.submitterName,
-                volunteerPhone: data.phone || request.submitterPhone,
+                volunteerId: volunteer?.id,
+                volunteerName: volunteerPayload.name || request.submitterName,
+                volunteerPhone: volunteerPayload.phone || request.submitterPhone,
                 status: 'SIGNED_UP'
               }
             })
@@ -259,39 +421,13 @@ router.put('/requests/:id/approve', authMiddleware, async (req: AuthRequest, res
             })
           }
           break
+        }
 
-        case 'PLAQUE':
-          await tx.memorialPlaque.create({
-            data: {
-              plaqueType: data.plaqueType || 'LONGEVITY',
-              holderName: data.holderName,
-              deceasedName: data.deceasedName,
-              deceasedName2: data.deceasedName2,
-              birthDate2: data.birthDate2,
-              deathDate2: data.deathDate2,
-              zodiac2: data.zodiac2,
-              gender2: data.gender2,
-              gender: data.gender,
-              zodiac: data.zodiac,
-              birthDate: data.birthDate,
-              birthLunar: data.birthLunar?.includes('1'),
-              deathDate: data.deathDate,
-              deathLunar: data.deathLunar?.includes('1'),
-              yangShang: data.yangShang || request.submitterName,
-              phone: data.phone || request.submitterPhone,
-              address: data.address,
-              dedicationType: data.dedicationType,
-              longevitySubtype: data.longevitySubtype,
-              size: data.size,
-              blessingText: data.blessingText,
-              startDate: data.startDate ? new Date(data.startDate) : new Date(),
-              endDate: data.endDate ? new Date(data.endDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-              ritualId: data.ritualId || null,
-            }
-          })
-          break
+        case 'RITUAL': {
+          const ritual = data.ritualId
+            ? await tx.ritual.findUnique({ where: { id: data.ritualId } })
+            : null
 
-        case 'RITUAL':
           if (data.ritualId) {
             await tx.ritualParticipant.create({
               data: {
@@ -301,23 +437,20 @@ router.put('/requests/:id/approve', authMiddleware, async (req: AuthRequest, res
               }
             })
           }
-          break
 
-        case 'LAMPOFFERING':
-          await tx.lampOffering.create({
-            data: {
-              name: request.submitterName,
-              phone: request.submitterPhone,
-              lampType: data.lampType,
-              location: data.location,
-              blessingName: data.blessingName,
-              blessingType: data.blessingType,
-              amount: data.amount || 0,
-              startDate: data.startDate ? new Date(data.startDate) : new Date(),
-              endDate: data.endDate ? new Date(data.endDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-            }
-          })
+          if (shouldCreateRitualPlaque(data)) {
+            await tx.memorialPlaque.create({
+              data: buildPlaquePayload(
+                data,
+                data.plaqueType || 'LONGEVITY',
+                request.submitterName,
+                request.submitterPhone,
+                ritual?.ritualDate || null,
+              )
+            })
+          }
           break
+        }
 
         case 'ACCOMMODATION':
           const roomId = data.roomId
@@ -347,7 +480,7 @@ router.put('/requests/:id/approve', authMiddleware, async (req: AuthRequest, res
           await tx.diningReservation.create({
             data: {
               mealType: data.mealType || 'LUNCH',
-              date: data.date ? new Date(data.date) : new Date(),
+              date: (data.mealDate || data.date) ? new Date(data.mealDate || data.date) : new Date(),
               contactName: request.submitterName,
               contactPhone: request.submitterPhone,
               mealCount: data.mealCount || 1,
@@ -355,6 +488,7 @@ router.put('/requests/:id/approve', authMiddleware, async (req: AuthRequest, res
             }
           })
           break
+        }
       }
 
       const updated = await tx.registrationRequest.update({

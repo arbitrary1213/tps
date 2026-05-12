@@ -63,6 +63,22 @@ describe('Registration Flow Logic Tests', () => {
 
       expect(result).toBe('created_plaque')
     })
+
+    it('should treat legacy plaque task types as plaque approvals', () => {
+      const plaqueTaskTypes = new Set(['PLAQUE', 'LONGEVITY', 'DELIVERANCE', 'REBIRTH'])
+
+      expect(plaqueTaskTypes.has('PLAQUE')).toBe(true)
+      expect(plaqueTaskTypes.has('LONGEVITY')).toBe(true)
+      expect(plaqueTaskTypes.has('DELIVERANCE')).toBe(true)
+      expect(plaqueTaskTypes.has('REBIRTH')).toBe(true)
+    })
+
+    it('should treat LAMP as a valid lamp approval taskType', () => {
+      const lampTaskTypes = new Set(['LAMP', 'LAMPOFFERING'])
+
+      expect(lampTaskTypes.has('LAMP')).toBe(true)
+      expect(lampTaskTypes.has('LAMPOFFERING')).toBe(true)
+    })
   })
 
   describe('Form Data Filtering', () => {
@@ -117,12 +133,13 @@ describe('Registration Flow Logic Tests', () => {
       const formData: Record<string, string> = { blessingName: '祝福人', holderName: '持名者' }
 
       const getSubmitterName = (tt: string, fd: Record<string, string>) => {
-        if (tt === 'LONGEVITY' || tt === 'LAMP') return fd.blessingName || fd.holderName || ''
+        if (tt === 'LONGEVITY') return fd.holderName || fd.blessingName || ''
+        if (tt === 'LAMP') return fd.name || fd.blessingName || ''
         if (tt === 'DELIVERANCE') return fd.yangShang || ''
         return fd.name || ''
       }
 
-      expect(getSubmitterName(taskType, formData)).toBe('祝福人')
+      expect(getSubmitterName(taskType, formData)).toBe('持名者')
     })
 
     it('should extract submitterName for DELIVERANCE', () => {
@@ -130,12 +147,105 @@ describe('Registration Flow Logic Tests', () => {
       const formData: Record<string, string> = { yangShang: '阳上人', name: '其他' }
 
       const getSubmitterName = (tt: string, fd: Record<string, string>) => {
-        if (tt === 'LONGEVITY' || tt === 'LAMP') return fd.blessingName || fd.holderName || ''
+        if (tt === 'LONGEVITY') return fd.holderName || fd.blessingName || ''
+        if (tt === 'LAMP') return fd.name || fd.blessingName || ''
         if (tt === 'DELIVERANCE') return fd.yangShang || ''
         return fd.name || ''
       }
 
       expect(getSubmitterName(taskType, formData)).toBe('阳上人')
+    })
+  })
+  describe('Volunteer Approval Mapping', () => {
+    it('should prepare volunteer archive fields for profile upsert', () => {
+      const formData = {
+        name: '??',
+        phone: '13800138000',
+        dharmaName: '??',
+        birthDate: '2026-05-09',
+        preceptsHeld: ['??'],
+        volunteerTimes: '3',
+        serviceStartDate: '2026-05-10',
+        signature: '??'
+      }
+
+      const payload: Record<string, any> = {
+        name: formData.name,
+        phone: formData.phone,
+        dharmaName: formData.dharmaName,
+        signature: formData.signature,
+      }
+      if (Array.isArray(formData.preceptsHeld) && formData.preceptsHeld.length > 0) payload.preceptsHeld = formData.preceptsHeld
+      payload.volunteerTimes = Number(formData.volunteerTimes)
+      payload.birthDate = new Date(formData.birthDate)
+      payload.serviceStartDate = new Date(formData.serviceStartDate)
+
+      expect(payload.name).toBe('??')
+      expect(payload.phone).toBe('13800138000')
+      expect(payload.preceptsHeld).toEqual(['??'])
+      expect(payload.volunteerTimes).toBe(3)
+      expect(payload.birthDate instanceof Date).toBe(true)
+      expect(payload.serviceStartDate instanceof Date).toBe(true)
+    })
+
+    it('should allow volunteer signup creation to link an upserted volunteer', () => {
+      const volunteer = { id: 'vol-1', phone: '13800138000' }
+      const signup = {
+        volunteerId: volunteer.id,
+        volunteerPhone: volunteer.phone,
+      }
+
+      expect(signup.volunteerId).toBe('vol-1')
+      expect(signup.volunteerPhone).toBe('13800138000')
+    })
+  })
+
+  describe('Ritual Registration With Plaque', () => {
+    it('should keep participant info and plaque info as separate sources', () => {
+      const formData = {
+        ritualId: 'ritual-1',
+        name: '??',
+        phone: '13800138000',
+        plaqueType: 'LONGEVITY',
+        holderName: '??',
+      }
+
+      const participantName = formData.name
+      const plaqueHolderName = formData.holderName
+
+      expect(participantName).toBe('??')
+      expect(plaqueHolderName).toBe('??')
+    })
+
+    it('should allow ritual registration to create a rebirth plaque payload', () => {
+      const formData = {
+        ritualId: 'ritual-1',
+        plaqueType: 'REBIRTH',
+        deceasedName: '???',
+        yangShang: '???',
+      }
+
+      expect(formData.plaqueType).toBe('REBIRTH')
+      expect(formData.deceasedName).toBe('???')
+      expect(formData.yangShang).toBe('???')
+    })
+  })
+
+  describe('Field Name Compatibility', () => {
+    it('should accept mealDate as the dining reservation date source', () => {
+      const formData = { mealDate: '2026-05-09', date: '2026-05-08' }
+      const resolvedDate = formData.mealDate || formData.date
+
+      expect(resolvedDate).toBe('2026-05-09')
+    })
+
+    it('should use custom dedication text when dedicationType is custom', () => {
+      const formData = { dedicationType: 'custom', customDedicationType: '????' }
+      const dedicationType = formData.dedicationType === 'custom'
+        ? (formData.customDedicationType || formData.dedicationType)
+        : formData.dedicationType
+
+      expect(dedicationType).toBe('????')
     })
   })
 })

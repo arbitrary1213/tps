@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "build": "./node_modules/.bin/tsc",
+    "build": "tsc",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
@@ -13,7 +13,8 @@
     "db:init": "node scripts/init-db.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "backfill:registration-dispatch": "node scripts/backfill-registration-dispatch.js"
   },
   "dependencies": {
     "@prisma/client": "^5.14.0",

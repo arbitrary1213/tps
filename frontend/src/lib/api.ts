@@ -1,14 +1,87 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || ''
+const API_BASE = ''
+
+declare global {
+  interface Window {
+    templeDesktop?: {
+      getCache?: (key: string) => Promise<any>
+      setCache?: (key: string, value: any) => Promise<boolean>
+      upsertLocalRows?: (entityType: string, rows: any[]) => Promise<{ count: number }>
+      listLocalRows?: (entityType: string) => Promise<any[]>
+      offlineSave?: (operation: any) => Promise<any>
+      getLocalDbInfo?: () => Promise<{ path: string; entityCount: number; pendingCount: number }>
+      openTemplateDesigner?: () => Promise<boolean>
+      printHtml?: (options: { html: string; deviceName?: string; silent?: boolean }) => Promise<{ success: boolean; failureReason?: string }>
+    }
+  }
+}
+
+const endpointEntityMap: Array<[RegExp, string]> = [
+  [/^\/api\/plaques(?:\?|$)/, 'plaques'],
+  [/^\/api\/devotees(?:\?|$)/, 'devotees'],
+  [/^\/api\/rituals(?:\?|$)/, 'rituals'],
+  [/^\/api\/registration\/requests(?:\?|$)/, 'registration_requests'],
+  [/^\/api\/print-jobs(?:\?|$)/, 'print_jobs'],
+  [/^\/api\/plaque-templates(?:\?|$)/, 'plaque_templates'],
+  [/^\/api\/calendar-events(?:\?|$)/, 'calendar_events'],
+]
+
+function entityTypeForEndpoint(endpoint: string) {
+  return endpointEntityMap.find(([pattern]) => pattern.test(endpoint))?.[1] || ''
+}
+
+function normalizeRows(data: any) {
+  if (Array.isArray(data)) return data
+  if (Array.isArray(data?.items)) return data.items
+  if (Array.isArray(data?.data)) return data.data
+  return []
+}
 
 interface FetchOptions extends RequestInit {
   token?: string
+  skipLocalFallback?: boolean
+  preferRemote?: boolean
+}
+
+function isDesktopRuntime() {
+  return typeof window !== 'undefined' && Boolean(window.templeDesktop)
+}
+
+function attachCacheMeta(value: any, meta: any) {
+  if (value && typeof value === 'object') {
+    Object.defineProperty(value, '__desktopCache', { value: meta, enumerable: false, configurable: true })
+  }
+  return value
+}
+
+async function readLocalFirst<T>(endpoint: string, method: string): Promise<T | null> {
+  const entityType = entityTypeForEndpoint(endpoint)
+  if (entityType) {
+    const rows = await window.templeDesktop?.listLocalRows?.(entityType).catch(() => null)
+    if (rows?.length) return attachCacheMeta(rows, { source: 'sqlite' }) as T
+  }
+  const cached = await window.templeDesktop?.getCache?.(`${method}:${endpoint}`).catch(() => null)
+  if (cached) return attachCacheMeta(cached.value, { source: 'cache', savedAt: cached.savedAt }) as T
+  return null
+}
+
+async function writeLocalFromGet(endpoint: string, method: string, data: any) {
+  await window.templeDesktop?.setCache?.(`${method}:${endpoint}`, data).catch(() => false)
+  const entityType = entityTypeForEndpoint(endpoint)
+  const rows = normalizeRows(data)
+  if (entityType && rows.length) {
+    await window.templeDesktop?.upsertLocalRows?.(entityType, rows).catch(() => ({ count: 0 }))
+  }
 }
 
 async function request<T = any>(endpoint: string, options: FetchOptions = {}): Promise<T> {
-  const { token, ...fetchOptions } = options
+  const { token, skipLocalFallback, preferRemote, ...fetchOptions } = options
+  const method = fetchOptions.method || 'GET'
+  const cacheKey = `${method}:${endpoint}`
+
+  const isFormData = typeof FormData !== 'undefined' && fetchOptions.body instanceof FormData
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
     ...(typeof options.headers === 'object' && options.headers !== null 
       ? options.headers as Record<string, string>
       : {}),
@@ -19,22 +92,55 @@ async function request<T = any>(endpoint: string, options: FetchOptions = {}): P
   }
 
   const url = API_BASE ? `${API_BASE}${endpoint}` : endpoint
-  const res = await fetch(url, {
-    ...fetchOptions,
-    headers,
-  })
-
-  const json = await res.json()
-
-  if (!res.ok || !json.success) {
-    throw new Error(json.error || '请求失败')
+  const shouldUseLocalFirst = method === 'GET' && isDesktopRuntime() && !skipLocalFallback && !preferRemote
+  if (shouldUseLocalFirst) {
+    const localValue = await readLocalFirst<T>(endpoint, method)
+    if (localValue) {
+      fetch(url, { ...fetchOptions, headers })
+        .then(async (res) => {
+          const json = await res.json()
+          if (res.ok && json.success) await writeLocalFromGet(endpoint, method, json.data)
+        })
+        .catch(() => {})
+      return localValue
+    }
   }
 
-  // GET requests return data.data, POST/PUT/DELETE return the full response
-  if (fetchOptions.method === 'GET' || !fetchOptions.method) {
-    return json.data
+  try {
+    const res = await fetch(url, {
+      ...fetchOptions,
+      headers,
+    })
+
+    const json = await res.json()
+
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || '请求失败')
+    }
+
+    if (method === 'GET') {
+      await writeLocalFromGet(endpoint, method, json.data)
+      return json.data
+    }
+    return json
+  } catch (error) {
+    if (method === 'GET' && !skipLocalFallback) {
+      const localValue = await readLocalFirst<T>(endpoint, method)
+      if (localValue) return localValue
+    }
+    throw error
   }
-  return json
+}
+
+export type DesktopStartupSyncResult = {
+  ok: number
+  failed: number
+  localDb?: {
+    path: string
+    entityCount: number
+    pendingCount: number
+  }
+  errors: string[]
 }
 
 // 认证
@@ -63,7 +169,7 @@ export const authAPI = {
 
 // 系统设置
 export const systemAPI = {
-  getSettings: () => request<any>('/api/system/settings'),
+  getSettings: (options?: FetchOptions) => request<any>('/api/system/settings', options),
   updateSettings: (token: string, data: any) =>
     request('/api/system/settings', { method: 'PUT', token, body: JSON.stringify(data) }),
 }
@@ -79,9 +185,9 @@ export const registrationAPI = {
   deleteTask: (token: string, id: string) =>
     request(`/api/registration/tasks/${id}`, { method: 'DELETE', token }),
 
-  getRequests: (token: string, params?: any) => {
+  getRequests: (token: string, params?: any, options?: FetchOptions) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    return request<any>(`/api/registration/requests${query}`, { token })
+    return request<any>(`/api/registration/requests${query}`, { token, ...(options || {}) })
   },
   submitRequest: (data: { taskId: string; submitterName: string; submitterPhone: string; formData: any }) =>
     request<any>('/api/registration/requests', { method: 'POST', body: JSON.stringify(data) }),
@@ -138,9 +244,9 @@ export const businessAPI = {
     request<any>('/api/volunteer-attendance/sign-out', { method: 'POST', body: JSON.stringify(data) }),
 
   // 信众
-  getDevotees: (token: string, params?: any) => {
+  getDevotees: (token: string, params?: any, options?: FetchOptions) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    return request<any[]>(`/api/devotees${query}`, { token })
+    return request<any[]>(`/api/devotees${query}`, { token, ...(options || {}) })
   },
   createDevotee: (token: string, data: any) =>
     request<any>('/api/devotees', { method: 'POST', token, body: JSON.stringify(data) }),
@@ -150,21 +256,42 @@ export const businessAPI = {
     request(`/api/devotees/${id}`, { method: 'DELETE', token }),
 
   // 牌位
-  getPlaques: (token: string, params?: any) => {
+  getPlaques: (token: string, params?: any, options?: FetchOptions) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    return request<any[]>(`/api/plaques${query}`, { token })
+    return request<any[]>(`/api/plaques${query}`, { token, ...(options || {}) })
   },
   createPlaque: (token: string, data: any) =>
     request<any>('/api/plaques', { method: 'POST', token, body: JSON.stringify(data) }),
   updatePlaque: (token: string, id: string, data: any) =>
     request<any>(`/api/plaques/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
+  batchUpdatePlaques: (token: string, data: { ids: string[]; action: string; ritualId?: string; endDate?: string }) =>
+    request<any>('/api/plaques/batch', { method: 'PUT', token, body: JSON.stringify(data) }),
   deletePlaque: (token: string, id: string) =>
     request(`/api/plaques/${id}`, { method: 'DELETE', token }),
+  createPrintJob: (token: string, data: {
+    sourceType?: string
+    plaqueIds: string[]
+    templateId?: string
+    templateName?: string
+    templateSnapshot?: any
+    plaqueType?: string
+    paperWidthMm?: number
+    paperHeightMm?: number
+    printClientId?: string
+    remarks?: string
+  }) =>
+    request<any>('/api/print-jobs', { method: 'POST', token, body: JSON.stringify(data) }),
+  getPrintJobs: (token: string, params?: any, options?: FetchOptions) => {
+    const query = params ? '?' + new URLSearchParams(params).toString() : ''
+    return request<any[]>(`/api/print-jobs${query}`, { token, ...(options || {}) })
+  },
+  getPrintJob: (token: string, id: string) =>
+    request<any>(`/api/print-jobs/${id}`, { token }),
 
   // 法会
-  getRituals: (params?: any) => {
+  getRituals: (params?: any, options?: FetchOptions) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    return request<any[]>(`/api/rituals${query}`)
+    return request<any[]>(`/api/rituals${query}`, options)
   },
   createRitual: (token: string, data: any) =>
     request<any>('/api/rituals', { method: 'POST', token, body: JSON.stringify(data) }),
@@ -237,6 +364,8 @@ export const businessAPI = {
   getUsers: (token: string) => request<any[]>('/api/users', { token }),
   createUser: (token: string, data: any) =>
     request<any>('/api/users', { method: 'POST', token, body: JSON.stringify(data) }),
+  updateUserPassword: (token: string, id: string, newPassword: string) =>
+    request(`/api/users/${id}/password`, { method: 'PUT', token, body: JSON.stringify({ newPassword }) }),
   deleteUser: (token: string, id: string) =>
     request(`/api/users/${id}`, { method: 'DELETE', token }),
 
@@ -247,10 +376,10 @@ export const businessAPI = {
   },
 
   // 统计
-  getStats: (token: string) => request<any>('/api/stats/dashboard', { token }),
+  getStats: (token: string, options?: FetchOptions) => request<any>('/api/stats/dashboard', { token, ...(options || {}) }),
 
   // 牌位模板
-  getPlaqueTemplates: (token: string) => request<any[]>('/api/plaque-templates', { token }),
+  getPlaqueTemplates: (token: string, options?: FetchOptions) => request<any[]>('/api/plaque-templates', { token, ...(options || {}) }),
   getPlaqueTemplate: (id: string) => request<any>(`/api/plaque-templates/${id}`),
   createPlaqueTemplate: (token: string, data: any) =>
     request<any>('/api/plaque-templates', { method: 'POST', token, body: JSON.stringify(data) }),
@@ -260,15 +389,16 @@ export const businessAPI = {
     request(`/api/plaque-templates/${id}`, { method: 'DELETE', token }),
 
   // 牌位导入
-  importPlaques: (token: string, file: File) => {
+  importPlaques: async (token: string, file: File) => {
     const formData = new FormData()
     formData.append('file', file)
-    return request<{ success: number; failed: number; errors: string[] }>('/api/import/plaques', {
+    const result = await request<any>('/api/import/plaques', {
       method: 'POST',
       token,
-      headers: {}, // 让 fetch 不设置 Content-Type，让 FormData 自己设置
+      headers: {},
       body: formData as any,
     })
+    return result.data || result
   },
 
 // Export plaques (CSV)
@@ -297,4 +427,21 @@ export const businessAPI = {
     document.body.removeChild(a)
     URL.revokeObjectURL(objectUrl)
   },
+}
+
+export const wechatAPI = {
+  getStatus: (token: string) => request<any>('/api/integrations/wechat/status', { token }),
+  getAuthUrl: (token: string) => request<any>('/api/integrations/wechat/auth-url', { token }),
+  bind: (token: string, data: any) =>
+    request<any>('/api/integrations/wechat/bind', { method: 'POST', token, body: JSON.stringify(data) }),
+  getMessages: (token: string) => request<any[]>('/api/wechat/messages', { token }),
+  replyMessage: (token: string, id: string, content: string) =>
+    request<any>(`/api/wechat/messages/${id}/reply`, { method: 'POST', token, body: JSON.stringify({ content }) }),
+  getArticles: (token: string) => request<any[]>('/api/wechat/articles', { token }),
+  createArticle: (token: string, data: any) =>
+    request<any>('/api/wechat/articles', { method: 'POST', token, body: JSON.stringify(data) }),
+  publishArticle: (token: string, id: string) =>
+    request<any>(`/api/wechat/articles/${id}/publish`, { method: 'POST', token }),
+  sendTemplateMessage: (token: string, data: any) =>
+    request<any>('/api/wechat/template-messages/send', { method: 'POST', token, body: JSON.stringify(data) }),
 }

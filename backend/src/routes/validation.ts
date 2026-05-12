@@ -32,6 +32,7 @@ const plaqueFields = {
   longevitySubtype: z.string().optional(),
   size: z.string().optional(),
   blessingText: z.string().optional(),
+  customDedicationType: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
 }
@@ -63,6 +64,10 @@ export const lampFormSchema = z.object({
 export const ritualFormSchema = z.object({
   ritualId: z.string().optional(),
   ...baseFields,
+  ...plaqueFields,
+  deceasedName2: z.string().optional(),
+  birthDate2: z.string().optional(),
+  deathDate2: z.string().optional(),
 })
 
 export const accommodationFormSchema = z.object({
@@ -76,6 +81,7 @@ export const accommodationFormSchema = z.object({
 export const diningFormSchema = z.object({
   mealType: z.enum(['BREAKFAST', 'LUNCH', 'DINNER', 'RITUAL']).optional(),
   date: z.string().optional(),
+  mealDate: z.string().optional(),
   mealCount: z.number().optional(),
   contactName: z.string().optional(),
   contactPhone: z.string().optional(),

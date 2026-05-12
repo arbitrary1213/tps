@@ -2,41 +2,44 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useAuthStore } from '@/stores/authStore'
 import { clsx } from 'clsx'
+import { useAuthStore } from '@/stores/authStore'
 
 const navItems = [
-  { group: '核心', items: [
-    { href: '/admin', label: '仪表盘', icon: '◉' },
-    { href: '/admin/tasks', label: '登记发布', icon: '◎' },
-    { href: '/admin/approvals', label: '登记审批', icon: '◇' },
+  { group: '工作台', items: [
+    { href: '/admin', label: '总览', icon: '总' },
+    { href: '/admin/tasks', label: '登记发布', icon: '登' },
+    { href: '/admin/approvals', label: '登记审批', icon: '审' },
   ]},
-  { group: '人员管理', items: [
-    { href: '/admin/volunteers', label: '义工管理', icon: '☺' },
-    { href: '/admin/monks', label: '僧众管理', icon: '♝' },
-    { href: '/admin/devotees', label: '信众管理', icon: '❀' },
+  { group: '寺院业务', items: [
+    { href: '/admin/devotees', label: '信众管理', icon: '信' },
+    { href: '/admin/plaques', label: '牌位管理', icon: '牌' },
+    { href: '/admin/rituals', label: '法会管理', icon: '法' },
+    { href: '/admin/lamps', label: '供灯祈福', icon: '灯' },
+    { href: '/admin/donations', label: '功德管理', icon: '功' },
   ]},
-  { group: '佛事管理', items: [
-    { href: '/admin/plaques', label: '牌位管理', icon: '▣' },
-    { href: '/admin/plaques/batch-print', label: '批量打印', icon: '⬇' },
-    { href: '/admin/plaque-templates', label: '模板设计', icon: '✎' },
-    { href: '/admin/rituals', label: '法会管理', icon: '☸' },
-    { href: '/admin/halls', label: '殿堂管理', icon: '⌂' },
-    { href: '/admin/lamps', label: '供灯祈福', icon: '✧' },
+  { group: '模板与打印', items: [
+    { href: '/print-api/', label: '模板设计', icon: '模' },
+    { href: '/admin/plaques/batch-print', label: '批量打印', icon: '印' },
   ]},
-  { group: '后勤管理', items: [
-    { href: '/admin/rooms', label: '住宿管理', icon: '⌂' },
-    { href: '/admin/dining', label: '斋堂管理', icon: '☕' },
-    { href: '/admin/visits', label: '来访管理', icon: '▷' },
+  { group: '公众号运营', items: [
+    { href: '/admin/wechat', label: '公众号控制台', icon: '微' },
   ]},
-  { group: '财务后勤', items: [
-    { href: '/admin/donations', label: '功德管理', icon: '♡' },
-    { href: '/admin/warehouse', label: '库房管理', icon: '▤' },
+  { group: '人员与后勤', items: [
+    { href: '/admin/volunteers', label: '义工管理', icon: '义' },
+    { href: '/admin/volunteer-tasks', label: '义工任务', icon: '任' },
+    { href: '/admin/volunteer-attendance', label: '义工考勤', icon: '勤' },
+    { href: '/admin/monks', label: '僧众管理', icon: '僧' },
+    { href: '/admin/rooms', label: '住宿管理', icon: '住' },
+    { href: '/admin/dining', label: '斋堂管理', icon: '斋' },
+    { href: '/admin/visits', label: '来访管理', icon: '访' },
+    { href: '/admin/warehouse', label: '库房管理', icon: '库' },
   ]},
   { group: '系统', items: [
-    { href: '/admin/settings', label: '系统设置', icon: '⚙' },
-    { href: '/admin/users', label: '用户管理', icon: '⚙' },
-    { href: '/admin/logs', label: '操作日志', icon: '☰' },
+    { href: '/admin/halls', label: '殿堂管理', icon: '殿' },
+    { href: '/admin/settings', label: '系统设置', icon: '设' },
+    { href: '/admin/users', label: '用户管理', icon: '用' },
+    { href: '/admin/logs', label: '操作日志', icon: '志' },
   ]},
 ]
 
@@ -46,14 +49,12 @@ export function AdminNav() {
 
   return (
     <aside className="fixed left-0 top-0 bottom-0 w-56 bg-white border-r border-[#E8E0D0] flex flex-col z-40">
-      {/* Logo */}
       <div className="h-16 flex items-center px-6 border-b border-[#E8E0D0]">
         <Link href="/admin" className="text-lg font-serif text-classic text-ink tracking-widest">
-          仙顶寺
+          仙顶寺管理
         </Link>
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-4">
         {navItems.map((group) => (
           <div key={group.group} className="mb-4">
@@ -82,7 +83,6 @@ export function AdminNav() {
         ))}
       </nav>
 
-      {/* User */}
       <div className="border-t border-[#E8E0D0] p-4">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-8 h-8 rounded-full bg-vermilion-light text-vermilion flex items-center justify-center text-sm font-medium">
