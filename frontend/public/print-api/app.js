@@ -1,4 +1,4 @@
-const templates = [
+﻿const templates = [
   { id: "blessing", name: "延生禄位", width: 90, height: 260, font: 36, vertical: true, tabletType: "blessing" },
   { id: "deliveranceDetail", name: "超度牌位 - 详细", width: 100, height: 280, font: 34, vertical: true, tabletType: "deliveranceDetail" },
   { id: "deliveranceSimple", name: "超度牌位 - 简版", width: 100, height: 260, font: 36, vertical: true, tabletType: "deliveranceSimple" },
@@ -145,6 +145,8 @@ const singleVariantPresets = [
   { key: "layout_two", label: "版式二" },
 ];
 
+const SUMMARY_TEMPLATE_IDS = new Set(["a4summary", "a3summary"]);
+
 const blessingSingleVariantAliases = {
   layout_one: "blessing_bodhisattva",
   layout_two: "blessing_person",
@@ -217,16 +219,15 @@ const controls = [
   "showBg", "enableDuplex",
   "summaryDataGroup", "summaryVariant", "summaryFormat", "columnCount", "rowsPerColumn", "summaryFont",
   "summaryLineGap", "pageMargin", "columnGap", "summaryVertical",
-].map($);
+].map($).filter(Boolean);
 
 function init() {
   migrateStoredLayouts();
+  const templateSelect = $("templateSelect");
   if (templateDesignerMode) {
-    templates.forEach((template) => {
-      appendTemplateOption(template);
-    });
-  } else {
-    $("templateSelect").innerHTML = "";
+    rebuildTemplateOptions();
+  } else if (templateSelect) {
+    templateSelect.innerHTML = "";
   }
 
   loadCustomTemplatesFromStorage({ includeLocalOnly: templateDesignerMode });
@@ -255,63 +256,73 @@ function init() {
   $("nextBtn").addEventListener("click", () => changePage(1));
   $("jumpPageBtn").addEventListener("click", jumpToPage);
   $("printFromPageBtn").addEventListener("click", printFromPage);
-  $("paperSelect").addEventListener("change", applyPaperPreset);
-  $("templateSelect").addEventListener("change", applyTemplate);
-  $("singleVariant").addEventListener("change", handleSingleVariantChange);
-  $("addStaticFieldBtn").addEventListener("click", addStaticField);
-  $("addSummaryStaticFieldBtn").addEventListener("click", addSummaryStaticField);
-  $("editStaticFieldBtn").addEventListener("click", editSelectedStaticField);
-  $("deleteStaticFieldBtn").addEventListener("click", deleteSelectedStaticField);
-  $("deleteTemplateBtn").addEventListener("click", deleteCurrentTemplate);
+  $("paperSelect")?.addEventListener("change", applyPaperPreset);
+  $("templateSelect")?.addEventListener("change", applyTemplate);
+  $("singleVariant")?.addEventListener("change", handleSingleVariantChange);
+  $("addStaticFieldBtn")?.addEventListener("click", addStaticField);
+  $("addSummaryStaticFieldBtn")?.addEventListener("click", addSummaryStaticField);
+  $("editStaticFieldBtn")?.addEventListener("click", editSelectedStaticField);
+  $("deleteStaticFieldBtn")?.addEventListener("click", deleteSelectedStaticField);
+  $("deleteTemplateBtn")?.addEventListener("click", deleteCurrentTemplate);
   document.querySelectorAll("[data-side]").forEach((button) => {
     button.addEventListener("click", () => setEditSide(button.dataset.side || "front"));
   });
 
-  document.getElementById("selectAllFields").addEventListener("click", () => {
+  document.getElementById("selectAllFields")?.addEventListener("click", () => {
     document.querySelectorAll(".field-checkbox").forEach(cb => cb.checked = true);
   });
 
-  document.getElementById("deselectAllFields").addEventListener("click", () => {
+  document.getElementById("deselectAllFields")?.addEventListener("click", () => {
     document.querySelectorAll(".field-checkbox").forEach(cb => cb.checked = false);
   });
 
-  document.getElementById("newTemplateBtn").addEventListener("click", () => {
+  document.getElementById("newTemplateBtn")?.addEventListener("click", () => {
     renderFieldSelection();
-    document.getElementById("newTemplateName").value = "";
-    document.getElementById("newTemplateWidth").value = $("paperWidth").value || (state.mode === "summary" ? "210" : "90");
-    document.getElementById("newTemplateHeight").value = $("paperHeight").value || (state.mode === "summary" ? "297" : "260");
-    document.getElementById("newTemplateVertical").checked = state.mode !== "summary" && $("singleVertical").checked;
-    document.getElementById("fieldSelection").closest("fieldset").hidden = state.mode === "summary";
-    document.getElementById("newTemplateDialog").showModal();
+    const newTemplateName = document.getElementById("newTemplateName");
+    const newTemplateWidth = document.getElementById("newTemplateWidth");
+    const newTemplateHeight = document.getElementById("newTemplateHeight");
+    const newTemplateVertical = document.getElementById("newTemplateVertical");
+    const fieldSelection = document.getElementById("fieldSelection");
+    const newTemplateDialog = document.getElementById("newTemplateDialog");
+    if (newTemplateName) newTemplateName.value = "";
+    if (newTemplateWidth) newTemplateWidth.value = $("paperWidth")?.value || (state.mode === "summary" ? "210" : "90");
+    if (newTemplateHeight) newTemplateHeight.value = $("paperHeight")?.value || (state.mode === "summary" ? "297" : "260");
+    if (newTemplateVertical) newTemplateVertical.checked = state.mode !== "summary" && Boolean($("singleVertical")?.checked);
+    if (fieldSelection?.closest("fieldset")) fieldSelection.closest("fieldset").hidden = state.mode === "summary";
+    newTemplateDialog?.showModal?.();
   });
 
-  document.getElementById("cancelNewTemplate").addEventListener("click", () => {
-    document.getElementById("newTemplateDialog").close();
+  document.getElementById("cancelNewTemplate")?.addEventListener("click", () => {
+    document.getElementById("newTemplateDialog")?.close?.();
   });
 
-  document.getElementById("newTemplateDialog").addEventListener("click", (e) => {
-    if (e.target === document.getElementById("newTemplateDialog")) {
-      document.getElementById("newTemplateDialog").close();
+  document.getElementById("newTemplateDialog")?.addEventListener("click", (e) => {
+    const dialog = document.getElementById("newTemplateDialog");
+    if (e.target === dialog) {
+      dialog?.close?.();
     }
   });
 
   controls.forEach((control) => control.addEventListener("input", () => {
     if (control.id === "tabletType" || control.id === "summaryDataGroup") {
+      if (control.id === "summaryDataGroup") {
+        handleSummaryGroupChange(true);
+        return;
+      }
       state.pageIndex = 0;
       buildFieldMapping();
       buildStyleEditor();
       renderTable();
       updateDataHint();
-      applySummaryDefault(control.id === "summaryDataGroup");
-      refreshSummaryVariantOptions();
       ensureLayout(currentLayoutKey());
     }
     if (control.id === "summaryVariant") {
-      buildSummaryFieldMapping();
-      buildStyleEditor();
+      handleSummaryVariantChange();
+      return;
     }
     if (control.id === "singleVariant") {
       handleSingleVariantChange();
+      return;
     }
     if (control.id === "styleField") syncStyleInputs();
     if (["fieldFontSize", "fieldColor", "fieldFontFamily", "fieldTextAlign", "fieldVerticalAlign", "fieldWrapMode"].includes(control.id)) updateSelectedFieldStyle();
@@ -320,14 +331,12 @@ function init() {
     render();
   }));
 
-  document.getElementById("confirmNewTemplate").addEventListener("click", createCustomTemplate);
-  $("summaryVariant").addEventListener("change", () => {
-    buildSummaryFieldMapping();
-    buildStyleEditor();
-    render();
+  document.getElementById("confirmNewTemplate")?.addEventListener("click", createCustomTemplate);
+  $("summaryVariant")?.addEventListener("change", () => {
+    handleSummaryVariantChange();
   });
   relocateSharedStyleEditor();
-  if (templateDesignerMode || $("templateSelect").options.length) {
+  if (templateDesignerMode || $("templateSelect")?.options?.length) {
     applyTemplate();
   } else {
     render();
@@ -348,22 +357,45 @@ function handleSingleVariantChange() {
   render();
 }
 
+function handleSummaryGroupChange(forceDefault = false) {
+  if (state.mode !== "summary") return;
+  state.pageIndex = 0;
+  state.activeFieldKey = "";
+  refreshSummaryVariantOptions();
+  ensureLayout(currentLayoutKey());
+  buildFieldMapping();
+  buildSummaryFieldMapping();
+  buildStyleEditor();
+  renderTable();
+  updateDataHint();
+  applySummaryDefault(forceDefault);
+  render();
+}
+
+function handleSummaryVariantChange() {
+  if (state.mode !== "summary") return;
+  state.activeFieldKey = "";
+  buildSummaryFieldMapping();
+  buildStyleEditor();
+  render();
+}
+
 function setMode(mode) {
   state.mode = mode;
   state.pageIndex = 0;
   if (mode !== "single") state.editSide = "front";
-  if (mode === "summary" && !isSummaryTemplate(currentTemplate())) {
-    $("templateSelect").value = "a4summary";
+  if (mode === "summary" && !isSummaryTemplate(currentTemplate()) && $("templateSelect")) {
+    $("templateSelect").value = defaultSummaryTemplateId();
   }
-  if (mode === "single" && isSummaryTemplate(currentTemplate())) {
-    $("templateSelect").value = $("tabletType").value || "blessing";
+  if (mode === "single" && isSummaryTemplate(currentTemplate()) && $("templateSelect")) {
+    $("templateSelect").value = $("tabletType")?.value || defaultSingleTemplateIdForGroup("blessing");
   }
   syncControlsFromSelectedTemplate();
   document.querySelectorAll("[data-mode]").forEach((button) => {
     button.classList.toggle("active", button.dataset.mode === mode);
   });
-  $("singleSettings").hidden = mode !== "single";
-  $("summarySettings").hidden = mode !== "summary";
+  if ($("singleSettings")) $("singleSettings").hidden = mode !== "single";
+  if ($("summarySettings")) $("summarySettings").hidden = mode !== "summary";
   if ($("duplexSettings")) $("duplexSettings").hidden = mode !== "single";
   syncSideButtons();
   relocateSharedStyleEditor();
@@ -453,31 +485,112 @@ function currentTemplate() {
   return templates.find((item) => item.id === $("templateSelect").value) || templates[0];
 }
 
+function templateDisplayName(template) {
+  if (!template?.id) return "";
+  const builtinNames = {
+    blessing: "延生牌位",
+    deliveranceDetail: "超度牌位（详版）",
+    deliveranceSimple: "超度牌位（简版）",
+    a4summary: "汇总多列（A4）",
+    a3summary: "汇总多列（A3）",
+  };
+  return builtinNames[template.id] || template.name || template.id;
+}
+
+function templateGroupLabel(template) {
+  if (template?.id?.startsWith("custom_")) return "自定义模板";
+  if (isSummaryTemplate(template)) return "汇总多列模板";
+  return "内置牌位模板";
+}
+
+function templateGroupOrder(template) {
+  if (template?.id?.startsWith("custom_")) return 3;
+  if (isSummaryTemplate(template)) return 2;
+  return 1;
+}
+
+function templateOrderInGroup(template) {
+  const order = {
+    blessing: 1,
+    deliveranceDetail: 2,
+    deliveranceSimple: 3,
+    a4summary: 1,
+    a3summary: 2,
+  };
+  if (Object.prototype.hasOwnProperty.call(order, template?.id || "")) return order[template.id];
+  return 99;
+}
+
+function ensureTemplateOptionGroup(select, label) {
+  const safeLabel = String(label || "").trim() || "其他模板";
+  let group = Array.from(select.children).find((item) => item.tagName === "OPTGROUP" && item.label === safeLabel);
+  if (!group) {
+    group = document.createElement("optgroup");
+    group.label = safeLabel;
+    select.appendChild(group);
+  }
+  return group;
+}
+
+function rebuildTemplateOptions(selectedId = $("templateSelect")?.value || "") {
+  const select = $("templateSelect");
+  if (!select) return;
+  select.innerHTML = "";
+  const sortedTemplates = [...templates].sort((left, right) => {
+    const groupDelta = templateGroupOrder(left) - templateGroupOrder(right);
+    if (groupDelta !== 0) return groupDelta;
+    const orderDelta = templateOrderInGroup(left) - templateOrderInGroup(right);
+    if (orderDelta !== 0) return orderDelta;
+    return templateDisplayName(left).localeCompare(templateDisplayName(right), "zh-CN");
+  });
+  sortedTemplates.forEach((template) => {
+    appendTemplateOption(template);
+  });
+  if (selectedId && Array.from(select.options).some((option) => option.value === selectedId)) {
+    select.value = selectedId;
+  } else if (templates[0]) {
+    select.value = templates[0].id;
+  }
+}
+
 function appendTemplateOption(template) {
   const select = $("templateSelect");
   if (!select || !template?.id || Array.from(select.options).some((option) => option.value === template.id)) return;
   const option = document.createElement("option");
   option.value = template.id;
-  option.textContent = template.name || template.id;
-  select.appendChild(option);
+  option.textContent = templateDisplayName(template);
+  ensureTemplateOptionGroup(select, templateGroupLabel(template)).appendChild(option);
 }
 
 function syncControlsFromSelectedTemplate() {
   const template = currentTemplate();
   const layout = ensureLayout(template.id);
-  $("paperWidth").value = layout.paper?.width || template.width;
-  $("paperHeight").value = layout.paper?.height || template.height;
-  $("paperSelect").value = paperPresetForSize(Number($("paperWidth").value), Number($("paperHeight").value));
+  const paperWidth = $("paperWidth");
+  const paperHeight = $("paperHeight");
+  const paperSelect = $("paperSelect");
+  const summaryVariant = $("summaryVariant");
+  const singleFont = $("singleFont");
+  const singleVertical = $("singleVertical");
+
   if (isSummaryTemplate(template)) {
+    const paper = layout.paper || summaryTemplatePaper(template.id);
+    if (paperWidth) paperWidth.value = paper.width;
+    if (paperHeight) paperHeight.value = paper.height;
+    if (paperSelect) paperSelect.value = summaryTemplatePaperPreset(template.id);
     applySavedSummarySettings(layout.summary);
     refreshSummaryVariantOptions();
-    if (layout.summary?.variantKey && Array.from($("summaryVariant").options).some((option) => option.value === layout.summary.variantKey)) {
-      $("summaryVariant").value = layout.summary.variantKey;
+    if (summaryVariant && layout.summary?.variantKey && Array.from(summaryVariant.options).some((option) => option.value === layout.summary.variantKey)) {
+      summaryVariant.value = layout.summary.variantKey;
     }
     buildSummaryFieldMapping();
   } else {
-    $("singleFont").value = template.font;
-    $("singleVertical").checked = layout.paper?.vertical ?? template.vertical;
+    if (paperWidth) paperWidth.value = layout.paper?.width || template.width;
+    if (paperHeight) paperHeight.value = layout.paper?.height || template.height;
+    if (paperSelect && paperWidth && paperHeight) {
+      paperSelect.value = paperPresetForSize(Number(paperWidth.value), Number(paperHeight.value));
+    }
+    if (singleFont) singleFont.value = template.font;
+    if (singleVertical) singleVertical.checked = layout.paper?.vertical ?? template.vertical;
     if ($("enableDuplex")) $("enableDuplex").checked = Boolean(layout.duplex?.enabled);
   }
   syncSideButtons();
@@ -605,8 +718,8 @@ async function deleteCurrentTemplate() {
   if (!confirm(`确定删除模板“${template.name}”吗？`)) return;
 
   const nextTemplateId = isSummaryTemplate(template)
-    ? "a4summary"
-    : (template.dataGroup === "blessing" ? "blessing" : "deliveranceSimple");
+    ? defaultSummaryTemplateId()
+    : defaultSingleTemplateIdForGroup(template.dataGroup);
 
   const index = templates.findIndex((item) => item.id === template.id);
   if (index >= 0) templates.splice(index, 1);
@@ -658,11 +771,17 @@ function handleBackground(event) {
     return;
   }
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
     const layout = currentEditableLayout();
     layout.background = String(reader.result || "");
     $("showBg").checked = true;
-    saveLayouts();
+    await persistTemplateMutation({
+      syncTemplate: true,
+      localMessage: "底图已保存到本机",
+      syncingMessage: "正在保存底图...",
+      successMessage: isDesktopRuntime() ? "底图已保存到本地数据库" : "底图已保存到服务器",
+      failureMessage: isDesktopRuntime() ? "底图已保存到本机，但本地数据库同步失败" : "底图已保存到本机，但服务器同步失败",
+    });
     render();
     event.target.value = "";
   };
@@ -771,9 +890,14 @@ async function importPdfBackground(file) {
   const layout = currentEditableLayout();
   layout.background = dataUrl;
   $("showBg").checked = true;
-  saveLayouts();
+  await persistTemplateMutation({
+    syncTemplate: true,
+    localMessage: "PDF 底图已保存到本机",
+    syncingMessage: "正在保存 PDF 底图...",
+    successMessage: isDesktopRuntime() ? "PDF 底图已保存到本地数据库" : "PDF 底图已保存到服务器",
+    failureMessage: isDesktopRuntime() ? "PDF 底图已保存到本机，但本地数据库同步失败" : "PDF 底图已保存到本机，但服务器同步失败",
+  });
   render();
-  $("statusText").textContent = "PDF 底图已导入";
 }
 
 function parseDelimited(text) {
@@ -845,7 +969,7 @@ function loadSystemPlaquesFromFilters() {
 
 async function loadSystemPlaques(group) {
   const previousMode = state.mode;
-  if (group === "blessing") {
+  if (isBlessingGroup(group)) {
     $("tabletType").value = "blessing";
     $("summaryDataGroup").value = "blessing";
   } else {
@@ -854,10 +978,10 @@ async function loadSystemPlaques(group) {
   }
 
   try {
-    setBusy(`正在读取${group === "blessing" ? "延生" : "往生/超度"}数据...`);
+    setBusy(`正在读取${dataGroupLoadLabel(group)}数据...`);
     const selectedType = $("systemPlaqueType").value;
     const subtype = $("systemPlaqueSubtype").value;
-    const allowedTypes = group === "blessing" ? ["LONGEVITY"] : ["REBIRTH", "DELIVERANCE"];
+    const allowedTypes = isBlessingGroup(group) ? ["LONGEVITY"] : ["REBIRTH", "DELIVERANCE"];
     const plaqueTypes = selectedType && allowedTypes.includes(selectedType) ? [selectedType] : allowedTypes;
     const status = $("systemStatus").value;
     const keyword = $("systemKeyword").value.trim();
@@ -913,7 +1037,7 @@ async function loadSystemPlaques(group) {
     updateDataHint();
     applySummaryDefault(true);
     render();
-    setBusy(`已读取${rows.length}条${group === "blessing" ? "延生" : "往生/超度"}数据`);
+    setBusy(`已读取${rows.length}条${dataGroupLoadLabel(group)}数据`);
   } catch (error) {
     console.error("读取系统数据失败:", error);
     alert(error.message || "读取系统数据失败");
@@ -939,14 +1063,11 @@ async function applyLaunchParams() {
     document.body.classList.add("print-preview-mode");
   }
 
-  const group = type === "LONGEVITY" ? "blessing" : "deliverance";
+  const group = dataGroupForPlaqueType(type);
   if (state.mode !== "single") setMode("single");
-  if (type === "LONGEVITY") {
-    $("tabletType").value = "blessing";
-  } else if (type === "REBIRTH") {
-    $("tabletType").value = "deliveranceDetail";
-  } else if (type === "DELIVERANCE") {
-    $("tabletType").value = "deliveranceSimple";
+  const tabletType = tabletTypeForPlaqueType(type);
+  if (tabletType) {
+    $("tabletType").value = tabletType;
   }
   $("summaryDataGroup").value = group;
   applyLaunchTemplate(templateId);
@@ -1257,7 +1378,7 @@ function firstRowValue(row, keys) {
 }
 
 function detectSummaryVariantForGroup(row, group = currentDataGroup()) {
-  if (group === "blessing") {
+  if (isBlessingGroup(group)) {
     const believer = firstRowValue(row, ["信人", "阳上", "阳上人", "believer", "yangshang", "yangShang"]);
     return believer ? "bodhisattva" : "person";
   }
@@ -1271,7 +1392,7 @@ function summaryVariantPresetForRow(row) {
 }
 
 function summaryFieldDefinitionsForGroup(group) {
-  if (group === "blessing") {
+  if (isBlessingGroup(group)) {
     return [
       { key: "summary_subject", label: "牌位主体", sourceKey: "subject" },
       { key: "summary_believer", label: "信人", sourceKey: "believer" },
@@ -1287,7 +1408,7 @@ function summaryFieldDefinitionsForGroup(group) {
 }
 
 function summaryFieldDefinitions(group = currentDataGroup()) {
-  if (group === "blessing") {
+  if (isBlessingGroup(group)) {
     return [
       { key: "summary_subject", label: "牌位主体", sourceKey: "subject" },
       { key: "summary_believer", label: "信人", sourceKey: "believer" },
@@ -1355,13 +1476,13 @@ function summaryFieldsForVariantByGroup(group, variantKey) {
 }
 
 function summaryTemplateDataGroup(templateId) {
-  const template = templates.find((item) => item.id === templateId);
+  const template = summaryTemplateById(templateId);
   const layout = state.layouts[templateId] || {};
   return template?.dataGroup || layout.summary?.dataGroup || "deliverance";
 }
 
 function isSummaryTemplateId(templateId) {
-  const template = templates.find((item) => item.id === templateId);
+  const template = summaryTemplateById(templateId);
   if (template) return isSummaryTemplate(template);
   return Boolean(state.layouts[templateId]?.summary);
 }
@@ -1530,6 +1651,7 @@ function buildSummaryFieldMapping() {
 
 function buildStyleEditor() {
   const select = $("styleField");
+  if (!select) return;
   const previous = state.activeFieldKey || select.value;
   const layout = currentEditableLayout();
   const fields = state.mode === "summary"
@@ -1558,18 +1680,27 @@ function buildStyleEditor() {
 }
 
 function syncStyleInputs() {
-  const currentKey = $("styleField").value || "subject";
+  const styleField = $("styleField");
+  const fieldFontSize = $("fieldFontSize");
+  const fieldColor = $("fieldColor");
+  const fieldFontFamily = $("fieldFontFamily");
+  const fieldTextAlign = $("fieldTextAlign");
+  const fieldVerticalAlign = $("fieldVerticalAlign");
+  const fieldWrapMode = $("fieldWrapMode");
+  if (!styleField || !fieldFontSize || !fieldColor || !fieldFontFamily || !fieldTextAlign || !fieldVerticalAlign || !fieldWrapMode) return;
+
+  const currentKey = styleField.value || "subject";
   state.activeFieldKey = currentKey;
   if (!currentKey) return;
   const style = normalizeFieldStyle(styleFor(currentKey));
-  $("fieldFontSize").value = style.fontSize;
-  $("fieldColor").value = style.color;
-  $("fieldFontFamily").value = style.fontFamily;
+  fieldFontSize.value = style.fontSize;
+  fieldColor.value = style.color;
+  fieldFontFamily.value = style.fontFamily;
   syncAlignmentOptions();
-  $("fieldTextAlign").value = style.textAlign || "center";
-  $("fieldVerticalAlign").value = style.verticalAlign || "center";
-  $("fieldWrapMode").value = style.wrapMode || "anywhere";
-  if (currentKey === "subject") $("singleFont").value = style.fontSize;
+  fieldTextAlign.value = style.textAlign || "center";
+  fieldVerticalAlign.value = style.verticalAlign || "center";
+  fieldWrapMode.value = style.wrapMode || "anywhere";
+  if (currentKey === "subject" && $("singleFont")) $("singleFont").value = style.fontSize;
   syncSelectedFieldHighlight();
 }
 
@@ -1597,16 +1728,25 @@ function syncAlignmentOptions() {
 }
 
 function updateSelectedFieldStyle() {
-  const key = $("styleField").value || "";
+  const styleField = $("styleField");
+  const fieldFontSize = $("fieldFontSize");
+  const fieldColor = $("fieldColor");
+  const fieldFontFamily = $("fieldFontFamily");
+  const fieldTextAlign = $("fieldTextAlign");
+  const fieldVerticalAlign = $("fieldVerticalAlign");
+  const fieldWrapMode = $("fieldWrapMode");
+  if (!styleField || !fieldFontSize || !fieldColor || !fieldFontFamily || !fieldTextAlign || !fieldVerticalAlign || !fieldWrapMode) return;
+
+  const key = styleField.value || "";
   if (!key) return;
   const layout = currentEditableLayout();
   const nextStyle = {
-    fontSize: Number($("fieldFontSize").value) || 18,
-    color: $("fieldColor").value || "#16110d",
-    fontFamily: $("fieldFontFamily").value || "SimSun, serif",
-    textAlign: $("fieldTextAlign").value || "center",
-    verticalAlign: $("fieldVerticalAlign").value || "center",
-    wrapMode: $("fieldWrapMode").value || "anywhere",
+    fontSize: Number(fieldFontSize.value) || 18,
+    color: fieldColor.value || "#16110d",
+    fontFamily: fieldFontFamily.value || "SimSun, serif",
+    textAlign: fieldTextAlign.value || "center",
+    verticalAlign: fieldVerticalAlign.value || "center",
+    wrapMode: fieldWrapMode.value || "anywhere",
   };
   if ((state.mode === "summary" && isSummaryFieldKey(key)) || isSingleVariantFieldKey(key)) {
     setLayoutBucketValue(layout, "styles", key, nextStyle, state.mode === "single" ? currentSingleVariantKey() : currentSummaryVariantKey());
@@ -1614,7 +1754,7 @@ function updateSelectedFieldStyle() {
     if (!layout.styles) layout.styles = {};
     layout.styles[key] = nextStyle;
   }
-  if (key === "subject") $("singleFont").value = nextStyle.fontSize;
+  if (key === "subject" && $("singleFont")) $("singleFont").value = nextStyle.fontSize;
   saveLayouts();
   syncStyleInputs();
   render();
@@ -1634,9 +1774,10 @@ function normalizeFieldStyle(style = {}) {
 function syncSubjectFontSize() {
   if (state.editSide === "back") return;
   const layout = ensureLayout(currentLayoutKey());
+  const fallbackFontSize = Number(normalizeFieldStyle(styleFor("subject")).fontSize) || 36;
   const nextStyle = {
     ...styleFor("subject"),
-    fontSize: Number($("singleFont").value) || 36,
+    fontSize: Number($("singleFont")?.value) || fallbackFontSize,
   };
   if (shouldScopeSingleVariantField("subject")) {
     setLayoutBucketValue(layout, "styles", "subject", nextStyle, currentSingleVariantKey());
@@ -1644,7 +1785,7 @@ function syncSubjectFontSize() {
     if (!layout.styles) layout.styles = {};
     layout.styles.subject = nextStyle;
   }
-  if ($("styleField").value === "subject") syncStyleInputs();
+  if ($("styleField")?.value === "subject") syncStyleInputs();
   saveLayouts();
 }
 
@@ -1904,6 +2045,8 @@ function singleSheet(row, side = state.editSide, forPrint = false) {
   const type = $("tabletType").value;
   const fields = singleFieldsForVariant(state.renderSingleVariant, row, forPrint);
   const layout = side === "back" ? backLayoutFor(currentLayoutKey()) : ensureLayout(currentLayoutKey());
+  const singleFontValue = Number($("singleFont")?.value) || Number(normalizeFieldStyle(styleFor("subject")).fontSize) || 36;
+  const singleOffsetYValue = Number($("singleOffsetY")?.value) || 0;
   const background = layout.background && $("showBg").checked
     ? `<img class="template-bg" src="${layout.background}" alt="">`
     : "";
@@ -1912,7 +2055,7 @@ function singleSheet(row, side = state.editSide, forPrint = false) {
       draggableField(field.key, `tablet-meta static-field${vertical}`, field.text)
     )).join("");
     const html = `
-      <article class="sheet duplex-back-sheet" style="${sheetVars()} --single-font:${Number($("singleFont").value) || 36}px; --offset-y:${Number($("singleOffsetY").value) || 0};">
+      <article class="sheet duplex-back-sheet" style="${sheetVars()} --single-font:${singleFontValue}px; --offset-y:${singleOffsetYValue};">
         ${background}
         <div class="tablet tablet-${type}" data-drag-surface="1">
           ${staticFields || (forPrint ? "" : '<div class="empty back-empty">背面固定页：可上传底图或添加静态字段</div>')}
@@ -1938,7 +2081,7 @@ function singleSheet(row, side = state.editSide, forPrint = false) {
     draggableField(field.key, `tablet-meta static-field${vertical}`, field.text)
   )).join("");
   const html = `
-    <article class="sheet" style="${sheetVars()} --single-font:${Number($("singleFont").value) || 36}px; --offset-y:${Number($("singleOffsetY").value) || 0};">
+    <article class="sheet" style="${sheetVars()} --single-font:${singleFontValue}px; --offset-y:${singleOffsetYValue};">
       ${background}
       <div class="tablet tablet-${type}" data-drag-surface="1">
         ${draggableField("subject", `single-field single-name${vertical}`, subjectContent || subjectLabel, !subjectContent)}
@@ -2380,11 +2523,11 @@ function updateSelectedRowsText() {
 function currentDataGroup() {
   if (state.mode === "summary") return $("summaryDataGroup").value || "deliverance";
   if ($("tabletType").value === "custom") return currentTemplate().dataGroup || "deliverance";
-  return $("tabletType").value === "blessing" ? "blessing" : "deliverance";
+  return isBlessingGroup($("tabletType").value) ? "blessing" : "deliverance";
 }
 
 function currentDataGroupName() {
-  return currentDataGroup() === "blessing" ? "延生禄位" : "超度牌位";
+  return dataGroupLabel(currentDataGroup());
 }
 
 function loadAllSamples() {
@@ -2464,6 +2607,34 @@ function loadLayouts() {
 
 function saveLayouts() {
   localStorage.setItem("tabletPrintLayouts", JSON.stringify(state.layouts));
+}
+
+async function persistTemplateMutation(options = {}) {
+  const {
+    syncTemplate = false,
+    localMessage = "",
+    syncingMessage = "",
+    successMessage = "",
+    failureMessage = "",
+  } = options;
+  const layoutKey = currentLayoutKey();
+  saveLayouts();
+  if (layoutKey.startsWith("custom_")) saveCustomTemplatesToStorage();
+
+  const shouldSync = syncTemplate && (isDesktopRuntime() || Boolean(authToken()));
+  if (!shouldSync) {
+    if (localMessage) $("statusText").textContent = localMessage;
+    return;
+  }
+
+  if (syncingMessage) $("statusText").textContent = syncingMessage;
+  try {
+    await syncCurrentTemplateToServer();
+    if (successMessage) $("statusText").textContent = successMessage;
+  } catch (error) {
+    console.error("同步模板失败", error);
+    if (failureMessage) $("statusText").textContent = failureMessage;
+  }
 }
 
 function loadRemoteTemplateIds() {
@@ -2563,12 +2734,13 @@ async function loadServerTemplates() {
 }
 
 function importServerTemplate(template) {
+  const selectedId = $("templateSelect")?.value || "";
   const data = template.elements;
   if (!data?.template?.id) return;
   const localTemplate = {
     ...data.template,
     id: data.template.id,
-    name: template.name || data.template.name,
+    name: data.template.name || template.name || templateDisplayName(data.template),
   };
   const index = templates.findIndex((item) => item.id === localTemplate.id);
   if (index >= 0) {
@@ -2576,7 +2748,7 @@ function importServerTemplate(template) {
   } else {
     templates.push(localTemplate);
   }
-  appendTemplateOption(localTemplate);
+  rebuildTemplateOptions(selectedId || localTemplate.id);
   if (data.defaults) templateDefaults[localTemplate.id] = data.defaults;
   if (data.layout) {
     const existingLayout = state.layouts[localTemplate.id];
@@ -2684,19 +2856,17 @@ function migrateStoredLayouts() {
   if (state.layouts.summary && !state.layouts.a4summary) {
     state.layouts.a4summary = {
       ...state.layouts.summary,
-      paper: state.layouts.summary.paper || { width: 210, height: 297, vertical: false },
+      paper: state.layouts.summary.paper || summaryTemplatePaper(defaultSummaryTemplateId()),
       summary: normalizeSummarySettings(state.layouts.summary.summary),
     };
     delete state.layouts.summary;
     changed = true;
   }
 
-  ["a4summary", "a3summary"].forEach((id) => {
-    const template = templates.find((item) => item.id === id);
-    if (!template) return;
+  summaryTemplateIds().forEach((id) => {
     const layout = ensureLayout(id);
     if (!layout.paper) {
-      layout.paper = { width: template.width, height: template.height, vertical: false };
+      layout.paper = summaryTemplatePaper(id);
       changed = true;
     }
     if (!layout.summary) {
@@ -2729,17 +2899,34 @@ function normalizeSummarySettings(settings = {}) {
   };
 }
 
+function createSummaryLayoutDefaults(templateId) {
+  return {
+    positions: {},
+    styles: {},
+    sizes: {},
+    background: "",
+    mappings: {},
+    staticFields: [],
+    duplex: { enabled: false },
+    backSide: createBlankSideLayout(),
+    paper: summaryTemplatePaper(templateId),
+    summary: normalizeSummarySettings(),
+  };
+}
+
 function ensureLayout(type) {
   if (!state.layouts[type]) {
-    state.layouts[type] = {
-      positions: clone(templateDefaults[type]?.positions || {}),
-      styles: clone(templateDefaults[type]?.styles || {}),
-      sizes: clone(templateDefaults[type]?.sizes || {}),
-      background: "",
-      mappings: {},
-      duplex: { enabled: false },
-      backSide: createBlankSideLayout(),
-    };
+    state.layouts[type] = isSummaryTemplateId(type)
+      ? createSummaryLayoutDefaults(type)
+      : {
+        positions: clone(templateDefaults[type]?.positions || {}),
+        styles: clone(templateDefaults[type]?.styles || {}),
+        sizes: clone(templateDefaults[type]?.sizes || {}),
+        background: "",
+        mappings: {},
+        duplex: { enabled: false },
+        backSide: createBlankSideLayout(),
+      };
   }
   if (!state.layouts[type].positions) state.layouts[type].positions = {};
   if (!state.layouts[type].styles) state.layouts[type].styles = clone(templateDefaults[type]?.styles || {});
@@ -2747,6 +2934,10 @@ function ensureLayout(type) {
   if (!state.layouts[type].mappings) state.layouts[type].mappings = {};
   if (!state.layouts[type].staticFields) state.layouts[type].staticFields = [];
   if (!state.layouts[type].duplex) state.layouts[type].duplex = { enabled: false };
+  if (isSummaryTemplateId(type)) {
+    if (!state.layouts[type].paper) state.layouts[type].paper = summaryTemplatePaper(type);
+    if (!state.layouts[type].summary) state.layouts[type].summary = normalizeSummarySettings();
+  }
   if (state.layouts[type].backSide) normalizeSideLayout(state.layouts[type].backSide);
   if (isSummaryTemplateId(type) && repairSummaryTemplateLayout(type)) saveLayouts();
   return state.layouts[type];
@@ -3096,14 +3287,67 @@ function resizeField(event) {
 }
 
 function currentLayoutKey() {
-  if (state.mode === "summary") return $("templateSelect").value || "summary";
+  if (state.mode === "summary") return $("templateSelect").value || defaultSummaryTemplateId();
   const templateId = $("templateSelect").value;
   if (templateId.startsWith("custom_")) return templateId;
   return $("tabletType").value;
 }
 
+function summaryTemplateIds() {
+  return Array.from(SUMMARY_TEMPLATE_IDS);
+}
+
+function defaultSummaryTemplateId() {
+  return summaryTemplateIds()[0] || "a4summary";
+}
+
+function defaultSingleTemplateIdForGroup(group) {
+  return group === "blessing" ? "blessing" : "deliveranceSimple";
+}
+
+function isBlessingGroup(group) {
+  return group === "blessing";
+}
+
+function dataGroupLabel(group) {
+  return isBlessingGroup(group) ? "延生禄位" : "超度牌位";
+}
+
+function dataGroupLoadLabel(group) {
+  return isBlessingGroup(group) ? "延生" : "往生/超度";
+}
+
+function dataGroupForPlaqueType(plaqueType) {
+  return plaqueType === "LONGEVITY" ? "blessing" : "deliverance";
+}
+
+function tabletTypeForPlaqueType(plaqueType) {
+  if (plaqueType === "LONGEVITY") return "blessing";
+  if (plaqueType === "REBIRTH") return "deliveranceDetail";
+  if (plaqueType === "DELIVERANCE") return "deliveranceSimple";
+  return "";
+}
+
+function summaryTemplateById(templateId) {
+  return templates.find((item) => item.id === templateId && isSummaryTemplate(item)) || null;
+}
+
+function summaryTemplatePaper(templateId) {
+  const template = summaryTemplateById(templateId) || summaryTemplateById(defaultSummaryTemplateId());
+  return {
+    width: template?.width || 210,
+    height: template?.height || 297,
+    vertical: false,
+  };
+}
+
+function summaryTemplatePaperPreset(templateId) {
+  const paper = summaryTemplatePaper(templateId);
+  return paperPresetForSize(paper.width, paper.height);
+}
+
 function isSummaryTemplate(template) {
-  return template.id === "a4summary" || template.id === "a3summary" || template.mode === "summary";
+  return SUMMARY_TEMPLATE_IDS.has(template.id) || template.mode === "summary";
 }
 
 function inferTemplateDataGroup(templateData) {
@@ -3130,6 +3374,7 @@ function currentSummarySettings() {
 function applySavedSummarySettings(settings) {
   if (!settings) return;
   if (settings.dataGroup) $("summaryDataGroup").value = settings.dataGroup;
+  refreshSummaryVariantOptions();
   if (typeof settings.format === "string") $("summaryFormat").value = settings.format;
   if (settings.columnCount) $("columnCount").value = settings.columnCount;
   if (settings.rowsPerColumn) $("rowsPerColumn").value = settings.rowsPerColumn;
@@ -3403,14 +3648,9 @@ function createCustomTemplate() {
     };
     templates.push(newTemplate);
     state.layouts[id] = {
-      positions: {},
-      styles: {},
-      sizes: {},
-      background: "",
+      ...createSummaryLayoutDefaults(id),
       paper: { width, height, vertical: false },
       summary: currentSummarySettings(),
-      duplex: { enabled: false },
-      backSide: createBlankSideLayout(),
     };
 
     appendTemplateOption(newTemplate);
@@ -3513,6 +3753,7 @@ function saveCustomTemplatesToStorage() {
         width: layout?.paper?.width || t.width,
         height: layout?.paper?.height || t.height,
         vertical: layout?.paper?.vertical ?? t.vertical,
+        background: layout?.background || "",
         summary: layout?.summary,
         staticFields: layout?.staticFields || [],
         duplex: layout?.duplex,
@@ -3572,6 +3813,10 @@ function loadCustomTemplatesFromStorage(options = {}) {
           const layout = ensureLayout(ct.id);
           layout.staticFields = ct.staticFields;
         }
+        if (ct.background) {
+          const layout = ensureLayout(ct.id);
+          layout.background = ct.background;
+        }
         if (ct.duplex || ct.backSide) {
           const layout = ensureLayout(ct.id);
           layout.duplex = ct.duplex || { enabled: false };
@@ -3587,7 +3832,7 @@ function loadCustomTemplatesFromStorage(options = {}) {
             positions: existingLayout.positions || {},
             styles: existingLayout.styles || {},
             sizes: existingLayout.sizes || {},
-            background: existingLayout.background || "",
+            background: existingLayout.background || ct.background || "",
             staticFields: existingLayout.staticFields || ct.staticFields || [],
             paper: {
               width: Number(ct.width) || 210,
@@ -3599,7 +3844,7 @@ function loadCustomTemplatesFromStorage(options = {}) {
           if (repairSummaryTemplateLayout(ct.id)) changed = true;
         }
 
-        appendTemplateOption(ct);
+        rebuildTemplateOptions($("templateSelect")?.value || ct.id);
       }
     });
     if (changed) saveCustomTemplatesToStorage();

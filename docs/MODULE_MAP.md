@@ -38,12 +38,12 @@
 | File | Role |
 | --- | --- |
 | `print-service/index.js` | Express static service and health endpoint |
-| `print-service/public/index.html` | Web print/template UI |
-| `print-service/public/app.js` | Main browser-side print/template logic |
-| `print-service/public/styles.css` | Print UI styles |
+| `frontend/public/print-api/index.html` | Web print/template UI single source |
+| `frontend/public/print-api/app.js` | Main browser-side print/template logic single source |
+| `frontend/public/print-api/styles.css` | Print UI styles single source |
 | `print-service/public/sample-*.csv` | Local sample import files |
 
-定位：模板设计、Web 预览、备用打印工具。阶段 1 不再把它定义为长期主打印执行端。
+定位：`print-service` 负责把 `frontend/public/print-api/` 这套唯一主实现跑起来，不再维护独立的 UI 副本。
 
 ## Desktop App
 
