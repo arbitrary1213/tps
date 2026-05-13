@@ -1,10 +1,9 @@
-﻿const templates = [
-  { id: "blessing", name: "延生禄位", width: 90, height: 260, font: 36, vertical: true, tabletType: "blessing" },
-  { id: "deliveranceDetail", name: "超度牌位 - 详细", width: 100, height: 280, font: 34, vertical: true, tabletType: "deliveranceDetail" },
-  { id: "deliveranceSimple", name: "超度牌位 - 简版", width: 100, height: 260, font: 36, vertical: true, tabletType: "deliveranceSimple" },
-  { id: "a4summary", name: "A4 汇总多列", width: 210, height: 297, font: 22, vertical: false },
-  { id: "a3summary", name: "A3 汇总多列", width: 297, height: 420, font: 22, vertical: false },
+const templates = [
+  { id: "a4summary", name: "延生通名", width: 210, height: 297, font: 22, vertical: false },
+  { id: "a3summary", name: "往生通名", width: 297, height: 420, font: 22, vertical: false },
 ];
+
+const HIDDEN_LEGACY_TEMPLATE_IDS = new Set(["blessing", "deliverance", "deliveranceSimple"]);
 
 const templateDefaults = {
   blessing: {
@@ -36,81 +35,72 @@ const templateDefaults = {
       wish: { w: 58, h: 18 },
     },
   },
-  deliveranceDetail: {
+  deliverance: {
     positions: {
       subject: { x: 50, y: 27 },
-      yinGeng: { x: 84, y: 18 },
-      birthday: { x: 73, y: 18 },
-      deathday: { x: 62, y: 18 },
+      deceasedInfo: { x: 84, y: 18 },
+      deceasedPrimary: { x: 84, y: 18 },
+      deceasedSecondary: { x: 73, y: 18 },
+      age: { x: 73, y: 18 },
+      birthday: { x: 62, y: 18 },
+      deathday: { x: 51, y: 18 },
       yangshang: { x: 22, y: 20 },
       address: { x: 16, y: 37 },
+      wish: { x: 48, y: 74 },
     },
     styles: {
       subject: { fontSize: 34, color: "#16110d", fontFamily: "SimSun, serif" },
-      yinGeng: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
+      deceasedInfo: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
+      deceasedPrimary: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
+      deceasedSecondary: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
+      age: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
       birthday: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
       deathday: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
       yangshang: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
       address: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
+      wish: { fontSize: 18, color: "#6e1517", fontFamily: "KaiTi, STKaiti, serif" },
     },
     sizes: {
       subject: { w: 28, h: 44 },
-      yinGeng: { w: 9, h: 36 },
+      deceasedInfo: { w: 10, h: 42 },
+      deceasedPrimary: { w: 10, h: 42 },
+      deceasedSecondary: { w: 10, h: 42 },
+      age: { w: 9, h: 32 },
       birthday: { w: 9, h: 36 },
       deathday: { w: 9, h: 36 },
       yangshang: { w: 11, h: 42 },
       address: { w: 11, h: 45 },
-    },
-  },
-  deliveranceSimple: {
-    positions: {
-      subject: { x: 50, y: 27 },
-      yangshang: { x: 25, y: 21 },
-      address: { x: 17, y: 38 },
-    },
-    styles: {
-      subject: { fontSize: 36, color: "#16110d", fontFamily: "SimSun, serif" },
-      yangshang: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
-      address: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
-    },
-    sizes: {
-      subject: { w: 30, h: 44 },
-      yangshang: { w: 12, h: 42 },
-      address: { w: 12, h: 45 },
+      wish: { w: 56, h: 18 },
     },
   },
 };
 
 const tabletTypes = {
   blessing: {
-    name: "延生禄位",
+    name: "延生禄位模板",
     fields: [
       { key: "subject", label: "牌位主体", aliases: ["牌位主体", "主体", "姓名", "名称"] },
       { key: "believer", label: "信人", aliases: ["信人", "阳上", "阳上人"] },
       { key: "age", label: "年龄", aliases: ["年龄", "岁数"] },
-      { key: "zodiac", label: "生肖", aliases: ["生肖", "属相"] },
-      { key: "birthday", label: "生日年月日", aliases: ["生日年月日", "生日", "出生年月日", "出生日期", "生辰"] },
+      { key: "zodiac", label: "属相", aliases: ["属相", "生肖"] },
+      { key: "birthday", label: "生日", aliases: ["生日", "生日年月日", "出生年月日", "出生日期", "生辰"] },
       { key: "address", label: "地址", aliases: ["地址", "住址"] },
       { key: "wish", label: "祈福语", aliases: ["祈福语", "祈愿", "备注"] },
     ],
   },
-  deliveranceDetail: {
-    name: "超度牌位 - 详细",
+  deliverance: {
+    name: "往生牌位模板",
     fields: [
       { key: "subject", label: "牌位主体", aliases: ["牌位主体", "主体", "姓名", "名称"] },
-      { key: "yinGeng", label: "阴庚", aliases: ["阴庚", "亡者阴庚"] },
+      { key: "deceasedInfo", label: "亡者信息", aliases: ["亡者信息", "亡者", "第二亡者"] },
+      { key: "deceasedPrimary", label: "第一亡者", aliases: ["第一亡者", "亡者1", "亡者一", "亡者姓名1", "亡者姓名", "亡者"] },
+      { key: "deceasedSecondary", label: "第二亡者", aliases: ["第二亡者", "亡者2", "亡者二", "亡者姓名2", "附名亡者"] },
+      { key: "age", label: "年龄", aliases: ["年龄", "岁数"] },
       { key: "birthday", label: "生日", aliases: ["生日", "出生日期", "生辰"] },
       { key: "deathday", label: "忌日", aliases: ["忌日", "往生日", "死亡日期"] },
       { key: "yangshang", label: "阳上", aliases: ["阳上", "阳上人", "信人"] },
       { key: "address", label: "地址", aliases: ["地址", "住址"] },
-    ],
-  },
-  deliveranceSimple: {
-    name: "超度牌位 - 简版",
-    fields: [
-      { key: "subject", label: "牌位主体", aliases: ["牌位主体", "主体", "姓名", "名称"] },
-      { key: "yangshang", label: "阳上", aliases: ["阳上", "阳上人", "信人"] },
-      { key: "address", label: "地址", aliases: ["地址", "住址"] },
+      { key: "wish", label: "寄语", aliases: ["寄语", "祈福语", "祈愿", "备注"] },
     ],
   },
 };
@@ -143,15 +133,138 @@ const summaryVariantPresets = {
 const singleVariantPresets = [
   { key: "layout_one", label: "版式一" },
   { key: "layout_two", label: "版式二" },
+  { key: "layout_three", label: "版式三" },
 ];
+
+const singleVariantPresetsByType = {
+  blessing: [
+    { key: "layout_one", label: "版式一" },
+    { key: "layout_two", label: "版式二" },
+  ],
+  deliverance: [
+    { key: "layout_one", label: "版式一" },
+    { key: "layout_two", label: "版式二" },
+    { key: "layout_three", label: "版式三" },
+  ],
+};
+
+const singleVariantFieldKeysByType = {
+  blessing: {
+    layout_one: ["subject", "believer", "age", "zodiac", "birthday", "address", "wish"],
+    layout_two: ["subject", "age", "zodiac", "birthday", "address", "wish"],
+  },
+  deliverance: {
+    layout_one: ["subject", "yangshang", "address"],
+    layout_two: ["subject", "age", "birthday", "deathday", "yangshang", "address", "wish"],
+    layout_three: ["subject", "deceasedPrimary", "deceasedSecondary", "yangshang", "address", "wish"],
+  },
+};
+
+const singleVariantLayoutDefaults = {
+  blessing: {
+    layout_one: {
+      positions: {
+        subject: { x: 50, y: 27 },
+        believer: { x: 82, y: 18 },
+        age: { x: 71, y: 18 },
+        zodiac: { x: 60, y: 18 },
+        birthday: { x: 49, y: 18 },
+        address: { x: 22, y: 24 },
+        wish: { x: 50, y: 74 },
+      },
+      sizes: {
+        subject: { w: 28, h: 42 },
+        believer: { w: 9, h: 36 },
+        age: { w: 9, h: 32 },
+        zodiac: { w: 9, h: 32 },
+        birthday: { w: 9, h: 38 },
+        address: { w: 11, h: 45 },
+        wish: { w: 58, h: 18 },
+      },
+    },
+    layout_two: {
+      positions: {
+        subject: { x: 50, y: 27 },
+        age: { x: 82, y: 18 },
+        zodiac: { x: 71, y: 18 },
+        birthday: { x: 60, y: 18 },
+        address: { x: 22, y: 24 },
+        wish: { x: 50, y: 74 },
+      },
+      sizes: {
+        subject: { w: 28, h: 42 },
+        age: { w: 9, h: 32 },
+        zodiac: { w: 9, h: 32 },
+        birthday: { w: 9, h: 38 },
+        address: { w: 11, h: 45 },
+        wish: { w: 58, h: 18 },
+      },
+    },
+  },
+  deliverance: {
+    layout_one: {
+      positions: {
+        subject: { x: 50, y: 27 },
+        yangshang: { x: 22, y: 20 },
+        address: { x: 16, y: 37 },
+      },
+      sizes: {
+        subject: { w: 28, h: 44 },
+        yangshang: { w: 11, h: 42 },
+        address: { w: 11, h: 45 },
+      },
+    },
+    layout_two: {
+      positions: {
+        subject: { x: 50, y: 27 },
+        age: { x: 73, y: 18 },
+        birthday: { x: 62, y: 18 },
+        deathday: { x: 51, y: 18 },
+        yangshang: { x: 22, y: 20 },
+        address: { x: 16, y: 37 },
+        wish: { x: 48, y: 74 },
+      },
+      sizes: {
+        subject: { w: 28, h: 44 },
+        age: { w: 9, h: 32 },
+        birthday: { w: 9, h: 36 },
+        deathday: { w: 9, h: 36 },
+        yangshang: { w: 11, h: 42 },
+        address: { w: 11, h: 45 },
+        wish: { w: 56, h: 18 },
+      },
+    },
+    layout_three: {
+      positions: {
+        subject: { x: 50, y: 27 },
+        deceasedPrimary: { x: 84, y: 17 },
+        deceasedSecondary: { x: 73, y: 17 },
+        yangshang: { x: 22, y: 20 },
+        address: { x: 16, y: 37 },
+        wish: { x: 48, y: 74 },
+      },
+      sizes: {
+        subject: { w: 28, h: 44 },
+        deceasedPrimary: { w: 10, h: 42 },
+        deceasedSecondary: { w: 10, h: 42 },
+        yangshang: { w: 11, h: 42 },
+        address: { w: 11, h: 45 },
+        wish: { w: 56, h: 18 },
+      },
+    },
+  },
+};
 
 const SUMMARY_TEMPLATE_IDS = new Set(["a4summary", "a3summary"]);
 
-const blessingSingleVariantAliases = {
-  layout_one: "blessing_bodhisattva",
-  layout_two: "blessing_person",
+const legacySingleVariantKeyMap = {
   blessing_bodhisattva: "layout_one",
   blessing_person: "layout_two",
+};
+
+const SINGLE_TABLE_FIELDS = {
+  blessing: ["牌位主体", "信人", "年龄", "属相", "生日", "地址", "祈福语"],
+  deliverance: ["牌位主体", "第一亡者", "第二亡者", "阳上", "年龄", "生日", "忌日", "寄语", "地址"],
 };
 
 const PDFJS_VERSION = "3.11.174";
@@ -179,12 +292,12 @@ if (launchPrintPreviewMode) {
 
 const sampleData = {
   blessing: [
-  { "牌位主体": "张三延生禄位", "信人": "张三", "年龄": "四十八岁", "生肖": "属龙", "生日年月日": "1978年正月初三", "地址": "本市东街一号", "祈福语": "消灾延寿 福慧增长" },
-  { "牌位主体": "李四延生禄位", "信人": "李四", "年龄": "五十二岁", "生肖": "属鼠", "生日年月日": "1974年二月初八", "地址": "本市南街二号", "祈福语": "身体康泰 所求如意" },
+  { "牌位主体": "张三", "信人": "张三", "年龄": "四十八岁", "属相": "属龙", "生日": "1978年正月初三", "地址": "本市东街一号", "祈福语": "消灾延寿 福慧增长" },
+  { "牌位主体": "谢释迦摩尼佛", "信人": "王五", "年龄": "", "属相": "", "生日": "", "地址": "本市南街二号", "祈福语": "身体康泰 所求如意" },
   ],
   deliverance: [
-  { "牌位主体": "王五超度莲位", "信人": "王五", "年龄": "六十岁", "生肖": "属马", "地址": "本市西街三号", "祈福语": "离苦得乐 往生净土", "阳上": "王家眷属", "阴庚": "甲午年", "生日": "三月十二", "忌日": "八月初一" },
-  { "牌位主体": "赵六超度莲位", "信人": "赵六", "年龄": "七十一岁", "生肖": "属蛇", "地址": "本市北街四号", "祈福语": "蒙佛接引 莲品增上", "阳上": "赵氏后人", "阴庚": "乙巳年", "生日": "四月十八", "忌日": "十月初二" },
+  { "牌位主体": "王五超度莲位", "第一亡者": "王五", "第二亡者": "", "阳上": "王家眷属", "年龄": "", "生日": "", "忌日": "", "寄语": "", "地址": "本市西街三号", "亡者信息": "王五" },
+  { "牌位主体": "赵六超度莲位", "第一亡者": "赵六", "第二亡者": "孙七", "阳上": "赵氏后人", "年龄": "七十一岁", "生日": "四月十八", "忌日": "十月初二", "寄语": "蒙佛接引 莲品增上", "地址": "本市北街四号", "亡者信息": "赵六\\n孙七" },
   ],
 };
 
@@ -209,9 +322,27 @@ const state = {
   renderSide: "",
   renderSingleVariant: "",
   singleVariantKey: singleVariantPresets[0].key,
+  fieldClipboard: null,
+  contextMenu: {
+    visible: false,
+    kind: "field",
+    key: "",
+    x: 0,
+    y: 0,
+    pastePosition: null,
+  },
 };
 
 const $ = (id) => document.getElementById(id);
+
+function defaultSingleVariantKeyForGroup(group = currentDataGroup()) {
+  return singleVariantPresetsByType[group]?.[0]?.key || singleVariantPresets[0].key;
+}
+
+function defaultSingleVariantKeyForTemplate(template = currentTemplate()) {
+  const group = template?.dataGroup || currentDataGroup();
+  return defaultSingleVariantKeyForGroup(group);
+}
 
 const controls = [
   "templateSelect", "paperSelect", "paperWidth", "paperHeight", "tabletType", "singleVariant",
@@ -263,9 +394,13 @@ function init() {
   $("singleVariantTabs")?.addEventListener("click", handleSingleVariantTabClick);
   $("addStaticFieldBtn")?.addEventListener("click", addStaticField);
   $("addSummaryStaticFieldBtn")?.addEventListener("click", addSummaryStaticField);
+  $("copyFieldBtn")?.addEventListener("click", copySelectedField);
+  $("pasteFieldBtn")?.addEventListener("click", pasteToSelectedField);
   $("editStaticFieldBtn")?.addEventListener("click", editSelectedStaticField);
   $("deleteStaticFieldBtn")?.addEventListener("click", deleteSelectedStaticField);
   $("deleteTemplateBtn")?.addEventListener("click", deleteCurrentTemplate);
+  ensureFieldContextMenu();
+  document.addEventListener("click", handleGlobalPointerDismiss);
   document.querySelectorAll("[data-side]").forEach((button) => {
     button.addEventListener("click", () => setEditSide(button.dataset.side || "front"));
   });
@@ -279,19 +414,44 @@ function init() {
   });
 
   document.getElementById("newTemplateBtn")?.addEventListener("click", () => {
-    renderFieldSelection();
+    const newTemplateType = document.getElementById("newTemplateType");
     const newTemplateName = document.getElementById("newTemplateName");
     const newTemplateWidth = document.getElementById("newTemplateWidth");
     const newTemplateHeight = document.getElementById("newTemplateHeight");
+    const newTemplateMode = document.getElementById("newTemplateMode");
     const newTemplateVertical = document.getElementById("newTemplateVertical");
     const fieldSelection = document.getElementById("fieldSelection");
     const newTemplateDialog = document.getElementById("newTemplateDialog");
+    const initialType = state.mode === "summary" ? "blessing" : currentDataGroup();
+    if (newTemplateType) newTemplateType.value = initialType;
+    renderFieldSelection(initialType);
     if (newTemplateName) newTemplateName.value = "";
-    if (newTemplateWidth) newTemplateWidth.value = $("paperWidth")?.value || (state.mode === "summary" ? "210" : "90");
-    if (newTemplateHeight) newTemplateHeight.value = $("paperHeight")?.value || (state.mode === "summary" ? "297" : "260");
-    if (newTemplateVertical) newTemplateVertical.checked = state.mode !== "summary" && Boolean($("singleVertical")?.checked);
-    if (fieldSelection?.closest("fieldset")) fieldSelection.closest("fieldset").hidden = state.mode === "summary";
+    const defaultPaper = defaultPaperForTemplateType(initialType);
+    if (newTemplateWidth) newTemplateWidth.value = state.mode === "summary" ? ($("paperWidth")?.value || "210") : String(defaultPaper.width);
+    if (newTemplateHeight) newTemplateHeight.value = state.mode === "summary" ? ($("paperHeight")?.value || "297") : String(defaultPaper.height);
+    if (newTemplateMode) newTemplateMode.value = state.mode === "summary" ? "preset" : "preset";
+    if (newTemplateVertical) newTemplateVertical.checked = state.mode === "summary" ? false : defaultPaper.vertical;
+    if (fieldSelection?.closest("fieldset")) fieldSelection.closest("fieldset").hidden = true;
     newTemplateDialog?.showModal?.();
+  });
+
+  document.getElementById("newTemplateMode")?.addEventListener("change", (event) => {
+    const mode = event.target?.value || "preset";
+    const fieldSelection = document.getElementById("fieldSelection");
+    if (fieldSelection?.closest("fieldset")) {
+      fieldSelection.closest("fieldset").hidden = state.mode === "summary" || mode !== "manual";
+    }
+  });
+
+  document.getElementById("newTemplateType")?.addEventListener("change", (event) => {
+    const templateType = event.target?.value || "blessing";
+    renderFieldSelection(templateType);
+    if (state.mode !== "summary") {
+      const defaultPaper = defaultPaperForTemplateType(templateType);
+      if (document.getElementById("newTemplateWidth")) document.getElementById("newTemplateWidth").value = String(defaultPaper.width);
+      if (document.getElementById("newTemplateHeight")) document.getElementById("newTemplateHeight").value = String(defaultPaper.height);
+      if (document.getElementById("newTemplateVertical")) document.getElementById("newTemplateVertical").checked = defaultPaper.vertical;
+    }
   });
 
   document.getElementById("cancelNewTemplate")?.addEventListener("click", () => {
@@ -306,11 +466,11 @@ function init() {
   });
 
   controls.forEach((control) => control.addEventListener("input", () => {
-    if (control.id === "tabletType" || control.id === "summaryDataGroup") {
-      if (control.id === "summaryDataGroup") {
-        handleSummaryGroupChange(true);
-        return;
-      }
+    if (control.id === "summaryDataGroup") {
+      handleSummaryGroupChange(true);
+      return;
+    }
+    if (control.id === "tabletType") {
       state.pageIndex = 0;
       buildFieldMapping();
       buildStyleEditor();
@@ -388,6 +548,7 @@ function handleSummaryVariantChange() {
   state.activeFieldKey = "";
   buildSummaryFieldMapping();
   buildStyleEditor();
+  buildStaticVisibilityControls();
   render();
 }
 
@@ -399,7 +560,7 @@ function setMode(mode) {
     $("templateSelect").value = defaultSummaryTemplateId();
   }
   if (mode === "single" && isSummaryTemplate(currentTemplate()) && $("templateSelect")) {
-    $("templateSelect").value = $("tabletType")?.value || defaultSingleTemplateIdForGroup("blessing");
+    $("templateSelect").value = defaultSingleTemplateIdForGroup("blessing");
   }
   syncControlsFromSelectedTemplate();
   document.querySelectorAll("[data-mode]").forEach((button) => {
@@ -477,7 +638,6 @@ function applyTemplate() {
   ensureLayout(template.id);
   if (isSummaryTemplate(template)) state.editSide = "front";
   syncControlsFromSelectedTemplate();
-  if (template.tabletType) $("tabletType").value = template.tabletType;
   if (isSummaryTemplate(template)) {
     setMode("summary");
     refreshSummaryVariantOptions();
@@ -499,32 +659,40 @@ function currentTemplate() {
 function templateDisplayName(template) {
   if (!template?.id) return "";
   const builtinNames = {
-    blessing: "延生牌位",
-    deliveranceDetail: "超度牌位（详版）",
-    deliveranceSimple: "超度牌位（简版）",
-    a4summary: "汇总多列（A4）",
-    a3summary: "汇总多列（A3）",
+    blessing: "延生禄位模板",
+    deliverance: "往生牌位模板",
+    a4summary: "延生通名",
+    a3summary: "往生通名",
   };
-  return builtinNames[template.id] || template.name || template.id;
+  if (builtinNames[template.id]) return builtinNames[template.id];
+  if (template?.id?.startsWith("custom_") && !isSummaryTemplate(template)) {
+    const prefix = template.dataGroup === "deliverance" ? "往生｜" : "延生｜";
+    const baseName = template.name || template.id;
+    return baseName.startsWith(prefix) ? baseName : `${prefix}${baseName}`;
+  }
+  return template.name || template.id;
 }
 
 function templateGroupLabel(template) {
-  if (template?.id?.startsWith("custom_")) return "自定义模板";
   if (isSummaryTemplate(template)) return "汇总多列模板";
-  return "内置牌位模板";
+  if (template?.id?.startsWith("custom_")) {
+    return template.dataGroup === "deliverance" ? "往生自定义模板" : "延生自定义模板";
+  }
+  return "内置单张牌位模板";
 }
 
 function templateGroupOrder(template) {
-  if (template?.id?.startsWith("custom_")) return 3;
-  if (isSummaryTemplate(template)) return 2;
+  if (isSummaryTemplate(template)) return 4;
+  if (template?.id?.startsWith("custom_")) {
+    return template.dataGroup === "deliverance" ? 3 : 2;
+  }
   return 1;
 }
 
 function templateOrderInGroup(template) {
   const order = {
     blessing: 1,
-    deliveranceDetail: 2,
-    deliveranceSimple: 3,
+    deliverance: 2,
     a4summary: 1,
     a3summary: 2,
   };
@@ -640,12 +808,13 @@ function syncSingleVariantControls() {
   if (!wrap) return;
   wrap.hidden = state.mode !== "single" || state.editSide === "back";
   const layout = ensureLayout(currentLayoutKey());
-  state.singleVariantKey = normalizeSingleVariantKey(layout.singleVariantKey || state.singleVariantKey || singleVariantPresets[0].key);
+  const presets = singleVariantPresetsForCurrentType();
+  state.singleVariantKey = normalizeSingleVariantKey(layout.singleVariantKey || state.singleVariantKey || presets[0].key);
   refreshSingleVariantOptions();
-  if (!$("singleVariant")?.value) $("singleVariant").value = singleVariantPresets[0].key;
+  if (!$("singleVariant")?.value) $("singleVariant").value = presets[0].key;
   const row = currentRows()[state.pageIndex];
   if (row && state.mode === "single") {
-    const detectedKey = summaryVariantPresetForRow(row)?.key || "";
+    const detectedKey = row.__variant || "";
     wrap.dataset.detectedVariant = detectedKey;
   } else {
     delete wrap.dataset.detectedVariant;
@@ -656,13 +825,14 @@ function syncSingleVariantControls() {
 function refreshSingleVariantOptions() {
   const select = $("singleVariant");
   if (!select) return;
+  const presets = singleVariantPresetsForCurrentType();
   const previous = normalizeSingleVariantKey(state.singleVariantKey || select.value);
-  select.innerHTML = singleVariantPresets.map((variant) => (
+  select.innerHTML = presets.map((variant) => (
     `<option value="${variant.key}">${escapeHtml(variant.label)}</option>`
   )).join("");
-  select.value = singleVariantPresets.some((variant) => variant.key === previous)
+  select.value = presets.some((variant) => variant.key === previous)
     ? previous
-    : singleVariantPresets[0].key;
+    : presets[0].key;
   state.singleVariantKey = select.value;
   renderSingleVariantTabs();
 }
@@ -671,9 +841,22 @@ function renderSingleVariantTabs() {
   const tabs = $("singleVariantTabs");
   const select = $("singleVariant");
   if (!tabs || !select) return;
-  tabs.innerHTML = singleVariantPresets.map((variant) => (
+  tabs.innerHTML = singleVariantPresetsForCurrentType().map((variant) => (
     `<button type="button" data-single-variant="${variant.key}" class="${select.value === variant.key ? "active" : ""}">${escapeHtml(variant.label)}</button>`
   )).join("");
+}
+
+function singleVariantPresetsForCurrentType() {
+  const type = state.mode === "single"
+    ? currentDataGroup()
+    : normalizeTabletType($("tabletType")?.value || currentTemplate()?.tabletType || "blessing");
+  return singleVariantPresetsByType[type] || singleVariantPresetsByType.blessing;
+}
+
+function variantPresetsForCurrentContext() {
+  if (state.mode === "single") return singleVariantPresetsForCurrentType();
+  if (state.mode === "summary") return summaryVariantPresetsFor();
+  return [];
 }
 
 function updateSingleVariantTabState() {
@@ -697,7 +880,70 @@ function handleSingleVariantTabClick(event) {
 }
 
 function buildStaticVisibilityControls() {
-  const wrap = $("singleStaticVisibility");
+  const singleWrap = $("singleStaticVisibility");
+  const summaryWrap = $("summaryStaticVisibility");
+
+  if (state.mode === "summary") {
+    if (singleWrap) {
+      singleWrap.hidden = true;
+      singleWrap.innerHTML = "";
+    }
+    if (!summaryWrap) return;
+    summaryWrap.hidden = false;
+    const layout = ensureLayout(currentLayoutKey());
+    const variantKey = currentSummaryVariantKey();
+    const fields = layout.staticFields || [];
+    if (!fields.length) {
+      summaryWrap.innerHTML = '<p class="hint">当前汇总模板还没有静态字段。</p>';
+      return;
+    }
+    summaryWrap.innerHTML = `
+      <div class="static-visibility-title">当前版式静态字段显示</div>
+      ${fields.map((field) => `
+        <label class="checkbox">
+          <input type="checkbox" data-summary-static-visibility="${escapeHtml(field.key)}"${staticFieldVisibleInVariant(field, variantKey) ? " checked" : ""}>
+          ${escapeHtml(field.text || field.key)}
+        </label>
+      `).join("")}
+    `;
+    summaryWrap.querySelectorAll("[data-summary-static-visibility]").forEach((checkbox) => {
+      checkbox.addEventListener("change", () => {
+        const key = checkbox.dataset.summaryStaticVisibility || "";
+        const target = fields.find((field) => field.key === key);
+        if (!target) return;
+        setStaticFieldVariantVisibility(target, checkbox.checked, variantKey);
+        state.activeFieldKey = key;
+        saveLayouts();
+        buildStyleEditor();
+        buildStaticVisibilityControls();
+        render();
+      });
+    });
+    summaryWrap.querySelectorAll("label.checkbox").forEach((label) => {
+      label.addEventListener("click", (event) => {
+        if (event.target instanceof HTMLInputElement) return;
+        const checkbox = label.querySelector("[data-summary-static-visibility]");
+        const key = checkbox?.dataset.summaryStaticVisibility || "";
+        if (!key) return;
+        state.activeFieldKey = key;
+        if ($("styleField")) {
+          $("styleField").value = key;
+          syncStyleInputs();
+        } else {
+          syncSelectedFieldHighlight();
+        }
+        buildStaticVisibilityControls();
+        render();
+      });
+    });
+    return;
+  }
+
+  if (summaryWrap) {
+    summaryWrap.hidden = true;
+    summaryWrap.innerHTML = "";
+  }
+  const wrap = singleWrap;
   if (!wrap) return;
   const enabled = state.mode === "single" && state.editSide !== "back";
   wrap.hidden = !enabled;
@@ -1016,10 +1262,8 @@ function loadSystemPlaquesFromFilters() {
 async function loadSystemPlaques(group) {
   const previousMode = state.mode;
   if (isBlessingGroup(group)) {
-    $("tabletType").value = "blessing";
     $("summaryDataGroup").value = "blessing";
   } else {
-    if ($("tabletType").value === "blessing") $("tabletType").value = "deliveranceSimple";
     $("summaryDataGroup").value = "deliverance";
   }
 
@@ -1111,10 +1355,6 @@ async function applyLaunchParams() {
 
   const group = dataGroupForPlaqueType(type);
   if (state.mode !== "single") setMode("single");
-  const tabletType = tabletTypeForPlaqueType(type);
-  if (tabletType) {
-    $("tabletType").value = tabletType;
-  }
   $("summaryDataGroup").value = group;
   applyLaunchTemplate(templateId);
 
@@ -1268,9 +1508,8 @@ function normalizeRow(row, group, index) {
   const rowId = row.__rowId || row.id || `${group}_${Date.now()}_${index}`;
   const normalized = { ...row, __rowId: String(rowId) };
   normalized.__summaryVariant = detectSummaryVariantForGroup(normalized, group);
-  normalized.__singleVariant = group === "blessing"
-    ? normalizeSingleVariantKey(summaryVariantPresetForRow(normalized)?.key)
-    : singleVariantPresets[0].key;
+  normalized.__variant = detectSingleVariantForGroup(normalized, group);
+  normalized.__singleVariant = normalized.__variant;
   return normalized;
 }
 
@@ -1303,19 +1542,15 @@ function shouldScopeSingleVariantField(key) {
 }
 
 function normalizeSingleVariantKey(key) {
-  return blessingSingleVariantAliases[key] || key || singleVariantPresets[0].key;
+  return legacySingleVariantKeyMap[key] || key || defaultSingleVariantKeyForGroup();
 }
 
 function currentSingleVariantBaseKey(row = null, forPrint = false) {
   if (state.mode !== "single") return "";
-  if (forPrint && row && $("tabletType")?.value === "blessing") {
-    return normalizeSingleVariantKey(summaryVariantPresetForRow(row)?.key || singleVariantPresets[0].key);
+  if (forPrint && row?.__variant) {
+    return normalizeSingleVariantKey(row.__variant);
   }
-  return normalizeSingleVariantKey(state.singleVariantKey || $("singleVariant")?.value || singleVariantPresets[0].key);
-}
-
-function blessingVariantKeyFromBase(baseKey = currentSingleVariantBaseKey()) {
-  return baseKey === "layout_two" ? "blessing_person" : "blessing_bodhisattva";
+  return normalizeSingleVariantKey(state.singleVariantKey || $("singleVariant")?.value || singleVariantPresetsForCurrentType()[0].key);
 }
 
 function currentSingleVariantKey(row = null, forPrint = false) {
@@ -1324,20 +1559,56 @@ function currentSingleVariantKey(row = null, forPrint = false) {
 }
 
 function singleFieldsForVariant(variantKey = currentSingleVariantKey(), row = null, forPrint = false) {
+  return singleBaseFieldsForVariant(variantKey, row, forPrint).concat(dynamicFieldsForCurrentContext(variantKey));
+}
+
+function singleBaseFieldsForVariant(variantKey = currentSingleVariantKey(), row = null, forPrint = false) {
   const fields = currentTabletType().fields;
   if (state.mode !== "single") return fields;
-  if ($("tabletType")?.value !== "blessing") return fields;
-  const key = blessingVariantKeyFromBase(forPrint && row ? currentSingleVariantKey(row, true) : variantKey);
-  const fieldKeys = key === "blessing_person"
-    ? ["subject", "birthday", "address"]
-    : ["subject", "believer", "address"];
+  const type = currentDataGroup();
+  const key = normalizeSingleVariantKey(forPrint && row ? currentSingleVariantKey(row, true) : variantKey);
+  const fieldKeys = singleVariantFieldKeysByType[type]?.[key]
+    || singleVariantFieldKeysByType[type]?.layout_one
+    || [];
   const map = new Map(fields.map((field) => [field.key, field]));
   return fieldKeys.map((fieldKey) => map.get(fieldKey)).filter(Boolean);
 }
 
+function detectSingleVariantForGroup(row, group = currentDataGroup()) {
+  if (group === "blessing") {
+    const believer = firstRowValue(row, ["信人", "阳上", "阳上人", "believer", "yangshang", "yangShang"]);
+    return believer ? "layout_one" : "layout_two";
+  }
+
+  const deceasedPrimary = firstRowValue(row, ["第一亡者", "亡者姓名", "亡者", "deceasedPrimary"]);
+  const deceasedSecondary = firstRowValue(row, ["第二亡者", "附名亡者", "deceasedSecondary"]);
+  const deceasedInfo = firstRowValue(row, ["亡者信息", "deceasedInfo"]);
+  const normalizedLines = deceasedInfo
+    .split(/\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const deceasedCount = deceasedSecondary
+    ? 2
+    : deceasedPrimary
+      ? 1
+      : (normalizedLines.length >= 2 ? 2 : 1);
+  if (deceasedCount >= 2) return "layout_three";
+
+  const hasAge = Boolean(firstRowValue(row, ["年龄", "age"]));
+  const hasBirthday = Boolean(firstRowValue(row, ["生日", "出生日期", "birthday"]));
+  const hasDeathday = Boolean(firstRowValue(row, ["忌日", "deathday"]));
+  return hasAge || hasBirthday || hasDeathday ? "layout_two" : "layout_one";
+}
+
+function dynamicFieldsForCurrentContext(variantKey = currentContextVariantKey()) {
+  const layout = currentEditableLayout();
+  const fields = layout?.dynamicFields || [];
+  return fields.filter((field) => staticFieldVisibleInVariant(field, variantKey));
+}
+
 function staticFieldsForCurrentContext(layout, variantKey = currentSingleVariantKey()) {
   const fields = layout?.staticFields || [];
-  if (state.mode === "single" && !isBackSideActive()) {
+  if ((state.mode === "single" || state.mode === "summary") && !isBackSideActive()) {
     return fields.filter((field) => staticFieldVisibleInVariant(field, variantKey));
   }
   return fields;
@@ -1348,12 +1619,6 @@ function staticFieldVisibleInVariant(field, variantKey = currentSingleVariantKey
   if (!field.variantVisibility || typeof field.variantVisibility !== "object") return true;
   if (Object.prototype.hasOwnProperty.call(field.variantVisibility, variantKey)) {
     return field.variantVisibility[variantKey] !== false;
-  }
-  if (variantKey === "layout_one" && Object.prototype.hasOwnProperty.call(field.variantVisibility, "blessing_bodhisattva")) {
-    return field.variantVisibility.blessing_bodhisattva !== false;
-  }
-  if (variantKey === "layout_two" && Object.prototype.hasOwnProperty.call(field.variantVisibility, "blessing_person")) {
-    return field.variantVisibility.blessing_person !== false;
   }
   return field.variantVisibility[variantKey] !== false;
 }
@@ -1374,14 +1639,6 @@ function getLayoutBucketValue(layout, bucket, key, variantKey = currentSummaryVa
     ? singleVariantStorageKey(key, variantKey)
     : summaryVariantStorageKey(key, variantKey);
   if (Object.prototype.hasOwnProperty.call(layout[bucket], scopedKey)) return layout[bucket][scopedKey];
-  if (state.mode === "single" && variantKey === "layout_one") {
-    const legacyKey = `single_variant_blessing_bodhisattva__${key}`;
-    if (Object.prototype.hasOwnProperty.call(layout[bucket], legacyKey)) return layout[bucket][legacyKey];
-  }
-  if (state.mode === "single" && variantKey === "layout_two") {
-    const legacyKey = `single_variant_blessing_person__${key}`;
-    if (Object.prototype.hasOwnProperty.call(layout[bucket], legacyKey)) return layout[bucket][legacyKey];
-  }
   return layout[bucket][key];
 }
 
@@ -1398,14 +1655,6 @@ function mappingValueForField(layout, key, variantKey = currentSingleVariantKey(
   if (!layout?.mappings) return undefined;
   const scopedKey = shouldScopeSingleVariantField(key) ? singleVariantStorageKey(key, variantKey) : key;
   if (Object.prototype.hasOwnProperty.call(layout.mappings, scopedKey)) return layout.mappings[scopedKey];
-  if (shouldScopeSingleVariantField(key) && variantKey === "layout_one") {
-    const legacyKey = `single_variant_blessing_bodhisattva__${key}`;
-    if (Object.prototype.hasOwnProperty.call(layout.mappings, legacyKey)) return layout.mappings[legacyKey];
-  }
-  if (shouldScopeSingleVariantField(key) && variantKey === "layout_two") {
-    const legacyKey = `single_variant_blessing_person__${key}`;
-    if (Object.prototype.hasOwnProperty.call(layout.mappings, legacyKey)) return layout.mappings[legacyKey];
-  }
   return layout.mappings[key];
 }
 
@@ -1442,7 +1691,7 @@ function summaryFieldDefinitionsForGroup(group) {
     return [
       { key: "summary_subject", label: "牌位主体", sourceKey: "subject" },
       { key: "summary_believer", label: "信人", sourceKey: "believer" },
-      { key: "summary_birthday", label: "出生日期", sourceKey: "birthday" },
+      { key: "summary_birthday", label: "生日", sourceKey: "birthday" },
       { key: "summary_address", label: "地址", sourceKey: "address" },
     ];
   }
@@ -1458,7 +1707,7 @@ function summaryFieldDefinitions(group = currentDataGroup()) {
     return [
       { key: "summary_subject", label: "牌位主体", sourceKey: "subject" },
       { key: "summary_believer", label: "信人", sourceKey: "believer" },
-      { key: "summary_birthday", label: "出生日期", sourceKey: "birthday" },
+      { key: "summary_birthday", label: "生日", sourceKey: "birthday" },
       { key: "summary_address", label: "地址", sourceKey: "address" },
     ];
   }
@@ -1475,10 +1724,11 @@ function summaryFieldsForVariant(variantKey = currentSummaryVariantKey(), row = 
   const toggles = layout.summaryFieldToggles?.[variantKey] || {};
   const definitions = summaryFieldDefinitions();
   const map = new Map(definitions.map((field) => [field.key, field]));
-  return (preset?.fields || [])
+  const builtins = (preset?.fields || [])
     .map((key) => map.get(key))
     .filter((field) => field && toggles[field.key] !== "off")
     .filter(Boolean);
+  return builtins.concat(dynamicFieldsForCurrentContext(variantKey));
 }
 
 function summaryDefaultPosition(key, variantKey = currentSummaryVariantKey()) {
@@ -1608,18 +1858,25 @@ function plaqueToRow(plaque) {
     : plaque.plaqueType === "DELIVERANCE"
       ? (plaque.dedicationType === "custom" ? plaque.customDedicationType : plaque.dedicationType) || plaque.deceasedName || plaque.name || plaque.subject || ""
       : (plaque.deceasedName || plaque.holderName || plaque.name || plaque.subject || "");
+  const primaryDeceased = plaque.deceasedName || "";
+  const secondaryDeceased = plaque.deceasedName2 || "";
+  const deceasedInfo = [primaryDeceased, secondaryDeceased].filter(Boolean).join("\n");
+  const ageValue = plaque.age || "";
+  const wishValue = plaque.message || plaque.blessingText || "";
   return {
     "牌位主体": subject || plaque.holderName || plaque.deceasedName || plaque.dedicationType || plaque.customDedicationType || "",
     "信人": plaque.yangShang || "",
-    "年龄": "",
-    "生肖": plaque.zodiac || "",
-    "生日年月日": plaque.birthDate || "",
+    "年龄": ageValue,
+    "属相": plaque.zodiac || "",
     "生日": plaque.birthDate || "",
     "忌日": plaque.deathDate || "",
-    "阴庚": "",
     "阳上": plaque.yangShang || "",
     "地址": plaque.address || "",
-    "祈福语": plaque.blessingText || "",
+    "祈福语": wishValue,
+    "寄语": wishValue,
+    "第一亡者": primaryDeceased,
+    "第二亡者": secondaryDeceased,
+    "亡者信息": deceasedInfo,
     "电话": plaque.phone || "",
     "牌位类型": plaque.plaqueType || "",
     "分类细项": plaque.longevitySubtype || plaque.dedicationType || plaque.customDedicationType || "",
@@ -1701,7 +1958,7 @@ function buildStyleEditor() {
   const previous = state.activeFieldKey || select.value;
   const layout = currentEditableLayout();
   const fields = state.mode === "summary"
-    ? summaryFieldsForVariant().concat(staticFieldsForCurrentContext(layout).map((field) => ({
+    ? summaryFieldsForVariant().concat(staticFieldsForCurrentContext(layout, currentSummaryVariantKey()).map((field) => ({
       key: field.key,
       label: `静态：${field.text}`,
     })))
@@ -1714,6 +1971,8 @@ function buildStyleEditor() {
   )).join("");
   if (fields.some((field) => field.key === previous)) {
     select.value = previous;
+  } else if (state.mode === "summary" && fields.some((field) => field.key === state.activeFieldKey)) {
+    select.value = state.activeFieldKey;
   } else if (fields[0]) {
     select.value = fields[0].key;
   } else {
@@ -1844,7 +2103,7 @@ function addStaticField() {
   const field = { key, text };
   if (state.mode === "single" && state.editSide !== "back") {
     field.variantVisibility = {};
-    singleVariantPresets.forEach((variant) => {
+    singleVariantPresetsForCurrentType().forEach((variant) => {
       field.variantVisibility[variant.key] = variant.key === currentSingleVariantKey();
     });
   }
@@ -1884,7 +2143,11 @@ function addSummaryStaticField() {
 
   const layout = currentEditableLayout();
   const key = `static_${Date.now()}`;
-  layout.staticFields.push({ key, text });
+  const field = { key, text, variantVisibility: {} };
+  summaryVariantPresetsFor().forEach((variant) => {
+    field.variantVisibility[variant.key] = variant.key === currentSummaryVariantKey();
+  });
+  layout.staticFields.push(field);
   layout.positions[key] = { x: 8, y: 8 };
   layout.sizes[key] = { w: 28, h: 12 };
   layout.styles[key] = {
@@ -1904,7 +2167,14 @@ function fieldOptions(key, aliases, savedMappings = {}, variantKey = currentSing
   const fields = currentFields();
   const layout = { mappings: savedMappings };
   const saved = mappingValueForField(layout, key, variantKey);
-  const matched = saved !== undefined ? saved : aliases.find((name) => fields.includes(name)) || "";
+  const dynamicField = dynamicFieldDefinitionByKey(key, variantKey);
+  const sourceAliases = dynamicField?.sourceKey
+    ? (state.mode === "summary"
+      ? (summaryFieldDefinitions().find((field) => field.key === dynamicField.sourceKey)?.aliases || [])
+      : (currentTabletType().fields.find((field) => field.key === dynamicField.sourceKey)?.aliases || []))
+    : [];
+  const aliasList = Array.isArray(aliases) && aliases.length ? aliases : sourceAliases;
+  const matched = saved !== undefined ? saved : aliasList.find((name) => fields.includes(name)) || "";
   const options = ['<option value="">不使用</option>'].concat(fields.map((field) => (
     `<option value="${escapeHtml(field)}"${field === matched ? " selected" : ""}>${escapeHtml(field)}</option>`
   )));
@@ -1915,19 +2185,93 @@ function currentTabletType() {
   if (state.mode === "summary") {
     return $("summaryDataGroup").value === "blessing"
       ? tabletTypes.blessing
-      : tabletTypes.deliveranceSimple;
+      : tabletTypes.deliverance;
   }
-  const type = $("tabletType").value;
+  const template = currentTemplate();
+  const type = normalizeTabletType(template?.tabletType || template?.dataGroup || "blessing");
   if (type === "custom") {
-    const templateId = $("templateSelect").value;
-    const fields = Object.keys(templateDefaults[templateId]?.positions || {}).map(key => ({
-      key,
-      label: key,
-      aliases: [key]
-    }));
-    return { name: "自定义模板", fields };
+    const group = template?.dataGroup === "deliverance" ? "deliverance" : "blessing";
+    const baseFields = tabletTypes[group]?.fields || [];
+    const allowedFieldKeys = new Set(resolveTemplateFieldKeys(template));
+    const fields = baseFields.filter((field) => allowedFieldKeys.has(field.key));
+    return {
+      name: templateDisplayName(template) || "自定义模板",
+      fields: fields.length ? fields : baseFields,
+    };
   }
   return tabletTypes[type] || tabletTypes.blessing;
+}
+
+function normalizeTabletType(type) {
+  if (type === "custom") return "custom";
+  return type === "deliverance" ? "deliverance" : "blessing";
+}
+
+function normalizeImportedTabletType(type) {
+  if (type === "custom") return "custom";
+  if (type === "deliveranceDetail" || type === "deliveranceSimple") return "deliverance";
+  return normalizeTabletType(type);
+}
+
+function unscopedFieldKey(key) {
+  if (typeof key !== "string") return "";
+  return key
+    .replace(/^single_variant_[^_]+__/, "")
+    .replace(/^summary_variant_[^_]+__/, "");
+}
+
+function defaultSingleFieldKeysForGroup(group) {
+  const variants = Object.values(singleVariantFieldKeysByType[group] || {});
+  return Array.from(new Set(variants.flatMap((fieldKeys) => fieldKeys || []).map((key) => unscopedFieldKey(key)).filter(Boolean)));
+}
+
+function resolveTemplateFieldKeys(template = currentTemplate()) {
+  if (!template) return [];
+  if (Array.isArray(template.fieldKeys) && template.fieldKeys.length) {
+    return Array.from(new Set(template.fieldKeys.map((key) => unscopedFieldKey(key)).filter(Boolean)));
+  }
+  const storedKeys = Object.keys(templateDefaults[template.id]?.positions || {})
+    .map((key) => unscopedFieldKey(key))
+    .filter(Boolean);
+  if (storedKeys.length) return Array.from(new Set(storedKeys));
+  if (template.dataGroup) return defaultSingleFieldKeysForGroup(template.dataGroup);
+  return [];
+}
+
+function singleVariantDefaultValue(type, variantKey, bucket, key, fallback) {
+  const variantDefaults = singleVariantLayoutDefaults[type]?.[variantKey]?.[bucket];
+  if (variantDefaults && Object.prototype.hasOwnProperty.call(variantDefaults, key)) {
+    return clone(variantDefaults[key]);
+  }
+  const templateBucket = templateDefaults[type]?.[bucket];
+  if (templateBucket && Object.prototype.hasOwnProperty.call(templateBucket, key)) {
+    return clone(templateBucket[key]);
+  }
+  return clone(fallback);
+}
+
+function createSinglePresetTemplateDefaults(dataGroup) {
+  const baseId = dataGroup === "deliverance" ? "deliverance" : "blessing";
+  const variantPresets = singleVariantPresetsByType[dataGroup] || [];
+  const positions = {};
+  const styles = {};
+  const sizes = {};
+  variantPresets.forEach((variant) => {
+    const fieldKeys = singleVariantFieldKeysByType[dataGroup]?.[variant.key] || [];
+    fieldKeys.forEach((fieldKey) => {
+      positions[singleVariantStorageKey(fieldKey, variant.key)] = singleVariantDefaultValue(baseId, variant.key, "positions", fieldKey, { x: 50, y: 50 });
+      styles[singleVariantStorageKey(fieldKey, variant.key)] = singleVariantDefaultValue(baseId, variant.key, "styles", fieldKey, { fontSize: 18, color: "#16110d", fontFamily: "SimSun, serif", textAlign: "center", verticalAlign: "center", wrapMode: "anywhere" });
+      sizes[singleVariantStorageKey(fieldKey, variant.key)] = singleVariantDefaultValue(baseId, variant.key, "sizes", fieldKey, { w: 20, h: 20 });
+    });
+  });
+  return { positions, styles, sizes };
+}
+
+function defaultPaperForTemplateType(templateType) {
+  if (templateType === "deliverance") {
+    return { width: 100, height: 280, vertical: true };
+  }
+  return { width: 90, height: 260, vertical: true };
 }
 
 function renderTable() {
@@ -1965,6 +2309,7 @@ function renderTable() {
 }
 
 function render() {
+  closeFieldContextMenu();
   syncPrintSize();
   if (!templateDesignerMode && !$("templateSelect").options.length) {
     $("preview").innerHTML = '<div class="empty">未读取到已同步模板，请先在主窗口同步服务器模板。</div>';
@@ -2044,6 +2389,7 @@ function createBlankSideLayout() {
     sizes: {},
     background: "",
     staticFields: [],
+    dynamicFields: [],
   };
 }
 
@@ -2052,6 +2398,7 @@ function normalizeSideLayout(layout) {
   if (!layout.styles) layout.styles = {};
   if (!layout.sizes) layout.sizes = {};
   if (!layout.staticFields) layout.staticFields = [];
+  if (!layout.dynamicFields) layout.dynamicFields = [];
   return layout;
 }
 
@@ -2088,7 +2435,7 @@ function singleSheet(row, side = state.editSide, forPrint = false) {
   state.renderSide = side;
   state.renderSingleVariant = side === "front" ? currentSingleVariantKey(row, forPrint) : "";
   const vertical = $("singleVertical").checked ? " vertical-text" : "";
-  const type = $("tabletType").value;
+  const type = currentDataGroup() === "blessing" ? "blessing" : "deliverance";
   const fields = singleFieldsForVariant(state.renderSingleVariant, row, forPrint);
   const layout = side === "back" ? backLayoutFor(currentLayoutKey()) : ensureLayout(currentLayoutKey());
   const singleFontValue = Number($("singleFont")?.value) || Number(normalizeFieldStyle(styleFor("subject")).fontSize) || 36;
@@ -2302,14 +2649,15 @@ function summarySheet(pageRows, forPrint = false) {
     const variantKey = forPrint
       ? (row ? (summaryVariantPresetForRow(row)?.key || selectedVariantKey) : selectedVariantKey)
       : selectedVariantKey;
-    const staticFields = layout.staticFields.map((field) => ({
+    const visibleStaticFields = staticFieldsForCurrentContext(layout, variantKey);
+    const staticFields = visibleStaticFields.map((field) => ({
       key: field.key,
       label: `静态：${field.text}`,
       text: field.text,
     }));
     const fields = (forPrint || columnIndex === 0)
       ? summaryFieldsForVariant(variantKey, row).concat(staticFields).map((field) => {
-      const staticField = layout.staticFields.find((item) => item.key === field.key);
+      const staticField = visibleStaticFields.find((item) => item.key === field.key);
       const text = staticField ? staticField.text : (row ? fieldValue(row, field.sourceKey) : "");
       const content = text
         ? escapeHtml(text)
@@ -2538,6 +2886,8 @@ function allCurrentRows() {
 }
 
 function currentFields() {
+  const configured = SINGLE_TABLE_FIELDS[currentDataGroup()];
+  if (Array.isArray(configured) && configured.length) return configured;
   return Array.from(new Set(allCurrentRows().flatMap((row) => Object.keys(row))))
     .filter((field) => !field.startsWith("__") && field !== "id");
 }
@@ -2568,8 +2918,9 @@ function updateSelectedRowsText() {
 
 function currentDataGroup() {
   if (state.mode === "summary") return $("summaryDataGroup").value || "deliverance";
-  if ($("tabletType").value === "custom") return currentTemplate().dataGroup || "deliverance";
-  return isBlessingGroup($("tabletType").value) ? "blessing" : "deliverance";
+  const template = currentTemplate();
+  if (template?.dataGroup) return template.dataGroup === "blessing" ? "blessing" : "deliverance";
+  return normalizeTabletType(template?.tabletType || "blessing") === "blessing" ? "blessing" : "deliverance";
 }
 
 function currentDataGroupName() {
@@ -2607,6 +2958,10 @@ function defaultSummaryFormat() {
 }
 
 function resolveFieldNameForKey(key) {
+  const dynamicField = dynamicFieldDefinitionByKey(key, state.renderSingleVariant || currentSingleVariantKey());
+  if (dynamicField?.sourceKey) {
+    return resolveFieldNameForKey(dynamicField.sourceKey);
+  }
   const select = document.querySelector(`[data-field-key="${key}"]`);
   if (select) return select.value || "";
   const layout = ensureLayout(currentLayoutKey());
@@ -2623,8 +2978,12 @@ function resolveFieldNameForKey(key) {
 
 function fieldValue(row, key) {
   if (isSummaryFieldKey(key)) {
-    const definition = summaryFieldDefinitions().find((field) => field.key === key);
+    const definition = summaryFieldDefinitions().find((field) => field.key === key) || dynamicFieldDefinitionByKey(key, currentSummaryVariantKey());
     return definition ? fieldValue(row, definition.sourceKey) : "";
+  }
+  const dynamicField = dynamicFieldDefinitionByKey(key, state.renderSingleVariant || currentSingleVariantKey());
+  if (dynamicField?.sourceKey) {
+    return fieldValue(row, dynamicField.sourceKey);
   }
   const fieldName = resolveFieldNameForKey(key);
   return fieldName ? value(row, fieldName) : "";
@@ -2645,7 +3004,8 @@ function currentFieldMappings() {
 
 function loadLayouts() {
   try {
-    return JSON.parse(localStorage.getItem("tabletPrintLayouts") || "{}");
+    const parsed = JSON.parse(localStorage.getItem("tabletPrintLayouts") || "{}");
+    return migrateLegacySingleVariantLayouts(parsed);
   } catch {
     return {};
   }
@@ -2653,6 +3013,62 @@ function loadLayouts() {
 
 function saveLayouts() {
   localStorage.setItem("tabletPrintLayouts", JSON.stringify(state.layouts));
+}
+
+function migrateLegacySingleVariantLayouts(layouts) {
+  if (!layouts || typeof layouts !== "object") return {};
+  const migrated = {};
+  Object.entries(layouts).forEach(([layoutId, layout]) => {
+    if (!layout || typeof layout !== "object") {
+      migrated[layoutId] = layout;
+      return;
+    }
+    const nextLayout = clone(layout);
+    if (nextLayout.singleVariantKey) {
+      nextLayout.singleVariantKey = normalizeSingleVariantKey(nextLayout.singleVariantKey);
+    }
+    ["positions", "styles", "sizes", "mappings"].forEach((bucket) => {
+      nextLayout[bucket] = migrateLegacyScopedKeys(nextLayout[bucket]);
+    });
+    if (Array.isArray(nextLayout.staticFields)) {
+      nextLayout.staticFields = nextLayout.staticFields.map((field) => {
+        if (!field || typeof field !== "object" || !field.variantVisibility || typeof field.variantVisibility !== "object") {
+          return field;
+        }
+        return {
+          ...field,
+          variantVisibility: migrateLegacyVariantVisibility(field.variantVisibility),
+        };
+      });
+    }
+    migrated[layoutId] = nextLayout;
+  });
+  return migrated;
+}
+
+function migrateLegacyScopedKeys(bucket) {
+  if (!bucket || typeof bucket !== "object" || Array.isArray(bucket)) return bucket;
+  const migrated = {};
+  Object.entries(bucket).forEach(([key, value]) => {
+    let nextKey = key;
+    nextKey = nextKey.replace(/^single_variant_blessing_bodhisattva__/, "single_variant_layout_one__");
+    nextKey = nextKey.replace(/^single_variant_blessing_person__/, "single_variant_layout_two__");
+    migrated[nextKey] = value;
+  });
+  return migrated;
+}
+
+function migrateLegacyVariantVisibility(visibility) {
+  const migrated = { ...visibility };
+  if (Object.prototype.hasOwnProperty.call(migrated, "blessing_bodhisattva")) {
+    migrated.layout_one = migrated.blessing_bodhisattva;
+    delete migrated.blessing_bodhisattva;
+  }
+  if (Object.prototype.hasOwnProperty.call(migrated, "blessing_person")) {
+    migrated.layout_two = migrated.blessing_person;
+    delete migrated.blessing_person;
+  }
+  return migrated;
 }
 
 async function persistTemplateMutation(options = {}) {
@@ -2783,9 +3199,11 @@ function importServerTemplate(template) {
   const selectedId = $("templateSelect")?.value || "";
   const data = template.elements;
   if (!data?.template?.id) return;
+  if (HIDDEN_LEGACY_TEMPLATE_IDS.has(data.template.id)) return;
   const localTemplate = {
     ...data.template,
     id: data.template.id,
+    tabletType: normalizeImportedTabletType(data.template.tabletType),
     name: data.template.name || template.name || templateDisplayName(data.template),
   };
   const index = templates.findIndex((item) => item.id === localTemplate.id);
@@ -2817,7 +3235,7 @@ function importServerTemplate(template) {
         staticFields: existingLayout.staticFields || data.layout.staticFields || [],
         summaryFieldToggles: existingLayout.summaryFieldToggles || data.layout.summaryFieldToggles || {},
         summary: existingLayout.summary || data.layout.summary,
-        singleVariantKey: existingLayout.singleVariantKey || data.layout.singleVariantKey || singleVariantPresets[0].key,
+        singleVariantKey: normalizeSingleVariantKey(existingLayout.singleVariantKey || data.layout.singleVariantKey || defaultSingleVariantKeyForTemplate(localTemplate)),
         background: existingLayout.background || normalizedLayout.background || "",
       };
     }
@@ -2849,7 +3267,7 @@ function exportCurrentTemplatePayload() {
     layout: {
       ...layout,
       singleVariantKey: state.mode === "single"
-        ? normalizeSingleVariantKey(layout.singleVariantKey || state.singleVariantKey || $("singleVariant")?.value || singleVariantPresets[0].key)
+        ? normalizeSingleVariantKey(layout.singleVariantKey || state.singleVariantKey || $("singleVariant")?.value || defaultSingleVariantKeyForTemplate(template))
         : layout.singleVariantKey,
     },
   };
@@ -2904,6 +3322,17 @@ async function syncCurrentTemplateToServer() {
 
 function migrateStoredLayouts() {
   let changed = false;
+
+  HIDDEN_LEGACY_TEMPLATE_IDS.forEach((id) => {
+    if (state.layouts[id]) {
+      delete state.layouts[id];
+      changed = true;
+    }
+    if (state.remoteTemplateIds[id]) {
+      delete state.remoteTemplateIds[id];
+      changed = true;
+    }
+  });
 
   if (state.layouts.summary && !state.layouts.a4summary) {
     state.layouts.a4summary = {
@@ -2976,19 +3405,21 @@ function ensureLayout(type) {
         sizes: clone(templateDefaults[type]?.sizes || {}),
         background: "",
         mappings: {},
-        singleVariantKey: singleVariantPresets[0].key,
-        duplex: { enabled: false },
-        backSide: createBlankSideLayout(),
-      };
+      dynamicFields: [],
+      singleVariantKey: defaultSingleVariantKeyForTemplate(templates.find((item) => item.id === type)),
+      duplex: { enabled: false },
+      backSide: createBlankSideLayout(),
+    };
   }
   if (!state.layouts[type].positions) state.layouts[type].positions = {};
   if (!state.layouts[type].styles) state.layouts[type].styles = clone(templateDefaults[type]?.styles || {});
   if (!state.layouts[type].sizes) state.layouts[type].sizes = clone(templateDefaults[type]?.sizes || {});
   if (!state.layouts[type].mappings) state.layouts[type].mappings = {};
   if (!state.layouts[type].staticFields) state.layouts[type].staticFields = [];
+  if (!state.layouts[type].dynamicFields) state.layouts[type].dynamicFields = [];
   if (!state.layouts[type].duplex) state.layouts[type].duplex = { enabled: false };
   if (!isSummaryTemplateId(type) && !state.layouts[type].singleVariantKey) {
-    state.layouts[type].singleVariantKey = singleVariantPresets[0].key;
+    state.layouts[type].singleVariantKey = defaultSingleVariantKeyForTemplate(templates.find((item) => item.id === type));
   }
   if (isSummaryTemplateId(type)) {
     if (!state.layouts[type].paper) state.layouts[type].paper = summaryTemplatePaper(type);
@@ -3012,7 +3443,7 @@ function positionFor(key, variantKey = currentSummaryVariantKey()) {
     const singleVariant = state.renderSingleVariant || currentSingleVariantKey();
     const saved = getLayoutBucketValue(layout, "positions", key, singleVariant);
     if (saved) return saved;
-    const fallback = clone(templateDefaults[type]?.positions?.[key] || { x: 50, y: 50 });
+    const fallback = singleVariantDefaultValue(type, singleVariant, "positions", key, { x: 50, y: 50 });
     return setLayoutBucketValue(layout, "positions", key, fallback, singleVariant);
   }
   const saved = getLayoutBucketValue(layout, "positions", key, variantKey);
@@ -3040,7 +3471,7 @@ async function saveCurrentLayout() {
   if (state.mode === "summary") {
     layout.summary = currentSummarySettings();
   } else {
-    layout.singleVariantKey = normalizeSingleVariantKey(state.singleVariantKey || $("singleVariant")?.value || singleVariantPresets[0].key);
+    layout.singleVariantKey = normalizeSingleVariantKey(state.singleVariantKey || $("singleVariant")?.value || defaultSingleVariantKeyForTemplate(currentTemplate()));
   }
   layout.duplex = {
     ...(layout.duplex || {}),
@@ -3076,8 +3507,9 @@ function resetCurrentLayout() {
     sizes: clone(templateDefaults[type]?.sizes || {}),
     background: "",
     mappings: {},
-    singleVariantKey: singleVariantPresets[0].key,
+    singleVariantKey: defaultSingleVariantKeyForTemplate(templates.find((item) => item.id === type)),
     staticFields: [],
+    dynamicFields: [],
     duplex: { enabled: false },
     backSide: createBlankSideLayout(),
   };
@@ -3087,6 +3519,11 @@ function resetCurrentLayout() {
   $("singleVertical").checked = template.vertical;
   saveLayouts();
   $("bgInput").value = "";
+  state.activeFieldKey = "";
+  syncControlsFromSelectedTemplate();
+  buildFieldMapping();
+  buildStyleEditor();
+  buildStaticVisibilityControls();
   render();
 }
 
@@ -3103,7 +3540,13 @@ function styleFor(key, variantKey = currentSummaryVariantKey()) {
     const singleVariant = state.renderSingleVariant || currentSingleVariantKey();
     const saved = getLayoutBucketValue(layout, "styles", key, singleVariant);
     if (saved) return saved;
-    const fallback = clone(templateDefaults[type]?.styles?.[key] || { fontSize: 18, color: "#16110d", fontFamily: "SimSun, serif", textAlign: "center", verticalAlign: "center", wrapMode: "anywhere" });
+    const fallback = singleVariantDefaultValue(
+      type,
+      singleVariant,
+      "styles",
+      key,
+      templateDefaults[type]?.styles?.[key] || { fontSize: 18, color: "#16110d", fontFamily: "SimSun, serif", textAlign: "center", verticalAlign: "center", wrapMode: "anywhere" }
+    );
     return setLayoutBucketValue(layout, "styles", key, fallback, singleVariant);
   }
   const saved = getLayoutBucketValue(layout, "styles", key, variantKey);
@@ -3133,7 +3576,7 @@ function sizeFor(key, variantKey = currentSummaryVariantKey()) {
     const singleVariant = state.renderSingleVariant || currentSingleVariantKey();
     const saved = getLayoutBucketValue(layout, "sizes", key, singleVariant);
     if (saved) return saved;
-    const fallback = clone(templateDefaults[type]?.sizes?.[key] || { w: 20, h: 20 });
+    const fallback = singleVariantDefaultValue(type, singleVariant, "sizes", key, { w: 20, h: 20 });
     return setLayoutBucketValue(layout, "sizes", key, fallback, singleVariant);
   }
   const saved = getLayoutBucketValue(layout, "sizes", key, variantKey);
@@ -3157,9 +3600,17 @@ function bindDragHandles() {
     element.addEventListener("contextmenu", handleFieldContextMenu);
     element.addEventListener("dblclick", handleFieldDoubleClick);
   });
+  document.querySelectorAll("[data-drag-surface]").forEach((surface) => {
+    surface.addEventListener("contextmenu", handleSurfaceContextMenu);
+  });
   document.querySelectorAll("[data-resize-key]").forEach((handle) => {
     handle.addEventListener("pointerdown", startResize);
   });
+}
+
+function dynamicFieldDefinitionByKey(key, variantKey = currentContextVariantKey()) {
+  const layout = currentEditableLayout();
+  return (layout.dynamicFields || []).find((field) => field.key === key && staticFieldVisibleInVariant(field, variantKey)) || null;
 }
 
 function selectFieldFromCanvas(event) {
@@ -3195,48 +3646,454 @@ function currentSelectedStaticField() {
   return key ? staticFields.find((field) => field.key === key) || null : null;
 }
 
+function currentContextVariantKey() {
+  if (state.mode === "single") return currentSingleVariantKey();
+  if (state.mode === "summary") return currentSummaryVariantKey();
+  return "";
+}
+
 function isStaticFieldKey(key) {
   if (!key) return false;
   const layout = currentEditableLayout();
   return (layout.staticFields || []).some((field) => field.key === key);
 }
 
+function ensureFieldContextMenu() {
+  if ($("fieldContextMenu")) return;
+  const menu = document.createElement("div");
+  menu.id = "fieldContextMenu";
+  menu.className = "field-context-menu";
+  menu.hidden = true;
+  menu.innerHTML = `
+    <button type="button" data-menu-action="copy">复制</button>
+    <button type="button" data-menu-action="paste">粘贴</button>
+    <button type="button" data-menu-action="delete">删除</button>
+    <button type="button" data-menu-action="edit">编辑</button>
+  `;
+  menu.addEventListener("click", handleFieldContextMenuAction);
+  document.body.appendChild(menu);
+}
+
+function openFieldContextMenu(key, clientX, clientY, options = {}) {
+  const menu = $("fieldContextMenu");
+  if (!menu) return;
+  const {
+    kind = "field",
+    pastePosition = null,
+  } = options;
+  if (kind === "field" && !key) return;
+  state.contextMenu = {
+    visible: true,
+    kind,
+    key,
+    x: clientX,
+    y: clientY,
+    pastePosition,
+  };
+  menu.querySelectorAll("[data-menu-action]").forEach((button) => {
+    button.hidden = false;
+    button.disabled = false;
+  });
+  if (kind === "surface") {
+    menu.querySelector('[data-menu-action="copy"]').hidden = true;
+    menu.querySelector('[data-menu-action="delete"]').hidden = true;
+    menu.querySelector('[data-menu-action="edit"]').hidden = true;
+  }
+  menu.hidden = false;
+  menu.querySelector('[data-menu-action="paste"]').disabled = !state.fieldClipboard;
+  requestAnimationFrame(() => {
+    const rect = menu.getBoundingClientRect();
+    const left = Math.min(clientX, Math.max(8, window.innerWidth - rect.width - 8));
+    const top = Math.min(clientY, Math.max(8, window.innerHeight - rect.height - 8));
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
+  });
+}
+
+function closeFieldContextMenu() {
+  state.contextMenu.visible = false;
+  state.contextMenu.kind = "field";
+  state.contextMenu.key = "";
+  state.contextMenu.pastePosition = null;
+  const menu = $("fieldContextMenu");
+  if (!menu) return;
+  menu.hidden = true;
+}
+
+function handleGlobalPointerDismiss(event) {
+  if (!state.contextMenu.visible) return;
+  if (event.target?.closest?.("#fieldContextMenu")) return;
+  closeFieldContextMenu();
+}
+
+function handleFieldContextMenuAction(event) {
+  const button = event.target.closest("[data-menu-action]");
+  if (!button) return;
+  const action = button.dataset.menuAction;
+  const key = state.contextMenu.key || currentSelectedFieldKey();
+  const contextKind = state.contextMenu.kind;
+  const pastePosition = state.contextMenu.pastePosition;
+  closeFieldContextMenu();
+  if (action === "paste") {
+    pasteClipboardToField(contextKind === "surface" ? "" : key, pastePosition);
+    return;
+  }
+  if (!key) return;
+  if (action === "copy") copyFieldByKey(key);
+  if (action === "delete") deleteSelectedField(key);
+  if (action === "edit") editFieldByKey(key);
+}
+
+function canvasFieldSnapshot(key) {
+  if (!key) return null;
+  const isStatic = isStaticFieldKey(key);
+  const dynamicField = dynamicFieldDefinitionByKey(key);
+  const layout = currentEditableLayout();
+  const variantKey = currentContextVariantKey();
+  const snapshot = {
+    kind: isStatic ? "static" : "dynamic",
+    key,
+    mode: state.mode,
+    side: state.editSide,
+    variantKey,
+    position: clone(positionFor(key, variantKey)),
+    size: clone(sizeFor(key, variantKey)),
+    style: clone(normalizeFieldStyle(styleFor(key, variantKey))),
+  };
+  if (isStatic) {
+    const field = (layout.staticFields || []).find((item) => item.key === key);
+    snapshot.text = field?.text || "";
+    snapshot.variantVisibility = clone(field?.variantVisibility || {});
+  } else if (dynamicField) {
+    snapshot.text = dynamicField.label || "";
+    snapshot.sourceKey = dynamicField.sourceKey || dynamicField.key;
+    snapshot.variantVisibility = clone(dynamicField.variantVisibility || {});
+  } else {
+    const builtin = state.mode === "summary"
+      ? summaryFieldDefinitions().find((field) => field.key === key)
+      : currentTabletType().fields.find((field) => field.key === key);
+    snapshot.text = builtin?.label || key;
+    snapshot.sourceKey = key;
+  }
+  return snapshot;
+}
+
+function copyFieldByKey(key) {
+  const snapshot = canvasFieldSnapshot(key);
+  if (!snapshot) return false;
+  state.fieldClipboard = snapshot;
+  state.activeFieldKey = key;
+  if ($("styleField")) {
+    $("styleField").value = key;
+    syncStyleInputs();
+  } else {
+    syncSelectedFieldHighlight();
+  }
+  $("statusText").textContent = snapshot.kind === "static" ? "已复制静态字段" : "已复制动态字段";
+  return true;
+}
+
+function copySelectedField() {
+  const key = currentSelectedFieldKey();
+  if (!key) {
+    alert("请先选中字段");
+    return;
+  }
+  copyFieldByKey(key);
+}
+
+function flashFieldSelection(key) {
+  if (!key) return;
+  requestAnimationFrame(() => {
+    const element = document.querySelector(`.editable-field[data-edit-key="${CSS.escape(key)}"]`);
+    if (!element) return;
+    element.classList.remove("is-flashed");
+    void element.offsetWidth;
+    element.classList.add("is-flashed");
+    window.setTimeout(() => {
+      element.classList.remove("is-flashed");
+    }, 520);
+  });
+}
+
+function pasteToSelectedField() {
+  const key = currentSelectedFieldKey();
+  if (!key && state.fieldClipboard?.kind !== "static") {
+    alert("请先选中目标字段");
+    return;
+  }
+  pasteClipboardToField(key);
+}
+
+function offsetFieldPosition(position, size, delta = 1) {
+  const nextX = clamp((Number(position?.x) || 0) + delta, 0, Math.max(0, 100 - (Number(size?.w) || 0)));
+  const nextY = clamp((Number(position?.y) || 0) + delta, 0, Math.max(0, 100 - (Number(size?.h) || 0)));
+  return {
+    x: Math.round(nextX * 10) / 10,
+    y: Math.round(nextY * 10) / 10,
+  };
+}
+
+function pointerPositionInSurface(surface, clientX, clientY, size = { w: 24, h: 12 }) {
+  const rect = surface.getBoundingClientRect();
+  const width = Number(size?.w) || 24;
+  const height = Number(size?.h) || 12;
+  const x = clamp(((clientX - rect.left) / rect.width) * 100 - (width / 2), 0, Math.max(0, 100 - width));
+  const y = clamp(((clientY - rect.top) / rect.height) * 100 - (height / 2), 0, Math.max(0, 100 - height));
+  return {
+    x: Math.round(x * 10) / 10,
+    y: Math.round(y * 10) / 10,
+  };
+}
+
+function applyFieldPlacement(layout, key, nextPlacement, options = {}) {
+  const { isStatic = false } = options;
+  const nextPosition = clone(nextPlacement.position || { x: 50, y: 50 });
+  const nextSize = clone(nextPlacement.size || { w: 24, h: 12 });
+  const nextStyle = clone(nextPlacement.style || normalizeFieldStyle());
+  if (isEditingBackSide()) {
+    layout.positions[key] = nextPosition;
+    layout.sizes[key] = nextSize;
+    layout.styles[key] = nextStyle;
+    return;
+  }
+  if (state.mode === "single") {
+    setLayoutBucketValue(layout, "positions", key, nextPosition, currentSingleVariantKey());
+    setLayoutBucketValue(layout, "sizes", key, nextSize, currentSingleVariantKey());
+    setLayoutBucketValue(layout, "styles", key, nextStyle, currentSingleVariantKey());
+    return;
+  }
+  if (state.mode === "summary" && !isStatic) {
+    setLayoutBucketValue(layout, "positions", key, nextPosition, currentSummaryVariantKey());
+    setLayoutBucketValue(layout, "sizes", key, nextSize, currentSummaryVariantKey());
+    setLayoutBucketValue(layout, "styles", key, nextStyle, currentSummaryVariantKey());
+    return;
+  }
+  layout.positions[key] = nextPosition;
+  layout.sizes[key] = nextSize;
+  layout.styles[key] = nextStyle;
+}
+
+function pasteClipboardToField(targetKey = "", pastePosition = null) {
+  const clipboard = state.fieldClipboard;
+  if (!clipboard) {
+    alert("请先复制字段");
+    return false;
+  }
+  const layout = currentEditableLayout();
+  if (clipboard.kind === "static") {
+    const key = `static_${Date.now()}`;
+    const field = { key, text: clipboard.text || "静态字段" };
+    if (!isEditingBackSide()) {
+      if (state.mode === "single") {
+        field.variantVisibility = clone(clipboard.variantVisibility || {});
+        singleVariantPresetsForCurrentType().forEach((variant) => {
+          if (field.variantVisibility[variant.key] === undefined) field.variantVisibility[variant.key] = false;
+        });
+        field.variantVisibility[currentSingleVariantKey()] = true;
+      } else if (state.mode === "summary") {
+        field.variantVisibility = clone(clipboard.variantVisibility || {});
+        summaryVariantPresetsFor().forEach((variant) => {
+          if (field.variantVisibility[variant.key] === undefined) field.variantVisibility[variant.key] = false;
+        });
+        field.variantVisibility[currentSummaryVariantKey()] = true;
+      }
+    }
+    layout.staticFields.push(field);
+    applyFieldPlacement(layout, key, {
+      position: pastePosition || offsetFieldPosition(clipboard.position, clipboard.size, 1.5),
+      size: clipboard.size,
+      style: clipboard.style,
+    }, { isStatic: true });
+    state.activeFieldKey = key;
+    saveLayouts();
+    buildStyleEditor();
+    buildStaticVisibilityControls();
+    if ($("styleField")) {
+      $("styleField").value = key;
+      syncStyleInputs();
+    }
+    render();
+    flashFieldSelection(key);
+    $("statusText").textContent = "已粘贴静态字段";
+    return true;
+  }
+
+  if (pastePosition) {
+    const key = `dynamic_${Date.now()}`;
+    const layout = currentEditableLayout();
+    const field = {
+      key,
+      label: clipboard.text || "动态字段",
+      sourceKey: clipboard.sourceKey || clipboard.key,
+      variantVisibility: {},
+    };
+    if (!isEditingBackSide()) {
+      if (state.mode === "single") {
+        singleVariantPresetsForCurrentType().forEach((variant) => {
+          field.variantVisibility[variant.key] = variant.key === currentSingleVariantKey();
+        });
+      } else if (state.mode === "summary") {
+        summaryVariantPresetsFor().forEach((variant) => {
+          field.variantVisibility[variant.key] = variant.key === currentSummaryVariantKey();
+        });
+      }
+    }
+    layout.dynamicFields.push(field);
+    applyFieldPlacement(layout, key, {
+      position: pastePosition,
+      size: clipboard.size,
+      style: clipboard.style,
+    }, { isStatic: false });
+    state.activeFieldKey = key;
+    saveLayouts();
+    buildFieldMapping();
+    buildStyleEditor();
+    buildStaticVisibilityControls();
+    if ($("styleField")) {
+      $("styleField").value = key;
+      syncStyleInputs();
+    }
+    render();
+    flashFieldSelection(key);
+    $("statusText").textContent = "已粘贴动态字段";
+    return true;
+  }
+
+  const key = targetKey || currentSelectedFieldKey();
+  if (!key) {
+    alert("请先选中目标字段");
+    return false;
+  }
+  state.activeFieldKey = key;
+  applyFieldPlacement(layout, key, {
+    position: clipboard.position,
+    size: clipboard.size,
+    style: clipboard.style,
+  }, { isStatic: isStaticFieldKey(key) });
+  saveLayouts();
+  buildStyleEditor();
+  if ($("styleField")) {
+    $("styleField").value = key;
+    syncStyleInputs();
+  }
+  render();
+  flashFieldSelection(key);
+  $("statusText").textContent = "已粘贴字段样式";
+  return true;
+}
+
+function deleteFieldScopedValue(layout, bucket, key) {
+  if (!layout?.[bucket]) return;
+  delete layout[bucket][key];
+  const variantKey = currentContextVariantKey();
+  if (state.mode === "single" && variantKey) {
+    delete layout[bucket][singleVariantStorageKey(key, variantKey)];
+    return;
+  }
+  if (state.mode === "summary" && isSummaryFieldKey(key) && variantKey) {
+    delete layout[bucket][summaryVariantStorageKey(key, variantKey)];
+  }
+}
+
+function resetDynamicFieldByKey(key) {
+  if (!key) return;
+  const layout = currentEditableLayout();
+  deleteFieldScopedValue(layout, "positions", key);
+  deleteFieldScopedValue(layout, "sizes", key);
+  deleteFieldScopedValue(layout, "styles", key);
+  deleteFieldScopedValue(layout, "mappings", key);
+  state.activeFieldKey = key;
+  saveLayouts();
+  buildStyleEditor();
+  if ($("styleField")) {
+    $("styleField").value = key;
+    syncStyleInputs();
+  }
+  render();
+  $("statusText").textContent = "已重置动态字段";
+}
+
 function handleFieldContextMenu(event) {
   event.preventDefault();
+  event.stopPropagation();
   const key = event.currentTarget?.dataset?.editKey || "";
   if (!key) return;
   state.activeFieldKey = key;
-  if (!isStaticFieldKey(key)) return;
-  deleteFieldByKey(key);
+  if ($("styleField")) {
+    $("styleField").value = key;
+    syncStyleInputs();
+  } else {
+    syncSelectedFieldHighlight();
+  }
+  openFieldContextMenu(key, event.clientX, event.clientY);
+}
+
+function handleSurfaceContextMenu(event) {
+  if (event.target?.closest?.("[data-edit-key]")) return;
+  event.preventDefault();
+  const surface = event.currentTarget;
+  const clipboard = state.fieldClipboard;
+  const pastePosition = clipboard
+    ? pointerPositionInSurface(surface, event.clientX, event.clientY, clipboard.size)
+    : null;
+  openFieldContextMenu("", event.clientX, event.clientY, {
+    kind: "surface",
+    pastePosition,
+  });
 }
 
 function handleFieldDoubleClick(event) {
   const key = event.currentTarget?.dataset?.editKey || "";
-  if (!isStaticFieldKey(key)) return;
-  editStaticFieldText(key);
+  editFieldByKey(key);
+}
+
+function editFieldByKey(key) {
+  if (!key) return;
+  state.activeFieldKey = key;
+  if ($("styleField")) {
+    $("styleField").value = key;
+    syncStyleInputs();
+  } else {
+    syncSelectedFieldHighlight();
+  }
+  if (isStaticFieldKey(key)) {
+    editStaticFieldText(key);
+    return;
+  }
+  $("fieldFontSize")?.focus();
+  $("statusText").textContent = "已选中动态字段，可直接修改样式";
 }
 
 function editSelectedStaticField() {
-  const field = currentSelectedStaticField();
-  if (!field) {
-    alert("请先选中静态字段");
+  const key = currentSelectedFieldKey();
+  if (!key) {
+    alert("请先选中字段");
     return;
   }
-  state.activeFieldKey = field.key;
-  editStaticFieldText(field.key);
+  editFieldByKey(key);
 }
 
 function deleteSelectedStaticField() {
-  const field = currentSelectedStaticField();
-  if (!field) {
-    alert("请先选中静态字段");
+  const key = currentSelectedFieldKey();
+  if (!key) {
+    alert("请先选中字段");
     return;
   }
-  state.activeFieldKey = field.key;
-  deleteFieldByKey(field.key);
+  deleteSelectedField(key);
+}
+
+function deleteSelectedField(key = currentSelectedFieldKey()) {
+  if (!key) return;
+  if (isStaticFieldKey(key)) {
+    deleteFieldByKey(key);
+    return;
+  }
+  resetDynamicFieldByKey(key);
 }
 
 function startDrag(event) {
+  if (event.button !== 0) return;
   if (event.target.closest(".resize-handle")) return;
   const element = event.currentTarget;
   const tablet = element.closest("[data-drag-surface]");
@@ -3269,6 +4126,7 @@ function startDrag(event) {
 }
 
 function startResize(event) {
+  if (event.button !== 0) return;
   event.stopPropagation();
   const handle = event.currentTarget;
   const element = handle.closest("[data-edit-key]");
@@ -3328,7 +4186,7 @@ function resizeField(event) {
   const deltaW = ((event.clientX - state.interaction.startX) / rect.width) * 100;
   const deltaH = ((event.clientY - state.interaction.startY) / rect.height) * 100;
   const width = clamp(state.interaction.startW + deltaW, 4, 96);
-  const height = clamp(state.interaction.startH + deltaH, 4, 96);
+  const height = Math.max(state.interaction.startH + deltaH, 4);
   state.interaction.element.style.width = `${width}%`;
   state.interaction.element.style.height = `${height}%`;
   const layout = currentEditableLayout();
@@ -3348,8 +4206,8 @@ function resizeField(event) {
 function currentLayoutKey() {
   if (state.mode === "summary") return $("templateSelect").value || defaultSummaryTemplateId();
   const templateId = $("templateSelect").value;
-  if (templateId.startsWith("custom_")) return templateId;
-  return $("tabletType").value;
+  if (templateId) return templateId;
+  return currentTemplate()?.id || defaultSingleTemplateIdForGroup("blessing");
 }
 
 function summaryTemplateIds() {
@@ -3361,7 +4219,7 @@ function defaultSummaryTemplateId() {
 }
 
 function defaultSingleTemplateIdForGroup(group) {
-  return group === "blessing" ? "blessing" : "deliveranceSimple";
+  return group === "blessing" ? "blessing" : "deliverance";
 }
 
 function isBlessingGroup(group) {
@@ -3382,8 +4240,8 @@ function dataGroupForPlaqueType(plaqueType) {
 
 function tabletTypeForPlaqueType(plaqueType) {
   if (plaqueType === "LONGEVITY") return "blessing";
-  if (plaqueType === "REBIRTH") return "deliveranceDetail";
-  if (plaqueType === "DELIVERANCE") return "deliveranceSimple";
+  if (plaqueType === "REBIRTH") return "deliverance";
+  if (plaqueType === "DELIVERANCE") return "deliverance";
   return "";
 }
 
@@ -3410,7 +4268,7 @@ function isSummaryTemplate(template) {
 }
 
 function inferTemplateDataGroup(templateData) {
-  const fields = (templateData.fields || []).map((field) => field.key);
+  const fields = (templateData.fields || []).map((field) => unscopedFieldKey(field.key));
   const blessingKeys = new Set(tabletTypes.blessing.fields.map((field) => field.key));
   return fields.some((key) => blessingKeys.has(key)) ? "blessing" : "deliverance";
 }
@@ -3469,7 +4327,39 @@ function endInteraction(event) {
   state.interaction = null;
 }
 
+function nudgeSelectedField(direction, step = 0.2) {
+  const key = currentSelectedFieldKey();
+  if (!key) return false;
+  const layout = currentEditableLayout();
+  const variantKey = currentContextVariantKey();
+  const size = sizeFor(key, variantKey);
+  const currentPosition = clone(positionFor(key, variantKey));
+  const delta = {
+    ArrowUp: { x: 0, y: -step },
+    ArrowDown: { x: 0, y: step },
+    ArrowLeft: { x: -step, y: 0 },
+    ArrowRight: { x: step, y: 0 },
+  }[direction];
+  if (!delta) return false;
+  const nextPosition = {
+    x: Math.round(clamp(currentPosition.x + delta.x, 0, Math.max(0, 100 - (size.w || 0))) * 10) / 10,
+    y: Math.round(clamp(currentPosition.y + delta.y, 0, Math.max(0, 100 - (size.h || 0))) * 10) / 10,
+  };
+  applyFieldPlacement(layout, key, {
+    position: nextPosition,
+    size,
+    style: styleFor(key, variantKey),
+  }, { isStatic: isStaticFieldKey(key) });
+  saveLayouts();
+  render();
+  return true;
+}
+
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeFieldContextMenu();
+    return;
+  }
   if (event.key !== "Delete" && event.key !== "Backspace") return;
   const tag = document.activeElement?.tagName || "";
   if (["INPUT", "TEXTAREA", "SELECT"].includes(tag)) return;
@@ -3477,7 +4367,29 @@ document.addEventListener("keydown", (event) => {
   if (!key) return;
   event.preventDefault();
   state.activeFieldKey = key;
-  deleteFieldByKey(key);
+  deleteSelectedField(key);
+});
+
+document.addEventListener("keydown", (event) => {
+  const tag = document.activeElement?.tagName || "";
+  if (["INPUT", "TEXTAREA", "SELECT"].includes(tag)) return;
+  if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "c") {
+    const key = currentSelectedFieldKey();
+    if (!key) return;
+    event.preventDefault();
+    copyFieldByKey(key);
+    return;
+  }
+  if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "v") {
+    if (!state.fieldClipboard) return;
+    event.preventDefault();
+    pasteClipboardToField(currentSelectedFieldKey());
+    return;
+  }
+  if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) return;
+  if (!currentSelectedFieldKey()) return;
+  event.preventDefault();
+  nudgeSelectedField(event.key, event.shiftKey ? 1 : 0.2);
 });
 
 function deleteFieldByKey(key) {
@@ -3487,21 +4399,21 @@ function deleteFieldByKey(key) {
   if (staticIndex >= 0) {
     layout.staticFields.splice(staticIndex, 1);
   }
+  const dynamicIndex = (layout.dynamicFields || []).findIndex((field) => field.key === key);
+  if (dynamicIndex >= 0) {
+    layout.dynamicFields.splice(dynamicIndex, 1);
+  }
   if (layout.positions?.[key]) delete layout.positions[key];
   if (layout.sizes?.[key]) delete layout.sizes[key];
   if (layout.styles?.[key]) delete layout.styles[key];
+  if (layout.mappings?.[key]) delete layout.mappings[key];
   if (isSingleVariantFieldKey(key)) {
-    singleVariantPresets.forEach((variant) => {
+    singleVariantPresetsForCurrentType().forEach((variant) => {
       const scoped = singleVariantStorageKey(key, variant.key);
       if (layout.positions?.[scoped]) delete layout.positions[scoped];
       if (layout.sizes?.[scoped]) delete layout.sizes[scoped];
       if (layout.styles?.[scoped]) delete layout.styles[scoped];
-    });
-    ["blessing_bodhisattva", "blessing_person"].forEach((variantKey) => {
-      const scoped = `single_variant_${variantKey}__${key}`;
-      if (layout.positions?.[scoped]) delete layout.positions[scoped];
-      if (layout.sizes?.[scoped]) delete layout.sizes[scoped];
-      if (layout.styles?.[scoped]) delete layout.styles[scoped];
+      if (layout.mappings?.[scoped]) delete layout.mappings[scoped];
     });
   }
   if (state.mode === "summary" && isSummaryFieldKey(key)) {
@@ -3509,6 +4421,7 @@ function deleteFieldByKey(key) {
     if (layout.positions?.[scoped]) delete layout.positions[scoped];
     if (layout.sizes?.[scoped]) delete layout.sizes[scoped];
     if (layout.styles?.[scoped]) delete layout.styles[scoped];
+    if (layout.mappings?.[scoped]) delete layout.mappings[scoped];
   }
   state.activeFieldKey = "";
   saveLayouts();
@@ -3645,15 +4558,13 @@ function escapeHtml(valueToEscape) {
 
 init();
 
-function renderFieldSelection() {
+function renderFieldSelection(templateType = "blessing") {
   const container = document.getElementById("fieldSelection");
   container.innerHTML = "";
 
-  const groups = [
-    { name: "延生禄位", dataGroup: "blessing", fields: tabletTypes.blessing.fields },
-    { name: "超度牌位 - 详细", dataGroup: "deliverance", fields: tabletTypes.deliveranceDetail.fields },
-    { name: "超度牌位 - 简版", dataGroup: "deliverance", fields: tabletTypes.deliveranceSimple.fields }
-  ];
+  const groups = templateType === "deliverance"
+    ? [{ name: "往生牌位模板", dataGroup: "deliverance", fields: tabletTypes.deliverance.fields }]
+    : [{ name: "延生禄位模板", dataGroup: "blessing", fields: tabletTypes.blessing.fields }];
 
   groups.forEach(group => {
     const groupDiv = document.createElement("div");
@@ -3693,6 +4604,8 @@ function createCustomTemplate() {
   const width = parseInt(document.getElementById("newTemplateWidth").value) || 90;
   const height = parseInt(document.getElementById("newTemplateHeight").value) || 260;
   const vertical = document.getElementById("newTemplateVertical").checked;
+  const createMode = document.getElementById("newTemplateMode")?.value || "preset";
+  const templateType = document.getElementById("newTemplateType")?.value || "blessing";
   const id = "custom_" + Date.now();
 
   if (state.mode === "summary") {
@@ -3729,7 +4642,7 @@ function createCustomTemplate() {
     });
   });
 
-  if (selectedFields.length === 0) {
+  if (createMode === "manual" && selectedFields.length === 0) {
     alert("请至少选择一个字段");
     return;
   }
@@ -3741,54 +4654,61 @@ function createCustomTemplate() {
     height,
     font: 22,
     vertical,
-    dataGroup: selectedFields.some((field) => field.dataGroup === "blessing") ? "blessing" : "deliverance",
-    tabletType: "custom"
+    dataGroup: templateType,
+    tabletType: "custom",
+    fieldKeys: createMode === "manual"
+      ? Array.from(new Set(selectedFields.map((field) => field.key)))
+      : defaultSingleFieldKeysForGroup(templateType),
   };
 
   templates.push(newTemplate);
 
-  templateDefaults[id] = {
-    positions: {},
-    styles: {},
-    sizes: {}
-  };
+  templateDefaults[id] = createMode === "manual"
+    ? {
+        positions: {},
+        styles: {},
+        sizes: {}
+      }
+    : createSinglePresetTemplateDefaults(newTemplate.dataGroup);
   state.layouts[id] = {
-    positions: {},
-    styles: {},
-    sizes: {},
+    positions: clone(templateDefaults[id].positions || {}),
+    styles: clone(templateDefaults[id].styles || {}),
+    sizes: clone(templateDefaults[id].sizes || {}),
     background: "",
     mappings: {},
-    singleVariantKey: normalizeSingleVariantKey(state.singleVariantKey || singleVariantPresets[0].key),
+    singleVariantKey: normalizeSingleVariantKey(singleVariantPresetsByType[newTemplate.dataGroup]?.[0]?.key || state.singleVariantKey || singleVariantPresets[0].key),
     staticFields: [],
     duplex: { enabled: false },
     backSide: createBlankSideLayout(),
     paper: { width, height, vertical },
   };
 
-  const defaultX = 50;
-  const defaultY = 30;
-  let yOffset = 0;
+  if (createMode === "manual") {
+    const defaultX = 50;
+    const defaultY = 30;
+    let yOffset = 0;
 
-  selectedFields.forEach((field, index) => {
-    const fieldKey = field.key;
-    templateDefaults[id].positions[fieldKey] = {
-      x: defaultX,
-      y: defaultY + yOffset
-    };
-    templateDefaults[id].styles[fieldKey] = {
-      fontSize: 18,
-      color: "#16110d",
-      fontFamily: "SimSun, serif"
-    };
-    templateDefaults[id].sizes[fieldKey] = {
-      w: 20,
-      h: 20
-    };
-    state.layouts[id].positions[fieldKey] = clone(templateDefaults[id].positions[fieldKey]);
-    state.layouts[id].styles[fieldKey] = clone(templateDefaults[id].styles[fieldKey]);
-    state.layouts[id].sizes[fieldKey] = clone(templateDefaults[id].sizes[fieldKey]);
-    yOffset += 8;
-  });
+    selectedFields.forEach((field) => {
+      const fieldKey = field.key;
+      templateDefaults[id].positions[fieldKey] = {
+        x: defaultX,
+        y: defaultY + yOffset
+      };
+      templateDefaults[id].styles[fieldKey] = {
+        fontSize: 18,
+        color: "#16110d",
+        fontFamily: "SimSun, serif"
+      };
+      templateDefaults[id].sizes[fieldKey] = {
+        w: 20,
+        h: 20
+      };
+      state.layouts[id].positions[fieldKey] = clone(templateDefaults[id].positions[fieldKey]);
+      state.layouts[id].styles[fieldKey] = clone(templateDefaults[id].styles[fieldKey]);
+      state.layouts[id].sizes[fieldKey] = clone(templateDefaults[id].sizes[fieldKey]);
+      yOffset += 8;
+    });
+  }
 
   appendTemplateOption(newTemplate);
 
@@ -3813,8 +4733,9 @@ function saveCustomTemplatesToStorage() {
         width: layout?.paper?.width || t.width,
         height: layout?.paper?.height || t.height,
         vertical: layout?.paper?.vertical ?? t.vertical,
+        fieldKeys: resolveTemplateFieldKeys(t),
         background: layout?.background || "",
-        singleVariantKey: layout?.singleVariantKey || singleVariantPresets[0].key,
+        singleVariantKey: normalizeSingleVariantKey(layout?.singleVariantKey || defaultSingleVariantKeyForTemplate(t)),
         summary: layout?.summary,
         staticFields: layout?.staticFields || [],
         duplex: layout?.duplex,
@@ -3841,6 +4762,10 @@ function loadCustomTemplatesFromStorage(options = {}) {
     const customTemplates = JSON.parse(stored);
     let changed = false;
     customTemplates.forEach(ct => {
+      if (HIDDEN_LEGACY_TEMPLATE_IDS.has(ct.id)) {
+        changed = true;
+        return;
+      }
       if (!includeLocalOnly && !state.remoteTemplateIds[ct.id]) return;
       const mode = ct.mode || (ct.summary || !(ct.fields || []).length ? "summary" : "single");
       if (ct.mode !== mode) changed = true;
@@ -3854,7 +4779,10 @@ function loadCustomTemplatesFromStorage(options = {}) {
           vertical: ct.vertical,
           mode,
           dataGroup: ct.dataGroup || inferTemplateDataGroup(ct),
-          tabletType: mode === "summary" ? undefined : "custom"
+          tabletType: mode === "summary" ? undefined : "custom",
+          fieldKeys: Array.isArray(ct.fieldKeys) && ct.fieldKeys.length
+            ? ct.fieldKeys.map((key) => unscopedFieldKey(key)).filter(Boolean)
+            : undefined,
         });
 
         templateDefaults[ct.id] = {
@@ -3918,3 +4846,4 @@ function loadCustomTemplatesFromStorage(options = {}) {
     console.error("加载自定义模板失败:", e);
   }
 }
+

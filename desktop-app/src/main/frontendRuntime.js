@@ -26,11 +26,11 @@ function createFrontendRuntime({ session, processRef, projectRoot, frontendPort,
             resolve({ statusCode: res.statusCode, data: json, body })
             return
           }
-          reject(new Error(`服务器返回 ${res.statusCode || '未知状态'}`))
+          reject(new Error(`Server responded with status ${res.statusCode || 'unknown'}`))
         })
       })
       req.on('timeout', () => {
-        req.destroy(new Error('服务器连接超时'))
+        req.destroy(new Error('Server connection timed out'))
       })
       req.on('error', reject)
     })
@@ -39,11 +39,11 @@ function createFrontendRuntime({ session, processRef, projectRoot, frontendPort,
   async function checkServerHealth(serverUrl) {
     const normalized = String(serverUrl || '').trim().replace(/\/+$/, '')
     if (!/^https?:\/\//.test(normalized)) {
-      throw new Error('服务器地址必须以 http:// 或 https:// 开头')
+      throw new Error('Server URL must start with http:// or https://')
     }
     const result = await requestJson(`${normalized}/api/health`)
     if (result.statusCode >= 400) {
-      throw new Error(`服务器健康检查失败：${result.statusCode}`)
+      throw new Error(`Server health check failed: ${result.statusCode}`)
     }
     return { serverUrl: normalized, statusCode: result.statusCode, data: result.data }
   }
@@ -67,9 +67,7 @@ function createFrontendRuntime({ session, processRef, projectRoot, frontendPort,
           }
           setTimeout(tick, 500)
         }
-        req.on('error', () => {
-          retry()
-        })
+        req.on('error', retry)
         req.setTimeout(1000, () => {
           req.destroy()
         })
@@ -118,15 +116,7 @@ function createFrontendRuntime({ session, processRef, projectRoot, frontendPort,
   async function startFrontend(serverUrl) {
     if (frontendProcess) return
 
-    try {
-      await waitForFrontend(`http://127.0.0.1:${frontendPort}/login`, 1200)
-      sendStatus('已连接本地前端服务', 70)
-      return
-    } catch {
-      // No existing local frontend is available; start our managed process below.
-    }
-
-    sendStatus('正在启动本地前端服务...', 35)
+    sendStatus('Starting local frontend...', 35)
     const frontendDir = path.join(projectRoot, 'frontend')
     const standaloneDir = path.join(frontendDir, '.next', 'standalone')
     const standaloneServer = path.join(standaloneDir, 'server.js')
@@ -164,7 +154,7 @@ function createFrontendRuntime({ session, processRef, projectRoot, frontendPort,
     })
 
     await waitForFrontend(`http://127.0.0.1:${frontendPort}/login`, 45000)
-    sendStatus('本地前端服务已就绪', 70)
+    sendStatus('Local frontend is ready', 70)
   }
 
   function stopFrontend() {

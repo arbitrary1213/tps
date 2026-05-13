@@ -43,7 +43,7 @@ router.get('/plaques', authMiddleware, async (req: AuthRequest, res: Response) =
 
 router.post('/plaques', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const validFields = ['id', 'plaqueType', 'holderName', 'deceasedName', 'deceasedName2', 'birthDate2', 'deathDate2', 'zodiac2', 'gender2', 'gender', 'zodiac', 'birthDate', 'birthLunar', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'dedicationType', 'longevitySubtype', 'size', 'startDate', 'endDate', 'blessingText', 'status', 'remarks', 'templateId', 'devoteeId', 'ritualId', 'createdBy', 'createdAt', 'updatedAt']
+    const validFields = ['id', 'plaqueType', 'holderName', 'deceasedName', 'deceasedName2', 'birthDate2', 'deathDate2', 'zodiac2', 'gender2', 'gender', 'zodiac', 'age', 'birthDate', 'birthLunar', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'dedicationType', 'longevitySubtype', 'size', 'startDate', 'endDate', 'message', 'blessingText', 'status', 'remarks', 'templateId', 'devoteeId', 'ritualId', 'createdBy', 'createdAt', 'updatedAt']
     const data: any = {}
     for (const key of validFields) {
       if (req.body[key] !== undefined) data[key] = req.body[key]
@@ -216,7 +216,7 @@ router.put('/plaques/batch', authMiddleware, async (req: AuthRequest, res: Respo
 
 router.put('/plaques/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const validFields = ['id', 'plaqueType', 'holderName', 'deceasedName', 'deceasedName2', 'birthDate2', 'deathDate2', 'zodiac2', 'gender2', 'gender', 'zodiac', 'birthDate', 'birthLunar', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'dedicationType', 'longevitySubtype', 'size', 'startDate', 'endDate', 'blessingText', 'status', 'remarks', 'templateId', 'devoteeId', 'ritualId', 'createdBy', 'createdAt', 'updatedAt']
+    const validFields = ['id', 'plaqueType', 'holderName', 'deceasedName', 'deceasedName2', 'birthDate2', 'deathDate2', 'zodiac2', 'gender2', 'gender', 'zodiac', 'age', 'birthDate', 'birthLunar', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'dedicationType', 'longevitySubtype', 'size', 'startDate', 'endDate', 'message', 'blessingText', 'status', 'remarks', 'templateId', 'devoteeId', 'ritualId', 'createdBy', 'createdAt', 'updatedAt']
     const data: any = {}
     for (const key of validFields) {
       if (req.body[key] !== undefined) data[key] = req.body[key]

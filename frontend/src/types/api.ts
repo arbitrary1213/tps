@@ -98,6 +98,9 @@ export interface PlaqueRecord {
   holderName?: string
   deceasedName?: string
   gender?: string
+  zodiac?: string
+  age?: string
+  message?: string
   birthDate?: string
   birthLunar: boolean
   deathDate?: string
@@ -111,6 +114,7 @@ export interface PlaqueRecord {
   phone?: string
   address?: string
   dedicationType?: string
+  customDedicationType?: string
   blessingText?: string
   startDate: string
   endDate: string

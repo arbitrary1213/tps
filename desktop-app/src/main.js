@@ -12,7 +12,7 @@ const {
   listLocalEntities,
   upsertLocalEntity,
 } = require('./main/localStore')
-const FRONTEND_PORT = 3900
+const FRONTEND_PORT = 3911
 
 function sendStatus(message, progress, level = 'info') {
   const mainWindow = windowManager?.getMainWindow?.()

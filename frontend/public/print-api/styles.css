@@ -160,6 +160,41 @@ textarea {
   align-items: end;
 }
 
+.field-context-menu {
+  position: fixed;
+  z-index: 2000;
+  display: grid;
+  gap: 4px;
+  min-width: 132px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffdf8;
+  box-shadow: 0 10px 26px rgba(22, 17, 13, 0.18);
+}
+
+.field-context-menu[hidden] {
+  display: none;
+}
+
+.field-context-menu button {
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  text-align: left;
+  background: transparent;
+}
+
+.field-context-menu button:hover:not(:disabled) {
+  background: #f5eee1;
+}
+
+.field-context-menu button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .segmented {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -267,7 +302,7 @@ textarea {
 .sheet {
   position: relative;
   flex: 0 0 auto;
-  overflow: hidden;
+  overflow: visible;
   width: var(--paper-w);
   height: var(--paper-h);
   background: #fffefa;
@@ -336,7 +371,7 @@ textarea {
   cursor: move;
   user-select: none;
   touch-action: none;
-  overflow: hidden;
+  overflow: visible;
   white-space: normal;
 }
 
@@ -346,7 +381,7 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  overflow: visible;
   overflow-wrap: anywhere;
   line-height: 1.15;
   text-align: center;
@@ -404,6 +439,12 @@ textarea {
   border-color: #0b57d0;
   background: rgb(219 234 254 / 72%);
   box-shadow: 0 0 0 1px rgb(11 87 208 / 35%);
+}
+
+.editable-field.is-flashed {
+  border-color: #c49335;
+  background: rgb(255 243 205 / 88%);
+  box-shadow: 0 0 0 2px rgb(196 147 53 / 42%);
 }
 
 .editable-field.auto-shrunk {
@@ -534,7 +575,6 @@ textarea {
 .meta-address {
   left: 13%;
   top: 37%;
-  max-height: 45%;
 }
 
 .tablet-blessing .meta-address {

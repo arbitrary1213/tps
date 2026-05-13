@@ -286,43 +286,45 @@ model Devotee {
 
 /// 牌位
 model MemorialPlaque {
-  id           String   @id @default(cuid())
-  plaqueType   String   // LONGEVITY / REBIRTH / DELIVERANCE
-  holderName   String?  // 持名者（延生禄位用）
-  deceasedName String?  // 亡者姓名（往生/超度用）
-  deceasedName2 String? // 第二亡者
-  birthDate2   String? // 第二亡者生日
-  deathDate2   String? // 第二亡者忌日
-  zodiac2      String? // 第二亡者生肖
-  gender2      String? // 第二亡者性别
-  gender       String?  // 男 / 女
-  zodiac       String?  // 生肖
-  birthDate    String?  // 生日
-  birthLunar  Boolean  @default(false)
-  deathDate    String?  // 忌日
-  deathLunar   Boolean  @default(false)
-  yangShang    String?  // 阳上（供奉人）
-  phone       String?
-  address     String?
-  dedicationType String? // 超度类型
-  longevitySubtype String? // 延生禄位子类型：祈福禄位、化太岁禄位、财神禄位、文殊禄位
-  size String? // 规格：小/中/大
-  startDate   DateTime?
-  endDate     DateTime?
-  blessingText String? // 祈福祝福语
-  status      String   @default("ACTIVE") // ACTIVE / EXPIRED / CANCELLED / RENEWED
-  remarks     String?
-  templateId  String?  // 关联模板
-  devoteeId   String?  // 关联信众
-  ritualId    String?  // 关联法会
-  createdBy   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String   @id @default(cuid())
+  plaqueType       String   // LONGEVITY / REBIRTH / DELIVERANCE
+  holderName       String?  // 持名者（延生禄位）
+  deceasedName     String?  // 亡者姓名（往生/超度）
+  deceasedName2    String?  // 第二亡者
+  birthDate2       String?  // 第二亡者生日
+  deathDate2       String?  // 第二亡者忌日
+  zodiac2          String?  // 第二亡者属相
+  gender2          String?  // 第二亡者性别
+  gender           String?  // 性别
+  zodiac           String?  // 属相
+  age              String?  // 年龄
+  birthDate        String?  // 生日
+  birthLunar       Boolean  @default(false)
+  deathDate        String?  // 忌日
+  deathLunar       Boolean  @default(false)
+  yangShang        String?  // 阳上（供奉人）
+  phone            String?
+  address          String?
+  dedicationType   String?  // 超度类型
+  longevitySubtype String?  // 延生禄位子类型
+  size             String?  // 规格：小/中/大
+  startDate        DateTime?
+  endDate          DateTime?
+  message          String?  // 寄语
+  blessingText     String?  // 祈福语
+  status           String   @default("ACTIVE") // ACTIVE / EXPIRED / CANCELLED / RENEWED
+  remarks          String?
+  templateId       String?  // 关联模板
+  devoteeId        String?  // 关联信众
+  ritualId         String?  // 关联法会
+  createdBy        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   // 关联
   template PlaqueTemplate? @relation(fields: [templateId], references: [id])
-  devotee   Devotee? @relation(fields: [devoteeId], references: [id])
-  ritual    Ritual? @relation(fields: [ritualId], references: [id])
+  devotee  Devotee?        @relation(fields: [devoteeId], references: [id])
+  ritual   Ritual?         @relation(fields: [ritualId], references: [id])
 
   @@index([plaqueType])
   @@index([status])
@@ -849,3 +851,4 @@ model WechatTemplateMessage {
   @@index([openId])
   @@map("wechat_template_messages")
 }
+

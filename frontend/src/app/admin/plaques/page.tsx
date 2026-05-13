@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useRef } from 'react'
 import { useAuthStore } from '@/stores/authStore'
@@ -101,6 +101,8 @@ export default function PlaquesPage() {
     holderName: '',
     deceasedName: '',
     gender: '',
+    zodiac: '',
+    age: '',
     birthDate: '',
     birthLunar: false,
     deathDate: '',
@@ -115,6 +117,7 @@ export default function PlaquesPage() {
     address: '',
     dedicationType: '',
     customDedicationType: '',
+    message: '',
     blessingText: '',
     startDate: '',
     endDate: '',
@@ -435,6 +438,11 @@ export default function PlaquesPage() {
     }
     try {
       const submitData = { ...formData }
+      if (submitData.message && !submitData.blessingText) {
+        submitData.blessingText = submitData.message
+      } else if (submitData.blessingText && !submitData.message) {
+        submitData.message = submitData.blessingText
+      }
       // 如果超度类型是"custom"，使用自定义字段的值，并保存到预设
       if (submitData.dedicationType === 'custom' && submitData.customDedicationType) {
         const newType = submitData.customDedicationType.trim()
@@ -474,6 +482,8 @@ export default function PlaquesPage() {
       holderName: plaque.holderName || '',
       deceasedName: plaque.deceasedName || '',
       gender: plaque.gender || '',
+      zodiac: plaque.zodiac || '',
+      age: plaque.age || '',
       birthDate: plaque.birthDate || '',
       birthLunar: plaque.birthLunar || false,
       deathDate: plaque.deathDate || '',
@@ -488,6 +498,7 @@ export default function PlaquesPage() {
       address: plaque.address || '',
       dedicationType: plaque.dedicationType || '',
       customDedicationType: plaque.customDedicationType || '',
+      message: plaque.message || '',
       blessingText: plaque.blessingText || '',
       startDate: plaque.startDate ? plaque.startDate.split('T')[0] : '',
       endDate: plaque.endDate ? plaque.endDate.split('T')[0] : '',
@@ -581,6 +592,8 @@ export default function PlaquesPage() {
       holderName: '',
       deceasedName: '',
       gender: '',
+      zodiac: '',
+      age: '',
       birthDate: '',
       birthLunar: false,
       deathDate: '',
@@ -595,6 +608,7 @@ export default function PlaquesPage() {
       address: '',
       dedicationType: '',
       customDedicationType: '',
+      message: '',
       blessingText: '',
       startDate: '',
       endDate: '',
@@ -893,6 +907,18 @@ export default function PlaquesPage() {
                 options={[{ value: '', label: '请选择' }, ...genderOptions]}
               />
               <Input
+                label="年龄"
+                value={formData.age}
+                onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                placeholder="请输入年龄"
+              />
+              <Input
+                label="属相"
+                value={formData.zodiac}
+                onChange={(e) => setFormData({ ...formData, zodiac: e.target.value })}
+                placeholder="请输入属相"
+              />
+              <Input
                 label="生日"
                 value={formData.birthDate}
                 onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
@@ -925,7 +951,7 @@ export default function PlaquesPage() {
               <Input
                 label="祈福祝福语"
                 value={formData.blessingText}
-                onChange={(e) => setFormData({ ...formData, blessingText: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, blessingText: e.target.value, message: e.target.value })}
                 placeholder="如：心想事成 万事如意"
               />
 
@@ -992,6 +1018,18 @@ export default function PlaquesPage() {
                 value={formData.gender}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                 options={[{ value: '', label: '请选择' }, ...genderOptions]}
+              />
+              <Input
+                label="年龄"
+                value={formData.age}
+                onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                placeholder="请输入年龄"
+              />
+              <Input
+                label="属相"
+                value={formData.zodiac}
+                onChange={(e) => setFormData({ ...formData, zodiac: e.target.value })}
+                placeholder="请输入属相"
               />
               <Input
                 label="生日"
@@ -1101,6 +1139,12 @@ export default function PlaquesPage() {
                 label="阳上（供奉人）"
                 value={formData.yangShang}
                 onChange={(e) => setFormData({ ...formData, yangShang: e.target.value })}
+              />
+              <Input
+                label="寄语"
+                value={formData.message}
+                onChange={(e) => setFormData({ ...formData, message: e.target.value, blessingText: e.target.value })}
+                placeholder="请输入寄语"
               />
 
               <div className="md:col-span-2">

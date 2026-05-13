@@ -153,8 +153,8 @@
             双面打印
           </label>
           <div class="segmented compact" role="group" aria-label="编辑页面">
-            <button class="active" type="button" data-side="front">编辑正面</button>
-            <button type="button" data-side="back">编辑背面</button>
+            <button class="active" type="button" data-side="front">正面</button>
+            <button type="button" data-side="back">背面</button>
           </div>
           <p class="hint">背面为固定页，只使用底图和静态字段；打印时自动跟在每条正面后面。</p>
         </div>
@@ -242,8 +242,8 @@
             换行方式
             <select id="fieldWrapMode">
               <option value="anywhere">自动换行</option>
-              <option value="break-word">尽量不断开连续字符</option>
-              <option value="normal">只在空格处换行</option>
+              <option value="break-word">不断开连续字符</option>
+              <option value="normal">空格处换行</option>
               <option value="nowrap">不换行</option>
             </select>
           </label>
@@ -417,17 +417,17 @@
       </label>
       <div class="grid-2">
         <label>
-          纸张宽度(mm)
+          宽度(mm)
           <input id="newTemplateWidth" type="number" min="30" value="90">
         </label>
         <label>
-          纸张高度(mm)
+          高度(mm)
           <input id="newTemplateHeight" type="number" min="1" value="260">
         </label>
       </div>
       <label class="checkbox">
         <input id="newTemplateVertical" type="checkbox" checked>
-        竖向排版
+        竖排
       </label>
       <fieldset>
         <legend>字段选择</legend>
