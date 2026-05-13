@@ -282,6 +282,7 @@ function init() {
     if (control.id === "summaryVariant") {
       buildSummaryFieldMapping();
       buildStyleEditor();
+      buildStaticVisibilityControls();
     }
     if (control.id === "singleVariant") {
       handleSingleVariantChange();
@@ -297,6 +298,7 @@ function init() {
   $("summaryVariant").addEventListener("change", () => {
     buildSummaryFieldMapping();
     buildStyleEditor();
+    buildStaticVisibilityControls();
     render();
   });
   relocateSharedStyleEditor();
@@ -435,6 +437,7 @@ function syncControlsFromSelectedTemplate() {
       $("summaryVariant").value = layout.summary.variantKey;
     }
     buildSummaryFieldMapping();
+    buildStaticVisibilityControls();
   } else {
     $("singleFont").value = template.font;
     $("singleVertical").checked = layout.paper?.vertical ?? template.vertical;
@@ -498,16 +501,16 @@ function refreshSingleVariantOptions() {
 }
 
 function buildStaticVisibilityControls() {
-  const wrap = $("singleStaticVisibility");
+  const wrap = state.mode === "summary" ? $("summaryStaticVisibility") : $("singleStaticVisibility");
   if (!wrap) return;
-  const enabled = state.mode === "single" && state.editSide !== "back";
+  const enabled = state.mode === "summary" || (state.mode === "single" && state.editSide !== "back");
   wrap.hidden = !enabled;
   if (!enabled) {
     wrap.innerHTML = "";
     return;
   }
   const layout = ensureLayout(currentLayoutKey());
-  const variantKey = currentSingleVariantKey();
+  const variantKey = state.mode === "summary" ? currentSummaryVariantKey() : currentSingleVariantKey();
   const fields = layout.staticFields || [];
   if (!fields.length) {
     wrap.innerHTML = '<p class="hint">当前模板还没有静态字段。</p>';
@@ -925,7 +928,7 @@ function singleFieldsForVariant(variantKey = currentSingleVariantKey(), row = nu
 
 function staticFieldsForCurrentContext(layout, variantKey = currentSingleVariantKey()) {
   const fields = layout?.staticFields || [];
-  if (state.mode === "single" && !isBackSideActive()) {
+  if ((state.mode === "single" && !isBackSideActive()) || state.mode === "summary") {
     return fields.filter((field) => staticFieldVisibleInVariant(field, variantKey));
   }
   return fields;
@@ -934,6 +937,9 @@ function staticFieldsForCurrentContext(layout, variantKey = currentSingleVariant
 function staticFieldVisibleInVariant(field, variantKey = currentSingleVariantKey()) {
   if (!field || !variantKey) return true;
   if (!field.variantVisibility || typeof field.variantVisibility !== "object") return true;
+  if (state.mode === "summary") {
+    return field.variantVisibility[variantKey] !== false;
+  }
   if (Object.prototype.hasOwnProperty.call(field.variantVisibility, variantKey)) {
     return field.variantVisibility[variantKey] !== false;
   }
@@ -1452,7 +1458,11 @@ function addSummaryStaticField() {
 
   const layout = currentEditableLayout();
   const key = `static_${Date.now()}`;
-  layout.staticFields.push({ key, text });
+  const field = { key, text, variantVisibility: {} };
+  summaryVariantPresetsFor().forEach((variant) => {
+    field.variantVisibility[variant.key] = variant.key === currentSummaryVariantKey();
+  });
+  layout.staticFields.push(field);
   layout.positions[key] = { x: 8, y: 8 };
   layout.sizes[key] = { w: 28, h: 12 };
   layout.styles[key] = {
@@ -1463,6 +1473,7 @@ function addSummaryStaticField() {
   $("summaryStaticFieldText").value = "";
   saveLayouts();
   buildStyleEditor();
+  buildStaticVisibilityControls();
   $("styleField").value = key;
   syncStyleInputs();
   render();
@@ -1623,7 +1634,7 @@ function clampSummaryFieldsIntoView() {
   const variantKey = currentSummaryVariantKey();
   const summaryKeys = summaryFieldsForVariant(variantKey)
     .map((field) => field.key)
-    .concat((layout.staticFields || []).map((field) => field.key));
+    .concat(staticFieldsForCurrentContext(layout, variantKey).map((field) => field.key));
   if (!summaryKeys.length) return;
   let changed = false;
   summaryKeys.forEach((key) => {
@@ -1862,7 +1873,7 @@ function summarySheet(pageRows, forPrint = false) {
     const variantKey = forPrint
       ? (row ? (summaryVariantPresetForRow(row)?.key || selectedVariantKey) : selectedVariantKey)
       : selectedVariantKey;
-    const staticFields = layout.staticFields.map((field) => ({
+    const staticFields = staticFieldsForCurrentContext(layout, variantKey).map((field) => ({
       key: field.key,
       label: `静态：${field.text}`,
       text: field.text,

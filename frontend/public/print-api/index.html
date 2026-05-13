@@ -171,13 +171,14 @@
             <option value="custom">自定义模板</option>
           </select>
         </label>
-        <label id="singleVariantWrap">
-          编辑版式
+        <div id="singleVariantWrap" class="variant-switcher">
+          <div class="control-label">编辑版式</div>
+          <div id="singleVariantTabs" class="segmented compact" role="group" aria-label="编辑版式"></div>
           <select id="singleVariant">
             <option value="layout_one">版式一</option>
             <option value="layout_two">版式二</option>
           </select>
-        </label>
+        </div>
         <div id="fieldMapping" class="field-mapping"></div>
         <div class="static-field-tools">
           <label>
@@ -187,6 +188,7 @@
           <button id="addStaticFieldBtn" type="button">添加</button>
         </div>
         <div id="sharedStaticFieldActions" class="static-field-actions">
+          <button id="copyFieldBtn" type="button">复制</button>
           <button id="editStaticFieldBtn" type="button">编辑</button>
           <button id="deleteStaticFieldBtn" type="button">删除</button>
         </div>
@@ -246,16 +248,6 @@
             </select>
           </label>
         </div>
-        <div class="grid-2">
-          <label>
-            主体字号
-            <input id="singleFont" type="number" min="12" max="90" value="36">
-          </label>
-          <label>
-            上偏移
-            <input id="singleOffsetY" type="number" min="-80" max="120" value="0">
-          </label>
-        </div>
         <label class="checkbox">
           <input id="singleVertical" type="checkbox" checked>
           竖排文字
@@ -283,6 +275,7 @@
           </label>
           <button id="addSummaryStaticFieldBtn" type="button">添加</button>
         </div>
+        <div id="summaryStaticVisibility" class="static-visibility"></div>
         <div class="static-field-actions-anchor"></div>
         <textarea id="summaryFormat" rows="7" hidden>{{牌位主体}}
 {{阳上}}
@@ -449,9 +442,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=20260512-1822"></script>
+  <script src="app.js?v=20260513-0010"></script>
 </body>
 </html>
-
-
-

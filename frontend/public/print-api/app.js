@@ -2581,13 +2581,17 @@ function importServerTemplate(template) {
   if (data.layout) {
     const existingLayout = state.layouts[localTemplate.id];
     const existingRemoteId = state.remoteTemplateIds[localTemplate.id];
+    const normalizedLayout = {
+      ...data.layout,
+      background: data.layout.background || data.template?.backgroundImage || template.backgroundImage || "",
+    };
     if (!existingLayout || !existingRemoteId || existingRemoteId === template.id) {
-      state.layouts[localTemplate.id] = data.layout;
+      state.layouts[localTemplate.id] = normalizedLayout;
     } else {
       state.layouts[localTemplate.id] = {
-        ...data.layout,
+        ...normalizedLayout,
         ...existingLayout,
-        paper: data.layout.paper || existingLayout.paper,
+        paper: normalizedLayout.paper || existingLayout.paper,
         positions: existingLayout.positions || data.layout.positions || {},
         styles: existingLayout.styles || data.layout.styles || {},
         sizes: existingLayout.sizes || data.layout.sizes || {},
@@ -2595,6 +2599,7 @@ function importServerTemplate(template) {
         staticFields: existingLayout.staticFields || data.layout.staticFields || [],
         summaryFieldToggles: existingLayout.summaryFieldToggles || data.layout.summaryFieldToggles || {},
         summary: existingLayout.summary || data.layout.summary,
+        background: existingLayout.background || normalizedLayout.background || "",
       };
     }
   }
@@ -2619,6 +2624,7 @@ function exportCurrentTemplatePayload() {
       font: template.font,
       vertical: state.mode === "summary" ? false : $("singleVertical").checked,
       tabletType: state.mode === "summary" ? undefined : ($("tabletType").value === "custom" ? "custom" : $("tabletType").value),
+      backgroundImage: layout.background || "",
     },
     defaults,
     layout,
@@ -2631,7 +2637,7 @@ async function syncCurrentTemplateToServer() {
   const body = {
     name: payload.template.name,
     type: payload.template.dataGroup === "blessing" ? "LONGEVITY" : "DELIVERANCE",
-    backgroundImage: "",
+    backgroundImage: payload.template.backgroundImage || payload.layout?.background || "",
     elements: payload,
   };
 
@@ -2796,17 +2802,20 @@ async function saveCurrentLayout() {
   state.layouts[layoutKey] = layout;
   saveLayouts();
   if (layoutKey.startsWith("custom_")) saveCustomTemplatesToStorage();
-  $("statusText").textContent = authToken() ? "模板已保存，正在同步服务器..." : "模板已保存到本机";
-  if (!authToken()) return;
+  const shouldSync = isDesktopRuntime() || Boolean(authToken());
+  $("statusText").textContent = shouldSync ? "模板已保存，正在同步..." : "模板已保存到本机";
+  if (!shouldSync) return;
   syncCurrentTemplateToServer()
     .then(() => {
       state.layouts[layoutKey] = layout;
       saveLayouts();
-      $("statusText").textContent = "模板已保存到服务器";
+      $("statusText").textContent = isDesktopRuntime() ? "模板已保存到本地数据库" : "模板已保存到服务器";
     })
     .catch((error) => {
-      console.error("同步服务器模板失败:", error);
-      $("statusText").textContent = "模板已保存到本机，服务器同步失败";
+      console.error("同步模板失败", error);
+      $("statusText").textContent = isDesktopRuntime()
+        ? "模板已保存到本机，但本地数据库同步失败"
+        : "模板已保存到本机，但服务器同步失败";
     });
 }
 

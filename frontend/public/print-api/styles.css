@@ -120,6 +120,17 @@ label {
   font-size: 13px;
 }
 
+.variant-switcher {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.control-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 input,
 select,
 textarea {
@@ -159,6 +170,10 @@ textarea {
   border-color: var(--accent);
   color: #fff;
   background: var(--accent);
+}
+
+#singleVariantWrap select {
+  display: none;
 }
 
 .file-picker {
@@ -408,13 +423,7 @@ textarea {
   cursor: nwse-resize;
 }
 
-.single-title {
-  top: calc(18% + var(--offset-y) * 1px);
-  font-size: 20px;
-}
-
 .single-name {
-  font-size: var(--single-font);
   font-weight: 700;
 }
 

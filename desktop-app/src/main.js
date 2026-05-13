@@ -15,6 +15,7 @@ const {
 const FRONTEND_PORT = 3900
 
 function sendStatus(message, progress, level = 'info') {
+  const mainWindow = windowManager?.getMainWindow?.()
   if (!mainWindow || mainWindow.isDestroyed()) return
   mainWindow.webContents.send('desktop:status', { message, progress, level })
 }
