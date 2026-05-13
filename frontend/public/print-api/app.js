@@ -208,6 +208,7 @@ const state = {
   editSide: "front",
   renderSide: "",
   renderSingleVariant: "",
+  singleVariantKey: singleVariantPresets[0].key,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -259,6 +260,7 @@ function init() {
   $("paperSelect")?.addEventListener("change", applyPaperPreset);
   $("templateSelect")?.addEventListener("change", applyTemplate);
   $("singleVariant")?.addEventListener("change", handleSingleVariantChange);
+  $("singleVariantTabs")?.addEventListener("click", handleSingleVariantTabClick);
   $("addStaticFieldBtn")?.addEventListener("click", addStaticField);
   $("addSummaryStaticFieldBtn")?.addEventListener("click", addSummaryStaticField);
   $("editStaticFieldBtn")?.addEventListener("click", editSelectedStaticField);
@@ -350,7 +352,16 @@ function init() {
 
 function handleSingleVariantChange() {
   if (state.mode !== "single") return;
+  state.singleVariantKey = normalizeSingleVariantKey($("singleVariant")?.value || state.singleVariantKey);
+  if ($("singleVariant")) $("singleVariant").value = state.singleVariantKey;
+  const layout = ensureLayout(currentLayoutKey());
+  layout.singleVariantKey = state.singleVariantKey;
+  const row = currentRows()[state.pageIndex];
+  if (row) row.__singleVariant = currentSingleVariantKey();
   state.activeFieldKey = "";
+  updateSingleVariantTabState();
+  saveLayouts();
+  if (currentLayoutKey().startsWith("custom_")) saveCustomTemplatesToStorage();
   buildFieldMapping();
   buildStyleEditor();
   buildStaticVisibilityControls();
@@ -589,6 +600,8 @@ function syncControlsFromSelectedTemplate() {
     if (paperSelect && paperWidth && paperHeight) {
       paperSelect.value = paperPresetForSize(Number(paperWidth.value), Number(paperHeight.value));
     }
+    state.singleVariantKey = normalizeSingleVariantKey(layout.singleVariantKey || $("singleVariant")?.value || state.singleVariantKey);
+    if ($("singleVariant")) $("singleVariant").value = state.singleVariantKey;
     if (singleFont) singleFont.value = template.font;
     if (singleVertical) singleVertical.checked = layout.paper?.vertical ?? template.vertical;
     if ($("enableDuplex")) $("enableDuplex").checked = Boolean(layout.duplex?.enabled);
@@ -626,6 +639,8 @@ function syncSingleVariantControls() {
   const wrap = $("singleVariantWrap");
   if (!wrap) return;
   wrap.hidden = state.mode !== "single" || state.editSide === "back";
+  const layout = ensureLayout(currentLayoutKey());
+  state.singleVariantKey = normalizeSingleVariantKey(layout.singleVariantKey || state.singleVariantKey || singleVariantPresets[0].key);
   refreshSingleVariantOptions();
   if (!$("singleVariant")?.value) $("singleVariant").value = singleVariantPresets[0].key;
   const row = currentRows()[state.pageIndex];
@@ -641,13 +656,44 @@ function syncSingleVariantControls() {
 function refreshSingleVariantOptions() {
   const select = $("singleVariant");
   if (!select) return;
-  const previous = normalizeSingleVariantKey(select.value);
+  const previous = normalizeSingleVariantKey(state.singleVariantKey || select.value);
   select.innerHTML = singleVariantPresets.map((variant) => (
     `<option value="${variant.key}">${escapeHtml(variant.label)}</option>`
   )).join("");
   select.value = singleVariantPresets.some((variant) => variant.key === previous)
     ? previous
     : singleVariantPresets[0].key;
+  state.singleVariantKey = select.value;
+  renderSingleVariantTabs();
+}
+
+function renderSingleVariantTabs() {
+  const tabs = $("singleVariantTabs");
+  const select = $("singleVariant");
+  if (!tabs || !select) return;
+  tabs.innerHTML = singleVariantPresets.map((variant) => (
+    `<button type="button" data-single-variant="${variant.key}" class="${select.value === variant.key ? "active" : ""}">${escapeHtml(variant.label)}</button>`
+  )).join("");
+}
+
+function updateSingleVariantTabState() {
+  const select = $("singleVariant");
+  document.querySelectorAll("[data-single-variant]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.singleVariant === select?.value);
+  });
+}
+
+function handleSingleVariantTabClick(event) {
+  const button = event.target.closest("[data-single-variant]");
+  const select = $("singleVariant");
+  if (!button || !select) return;
+  event.preventDefault();
+  event.stopPropagation();
+  if (select.value === button.dataset.singleVariant) return;
+  state.singleVariantKey = normalizeSingleVariantKey(button.dataset.singleVariant);
+  select.value = state.singleVariantKey;
+  updateSingleVariantTabState();
+  handleSingleVariantChange();
 }
 
 function buildStaticVisibilityControls() {
@@ -1265,7 +1311,7 @@ function currentSingleVariantBaseKey(row = null, forPrint = false) {
   if (forPrint && row && $("tabletType")?.value === "blessing") {
     return normalizeSingleVariantKey(summaryVariantPresetForRow(row)?.key || singleVariantPresets[0].key);
   }
-  return normalizeSingleVariantKey($("singleVariant")?.value || singleVariantPresets[0].key);
+  return normalizeSingleVariantKey(state.singleVariantKey || $("singleVariant")?.value || singleVariantPresets[0].key);
 }
 
 function blessingVariantKeyFromBase(baseKey = currentSingleVariantBaseKey()) {
@@ -2771,6 +2817,7 @@ function importServerTemplate(template) {
         staticFields: existingLayout.staticFields || data.layout.staticFields || [],
         summaryFieldToggles: existingLayout.summaryFieldToggles || data.layout.summaryFieldToggles || {},
         summary: existingLayout.summary || data.layout.summary,
+        singleVariantKey: existingLayout.singleVariantKey || data.layout.singleVariantKey || singleVariantPresets[0].key,
         background: existingLayout.background || normalizedLayout.background || "",
       };
     }
@@ -2799,7 +2846,12 @@ function exportCurrentTemplatePayload() {
       backgroundImage: layout.background || "",
     },
     defaults,
-    layout,
+    layout: {
+      ...layout,
+      singleVariantKey: state.mode === "single"
+        ? normalizeSingleVariantKey(layout.singleVariantKey || state.singleVariantKey || $("singleVariant")?.value || singleVariantPresets[0].key)
+        : layout.singleVariantKey,
+    },
   };
 }
 
@@ -2924,6 +2976,7 @@ function ensureLayout(type) {
         sizes: clone(templateDefaults[type]?.sizes || {}),
         background: "",
         mappings: {},
+        singleVariantKey: singleVariantPresets[0].key,
         duplex: { enabled: false },
         backSide: createBlankSideLayout(),
       };
@@ -2934,6 +2987,9 @@ function ensureLayout(type) {
   if (!state.layouts[type].mappings) state.layouts[type].mappings = {};
   if (!state.layouts[type].staticFields) state.layouts[type].staticFields = [];
   if (!state.layouts[type].duplex) state.layouts[type].duplex = { enabled: false };
+  if (!isSummaryTemplateId(type) && !state.layouts[type].singleVariantKey) {
+    state.layouts[type].singleVariantKey = singleVariantPresets[0].key;
+  }
   if (isSummaryTemplateId(type)) {
     if (!state.layouts[type].paper) state.layouts[type].paper = summaryTemplatePaper(type);
     if (!state.layouts[type].summary) state.layouts[type].summary = normalizeSummarySettings();
@@ -2983,6 +3039,8 @@ async function saveCurrentLayout() {
   };
   if (state.mode === "summary") {
     layout.summary = currentSummarySettings();
+  } else {
+    layout.singleVariantKey = normalizeSingleVariantKey(state.singleVariantKey || $("singleVariant")?.value || singleVariantPresets[0].key);
   }
   layout.duplex = {
     ...(layout.duplex || {}),
@@ -3018,6 +3076,7 @@ function resetCurrentLayout() {
     sizes: clone(templateDefaults[type]?.sizes || {}),
     background: "",
     mappings: {},
+    singleVariantKey: singleVariantPresets[0].key,
     staticFields: [],
     duplex: { enabled: false },
     backSide: createBlankSideLayout(),
@@ -3699,6 +3758,7 @@ function createCustomTemplate() {
     sizes: {},
     background: "",
     mappings: {},
+    singleVariantKey: normalizeSingleVariantKey(state.singleVariantKey || singleVariantPresets[0].key),
     staticFields: [],
     duplex: { enabled: false },
     backSide: createBlankSideLayout(),
@@ -3754,6 +3814,7 @@ function saveCustomTemplatesToStorage() {
         height: layout?.paper?.height || t.height,
         vertical: layout?.paper?.vertical ?? t.vertical,
         background: layout?.background || "",
+        singleVariantKey: layout?.singleVariantKey || singleVariantPresets[0].key,
         summary: layout?.summary,
         staticFields: layout?.staticFields || [],
         duplex: layout?.duplex,
@@ -3816,6 +3877,10 @@ function loadCustomTemplatesFromStorage(options = {}) {
         if (ct.background) {
           const layout = ensureLayout(ct.id);
           layout.background = ct.background;
+        }
+        if (ct.singleVariantKey) {
+          const layout = ensureLayout(ct.id);
+          layout.singleVariantKey = normalizeSingleVariantKey(ct.singleVariantKey);
         }
         if (ct.duplex || ct.backSide) {
           const layout = ensureLayout(ct.id);
