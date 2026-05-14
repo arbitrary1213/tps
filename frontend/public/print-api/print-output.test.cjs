@@ -15,6 +15,10 @@ assert.match(printMedia, /\.print-settings-panel\b/, 'browser printing hides the
 assert.match(printMedia, /\.print-settings-actions\b/, 'browser printing hides the print action buttons');
 assert.match(printMedia, /\.print-more-settings\b/, 'browser printing hides expanded print settings');
 assert.match(printMedia, /display:\s*none\s*!important/i, 'hidden print controls use a print-enforced display rule');
+assert.match(printMedia, /print-color-adjust:\s*exact/i, 'browser printing preserves exact page colors and sizes');
+assert.match(printMedia, /\.tablet\s*\{[^}]*border:\s*0\s*!important/i, 'browser printing removes tablet guide border from layout');
+assert.match(printMedia, /\.summary-column\s*\{[^}]*border:\s*0\s*!important/i, 'browser printing removes summary guide borders');
+assert.match(printMedia, /\.summary-editor-surface\b[\s\S]*?\.summary-guide-column\b[\s\S]*?background:\s*transparent\s*!important/i, 'browser printing removes summary guide backgrounds');
 
 assert.match(app, /buildDesktopPrintHtml\(\$\("preview"\)\.innerHTML\)/, 'desktop printing sends rendered preview HTML');
 assert.match(app, /<body>\$\{previewHtml\}<\/body>/, 'desktop print document contains the preview body only');

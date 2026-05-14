@@ -922,6 +922,8 @@ body.print-preview-mode .resize-handle {
     margin: 0;
     padding: 0;
     background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .app-header,
@@ -957,6 +959,8 @@ body.print-preview-mode .resize-handle {
     height: var(--print-h);
     min-height: var(--print-h);
     margin: 0;
+    padding: 0;
+    border: 0;
     overflow: hidden;
     box-shadow: none;
     break-after: page;
@@ -969,8 +973,8 @@ body.print-preview-mode .resize-handle {
   }
 
   .tablet {
-    border-color: transparent;
-    background: transparent;
+    border: 0 !important;
+    background: transparent !important;
   }
 
   .tablet::before {
@@ -980,6 +984,17 @@ body.print-preview-mode .resize-handle {
   .template-bg {
     display: block;
     opacity: 1;
+  }
+
+  .summary-column {
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  .summary-editor-surface,
+  .summary-guide-column,
+  .summary-cell.empty {
+    background: transparent !important;
   }
 
   .is-placeholder {
