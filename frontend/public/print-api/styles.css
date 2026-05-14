@@ -927,7 +927,10 @@ body.print-preview-mode .resize-handle {
   .app-header,
   .controls,
   .data-panel,
-  .preview-toolbar {
+  .preview-toolbar,
+  .print-settings-panel,
+  .print-more-settings,
+  .print-settings-actions {
     display: none !important;
   }
 

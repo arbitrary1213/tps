@@ -2,6 +2,38 @@ const fs = require('fs')
 const os = require('os')
 const path = require('path')
 
+async function waitForPrintWindowReady(webContents) {
+  await webContents.executeJavaScript(`
+    (async () => {
+      if (document.fonts && document.fonts.ready) {
+        try {
+          await document.fonts.ready;
+        } catch (_) {}
+      }
+
+      const images = Array.from(document.images || []);
+      const waitForImages = Promise.all(images.map((image) => {
+        if (image.complete) return Promise.resolve();
+        if (typeof image.decode === 'function') {
+          return image.decode().catch(() => {});
+        }
+        return new Promise((resolve) => {
+          image.addEventListener('load', resolve, { once: true });
+          image.addEventListener('error', resolve, { once: true });
+        });
+      }));
+      await Promise.race([
+        waitForImages,
+        new Promise((resolve) => setTimeout(resolve, 5000)),
+      ]);
+
+      await new Promise((resolve) => requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      }));
+    })();
+  `)
+}
+
 function registerIpcHandlers({
   app,
   BrowserWindow,
@@ -164,6 +196,7 @@ function registerIpcHandlers({
 
     try {
       await printWindow.loadFile(tempHtmlPath)
+      await waitForPrintWindowReady(printWindow.webContents)
     } catch (error) {
       fs.rmSync(tempDir, { recursive: true, force: true })
       throw error
