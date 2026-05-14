@@ -65,7 +65,7 @@ jobs:
         run: npm ci
         working-directory: print-service
 
-      - name: Check print service syntax
+      - name: Check print service and run print-api tests
         run: |
           node --check index.js
           node --check ../frontend/public/print-api/app.js
@@ -74,7 +74,15 @@ jobs:
           node --check ../frontend/public/print-api/print-output.test.cjs
           node --check ../frontend/public/print-api/template-load-order.test.cjs
           node --check ../frontend/public/print-api/template-server-sync.test.cjs
+          node ../frontend/public/print-api/launch-template-order.test.cjs
+          node ../frontend/public/print-api/pdf-print-quality.test.cjs
+          node ../frontend/public/print-api/print-output.test.cjs
+          node ../frontend/public/print-api/template-load-order.test.cjs
+          node ../frontend/public/print-api/template-server-sync.test.cjs
         working-directory: print-service
+
+      - name: Check deploy contract
+        run: node scripts/deploy-contract.test.cjs
 
   deploy:
     name: Deploy

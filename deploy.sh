@@ -112,6 +112,19 @@ restart_frontend() {
   systemctl restart "$FRONTEND_SERVICE"
 }
 
+sync_print_api_assets() {
+  echo "[3/6] Syncing print-api assets to frontend standalone..."
+  local source_dir="$APP_DIR/frontend/public/print-api"
+  local target_dir="$APP_DIR/frontend/.next/standalone/public/print-api"
+  if [ ! -d "$source_dir" ]; then
+    echo "Missing print-api source directory: $source_dir" >&2
+    return 1
+  fi
+  mkdir -p "$(dirname "$target_dir")"
+  rm -rf "$target_dir"
+  cp -a "$source_dir" "$target_dir"
+}
+
 build_print_image() {
   echo "[3/6] Building print image..."
   docker build -f "$APP_DIR/print-service/Dockerfile" -t docker_temple-print:latest "$APP_DIR"
@@ -159,6 +172,8 @@ if has_target frontend; then
 fi
 
 if has_target print; then
+  sync_print_api_assets
+  restart_frontend
   build_print_image
   restart_print
 fi
@@ -167,6 +182,7 @@ echo "[6/6] Verifying services..."
 sleep 5
 if has_target backend; then verify_backend; fi
 if has_target frontend; then verify_frontend; fi
+if has_target print; then verify_frontend; fi
 if has_target print; then verify_print; fi
 
 echo "===== Deploy Complete ====="
