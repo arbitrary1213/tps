@@ -393,7 +393,7 @@ const controls = [
   "templateSelect", "paperSelect", "paperWidth", "paperHeight", "singleVariant",
   "singleFont", "singleOffsetY", "singleVertical",
   "styleField", "fieldFontSize", "fieldColor", "fieldFontFamily", "fieldTextAlign", "fieldVerticalAlign", "fieldWrapMode", "staticFieldText",
-  "showBg", "enableDuplex",
+  "showBg", "enableDuplex", "designPrintBackgroundGraphics", "printBackgroundGraphics",
   "summaryDataGroup", "summaryVariant", "summaryFormat", "columnCount", "rowsPerColumn", "summaryFont",
   "summaryLineGap", "pageMargin", "columnGap", "summaryVertical",
 ].map($).filter(Boolean);
@@ -426,10 +426,12 @@ async function init() {
   $("bgInput").addEventListener("change", handleBackground);
   $("saveTemplateBtn").addEventListener("click", saveCurrentLayout);
   $("resetTemplateBtn").addEventListener("click", resetCurrentLayout);
-  $("printBtn").addEventListener("click", printAll);
+  $("printBtn").addEventListener("click", enterPrintPreviewMode);
   $("printSettingsPrintBtn")?.addEventListener("click", printAll);
   $("printSettingsSystemDialogBtn")?.addEventListener("click", printWithSystemDialog);
   $("printSettingsCancelBtn")?.addEventListener("click", () => window.close());
+  $("designPrintBackgroundGraphics")?.addEventListener("change", syncPrintBackgroundGraphicsControls);
+  $("printBackgroundGraphics")?.addEventListener("change", syncPrintBackgroundGraphicsControls);
   $("printPrinterSelect")?.addEventListener("change", loadPaperSizesForSelectedPrinter);
   $("printPaperSize")?.addEventListener("change", applySelectedPrintPaperSize);
   loadDesktopPrinters();
@@ -1255,6 +1257,15 @@ function shouldPrintTemplateBackground(forPrint = false) {
   if (!$("showBg")?.checked) return false;
   if (!forPrint) return true;
   return $("printBackgroundGraphics")?.checked ?? true;
+}
+
+function syncPrintBackgroundGraphicsControls(event = null) {
+  const source = event?.target || $("designPrintBackgroundGraphics") || $("printBackgroundGraphics");
+  const checked = source?.checked ?? true;
+  ["designPrintBackgroundGraphics", "printBackgroundGraphics"].forEach((id) => {
+    const control = $(id);
+    if (control && control.checked !== checked) control.checked = checked;
+  });
 }
 
 function parseDelimited(text) {
@@ -2768,6 +2779,14 @@ function summarySheet(pageRows, forPrint = false) {
 
 async function printAll() {
   await printRangeFrom(0, { systemDialog: false });
+}
+
+function enterPrintPreviewMode() {
+  document.documentElement.classList.add("print-preview-mode");
+  document.body.classList.add("print-preview-mode");
+  syncPrintBackgroundGraphicsControls();
+  syncPrintSize();
+  render();
 }
 
 async function printFromPage() {
