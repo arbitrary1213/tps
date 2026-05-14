@@ -24,7 +24,7 @@ async function testModules() {
     console.log('=== Testing Login ===');
     await page.goto('https://xiandingsi.cn/login', { waitUntil: 'networkidle', timeout: 30000 });
     await page.fill('input[type="text"]', 'admin');
-    await page.fill('input[type="password"]', 'admin123');
+    await page.fill('input[type="password"]', 'chanming3239');
     await page.click('button[type="submit"]');
     await page.waitForTimeout(3000);
     

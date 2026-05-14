@@ -114,7 +114,7 @@ restart_frontend() {
 
 build_print_image() {
   echo "[3/6] Building print image..."
-  docker build -t docker_temple-print:latest "$APP_DIR/print-service"
+  docker build -f "$APP_DIR/print-service/Dockerfile" -t docker_temple-print:latest "$APP_DIR"
 }
 
 restart_print() {

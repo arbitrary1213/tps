@@ -1,77 +1,32 @@
 const templates = [
-  { id: "a4summary", name: "延生通名", width: 210, height: 297, font: 22, vertical: false },
-  { id: "a3summary", name: "往生通名", width: 297, height: 420, font: 22, vertical: false },
+  { id: "cmozim1oi0002hmbwceevwp7z", name: "延生通名", width: 297, height: 420, vertical: true, mode: "summary", dataGroup: "blessing" },
+  { id: "cmowl79v5000a2rdgs4czs9bo", name: "往生通名", width: 297, height: 420, vertical: true, mode: "summary", dataGroup: "blessing" },
+  { id: "cmoz9dtgc015wcyyxjcwqcumq", name: "红牒", width: 420, height: 297, vertical: true, mode: "summary", dataGroup: "blessing" },
+  { id: "cmowkqe9o00002rdg542nvmls", name: "延生禄位", width: 125, height: 360, vertical: true, mode: "summary", dataGroup: "blessing" },
+  { id: "cmp0u7lde04xmhmbwtueb8v4d", name: "红壳", width: 125, height: 360, vertical: true, mode: "summary", dataGroup: "blessing" },
+  { id: "cmp15pgnz000op0s9vkqcx9wt", name: "黄壳", width: 125, height: 360, vertical: true, mode: "single", dataGroup: "deliverance" },
+  { id: "cmozm19an001ahmbwqm8nmi1q", name: "超度牌位", width: 125, height: 360, vertical: true, mode: "single", dataGroup: "deliverance" },
+  { id: "cmoy8qpet023lp6guzs8mne81", name: "黄牒", width: 420, height: 297, vertical: true, mode: "single", dataGroup: "deliverance" },
 ];
 
-const HIDDEN_LEGACY_TEMPLATE_IDS = new Set(["blessing", "deliverance", "deliveranceSimple"]);
+const HIDDEN_LEGACY_TEMPLATE_IDS = new Set(["deliveranceDetail", "deliveranceSimple", "rebirth", "a4summary", "a3summary", "blessing", "deliverance"]);
+const BUILTIN_SINGLE_TEMPLATE_IDS = new Set(["cmp15pgnz000op0s9vkqcx9wt", "cmozm19an001ahmbwqm8nmi1q", "cmoy8qpet023lp6guzs8mne81"]);
 
 const templateDefaults = {
-  blessing: {
-    positions: {
-      subject: { x: 50, y: 27 },
-      believer: { x: 82, y: 18 },
-      age: { x: 71, y: 18 },
-      zodiac: { x: 60, y: 18 },
-      birthday: { x: 49, y: 18 },
-      address: { x: 22, y: 24 },
-      wish: { x: 50, y: 74 },
-    },
-    styles: {
-      subject: { fontSize: 36, color: "#16110d", fontFamily: "SimSun, serif" },
-      believer: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
-      age: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
-      zodiac: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
-      birthday: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
-      address: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
-      wish: { fontSize: 19, color: "#6e1517", fontFamily: "KaiTi, STKaiti, serif" },
-    },
-    sizes: {
-      subject: { w: 28, h: 42 },
-      believer: { w: 9, h: 36 },
-      age: { w: 9, h: 32 },
-      zodiac: { w: 9, h: 32 },
-      birthday: { w: 9, h: 38 },
-      address: { w: 11, h: 45 },
-      wish: { w: 58, h: 18 },
-    },
+  cmp15pgnz000op0s9vkqcx9wt: {
+    positions: { subject: { x: 50, y: 30 }, yangshang: { x: 50, y: 38 }, "single_variant_blessing_bodhisattva__subject": { x: 43.8, y: 63.5 }, "single_variant_blessing_bodhisattva__yangshang": { x: 37, y: 69.4 }, "single_variant_blessing_bodhisattva__static_1778501141180": { x: 36.9, y: 65.4 }, "single_variant_blessing_bodhisattva__static_1778501160565": { x: 37.4, y: 81.2 }, "single_variant_blessing_bodhisattva__static_1778501368780": { x: 38.6, y: 25 } },
+    styles: { subject: { fontSize: 18, color: "#16110d", fontFamily: "SimSun, serif" }, yangshang: { fontSize: 18, color: "#16110d", fontFamily: "SimSun, serif" }, "single_variant_blessing_bodhisattva__subject": { fontSize: 30, wrapMode: "anywhere", textAlign: "center", fontFamily: "KaiTi, STKaiti, serif", verticalAlign: "center" }, "single_variant_blessing_bodhisattva__yangshang": { fontSize: 20, wrapMode: "anywhere", textAlign: "center", fontFamily: "KaiTi, STKaiti, serif", verticalAlign: "center" }, "single_variant_blessing_bodhisattva__static_1778501141180": { fontSize: 20, wrapMode: "anywhere", textAlign: "center", fontFamily: "KaiTi, STKaiti, serif", verticalAlign: "center" }, "single_variant_blessing_bodhisattva__static_1778501160565": { fontSize: 18, wrapMode: "anywhere", textAlign: "center", fontFamily: "KaiTi, STKaiti, serif", verticalAlign: "center" }, "single_variant_blessing_bodhisattva__static_1778501368780": { fontSize: 50, wrapMode: "anywhere", textAlign: "center", fontFamily: "KaiTi, STKaiti, serif", verticalAlign: "center" } },
+    sizes: { subject: { h: 20, w: 20 }, yangshang: { h: 20, w: 20 }, "single_variant_blessing_bodhisattva__subject": { h: 20, w: 14.3 }, "single_variant_blessing_bodhisattva__yangshang": { h: 11.7, w: 6.4 }, "single_variant_blessing_bodhisattva__static_1778501141180": { h: 4, w: 5.7 }, "single_variant_blessing_bodhisattva__static_1778501160565": { h: 4, w: 6.2 }, "single_variant_blessing_bodhisattva__static_1778501368780": { h: 15.5, w: 23.5 } },
   },
-  deliverance: {
-    positions: {
-      subject: { x: 50, y: 27 },
-      deceasedInfo: { x: 84, y: 18 },
-      deceasedPrimary: { x: 84, y: 18 },
-      deceasedSecondary: { x: 73, y: 18 },
-      age: { x: 73, y: 18 },
-      birthday: { x: 62, y: 18 },
-      deathday: { x: 51, y: 18 },
-      yangshang: { x: 22, y: 20 },
-      address: { x: 16, y: 37 },
-      wish: { x: 48, y: 74 },
-    },
-    styles: {
-      subject: { fontSize: 34, color: "#16110d", fontFamily: "SimSun, serif" },
-      deceasedInfo: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
-      deceasedPrimary: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
-      deceasedSecondary: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
-      age: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
-      birthday: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
-      deathday: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
-      yangshang: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
-      address: { fontSize: 17, color: "#16110d", fontFamily: "SimSun, serif" },
-      wish: { fontSize: 18, color: "#6e1517", fontFamily: "KaiTi, STKaiti, serif" },
-    },
-    sizes: {
-      subject: { w: 28, h: 44 },
-      deceasedInfo: { w: 10, h: 42 },
-      deceasedPrimary: { w: 10, h: 42 },
-      deceasedSecondary: { w: 10, h: 42 },
-      age: { w: 9, h: 32 },
-      birthday: { w: 9, h: 36 },
-      deathday: { w: 9, h: 36 },
-      yangshang: { w: 11, h: 42 },
-      address: { w: 11, h: 45 },
-      wish: { w: 56, h: 18 },
-    },
+  cmozm19an001ahmbwqm8nmi1q: {
+    positions: { ritual: { x: 50, y: 50 }, address: { x: 78.4, y: 18.6 }, subject: { x: 34.4, y: 29.4 }, yangshang: { x: 5.6, y: 53.4 }, printSerial: { x: 78, y: 92 } },
+    styles: { ritual: { fontSize: 18, textAlign: "center", color: "#16110d", fontFamily: "SimSun, serif" }, address: { fontSize: 17, textAlign: "center", color: "#16110d", fontFamily: "SimSun, serif" }, subject: { fontSize: 60, textAlign: "center", color: "#16110d", fontFamily: "SimSun, serif" }, yangshang: { fontSize: 17, textAlign: "center", color: "#16110d", fontFamily: "SimSun, serif" }, printSerial: { fontSize: 12, textAlign: "center", color: "#7a1c1d", fontFamily: "Microsoft YaHei, sans-serif" } },
+    sizes: { ritual: { h: 20, w: 20 }, address: { h: 45, w: 12 }, subject: { h: 39, w: 29.1 }, yangshang: { h: 22.3, w: 22.6 }, printSerial: { h: 6, w: 18 } },
+  },
+  cmoy8qpet023lp6guzs8mne81: {
+    positions: { age: { x: 50, y: 50 }, wish: { x: 65.4, y: 62.8 }, zodiac: { x: 50, y: 50 }, address: { x: 78.2, y: 12.7 }, subject: { x: 54.2, y: 31.9 }, believer: { x: 65, y: 61.3 }, birthday: { x: 62.9, y: 64.5 }, yangshang: { x: 74.2, y: 31.6 }, static_1778314005753: { x: 82.5, y: 26.8 }, static_1778314051577: { x: 54.4, y: 12.9 }, static_1778378378270: { x: 16.9, y: 20.4 }, static_1778378435092: { x: 16.9, y: 45.3 }, static_1778378460620: { x: 16.9, y: 53.6 }, static_1778379124748: { x: 39.4, y: 26.8 }, clone_subject_1778379239115: { x: 20.5, y: 24.6 } },
+    styles: { age: { fontSize: 18, color: "#16110d", fontFamily: "SimSun, serif" }, wish: { fontSize: 18, textAlign: "center", color: "#16110d", fontFamily: "SimSun, serif" }, zodiac: { fontSize: 18, color: "#16110d", fontFamily: "SimSun, serif" }, address: { fontSize: 25, textAlign: "left", color: "#16110d", fontFamily: "KaiTi, STKaiti, serif" }, subject: { fontSize: 30, textAlign: "left", color: "#16110d", fontFamily: "KaiTi, STKaiti, serif" }, believer: { fontSize: 18, textAlign: "center", color: "#16110d", fontFamily: "SimSun, serif" }, birthday: { fontSize: 18, textAlign: "center", color: "#16110d", fontFamily: "SimSun, serif" }, yangshang: { fontSize: 25, textAlign: "left", color: "#16110d", fontFamily: "KaiTi, STKaiti, serif" }, static_1778314005753: { fontSize: 25, textAlign: "left", color: "#16110d", fontFamily: "KaiTi, STKaiti, serif" }, static_1778314051577: { fontSize: 30, textAlign: "center", color: "#16110d", fontFamily: "KaiTi, STKaiti, serif" }, static_1778378378270: { fontSize: 24, textAlign: "center", color: "#16110d", fontFamily: "KaiTi, STKaiti, serif" }, static_1778378435092: { fontSize: 25, textAlign: "center", color: "#16110d", fontFamily: "KaiTi, STKaiti, serif" }, static_1778378460620: { fontSize: 25, textAlign: "center", color: "#16110d", fontFamily: "KaiTi, STKaiti, serif" }, static_1778379124748: { fontSize: 60, textAlign: "left", color: "#16110d", fontFamily: "KaiTi, STKaiti, serif" }, clone_subject_1778379239115: { fontSize: 25, textAlign: "center", color: "#16110d", fontFamily: "KaiTi, STKaiti, serif" } },
+    sizes: { age: { h: 20, w: 20 }, wish: { h: 20, w: 20 }, zodiac: { h: 20, w: 20 }, address: { h: 61.9, w: 4.3 }, subject: { h: 57.9, w: 4.7 }, believer: { h: 20, w: 20 }, birthday: { h: 20, w: 20 }, yangshang: { h: 43.9, w: 4 }, static_1778314005753: { h: 21.1, w: 4 }, static_1778314051577: { h: 18.5, w: 4.2 }, static_1778378378270: { h: 12.8, w: 4 }, static_1778378435092: { h: 5.7, w: 4 }, static_1778378460620: { h: 6, w: 4 }, static_1778379124748: { h: 62.4, w: 6.6 }, clone_subject_1778379239115: { h: 14.3, w: 4 } },
   },
 };
 
@@ -255,7 +210,9 @@ const singleVariantLayoutDefaults = {
   },
 };
 
-const SUMMARY_TEMPLATE_IDS = new Set(["a4summary", "a3summary"]);
+const BUILTIN_SINGLE_TEMPLATES = [];
+
+const SUMMARY_TEMPLATE_IDS = new Set(["cmozim1oi0002hmbwceevwp7z", "cmowl79v5000a2rdgs4czs9bo", "cmoz9dtgc015wcyyxjcwqcumq", "cmowkqe9o00002rdg542nvmls", "cmp0u7lde04xmhmbwtueb8v4d"]);
 
 const legacySingleVariantKeyMap = {
   blessing_bodhisattva: "layout_one",
@@ -322,6 +279,7 @@ const state = {
   renderSide: "",
   renderSingleVariant: "",
   singleVariantKey: singleVariantPresets[0].key,
+  singleVariantManualOverride: false,
   fieldClipboard: null,
   contextMenu: {
     visible: false,
@@ -335,6 +293,64 @@ const state = {
 
 const $ = (id) => document.getElementById(id);
 
+function isBuiltinSingleTemplateId(templateId) {
+  return BUILTIN_SINGLE_TEMPLATE_IDS.has(templateId);
+}
+
+function isBuiltinSingleTemplate(template) {
+  return isBuiltinSingleTemplateId(template?.id || "");
+}
+
+function isAllowedSingleTemplate(template) {
+  if (!template || isSummaryTemplate(template)) return true;
+  if (isBuiltinSingleTemplate(template)) return true;
+  return Boolean(template?.id?.startsWith("custom_"));
+}
+
+function ensureBuiltinSingleTemplates() {
+  BUILTIN_SINGLE_TEMPLATES.forEach((builtinTemplate) => {
+    const existingIndex = templates.findIndex((item) => item.id === builtinTemplate.id);
+    if (existingIndex >= 0) {
+      templates[existingIndex] = {
+        ...templates[existingIndex],
+        ...builtinTemplate,
+      };
+    } else {
+      templates.push({ ...builtinTemplate });
+    }
+  });
+}
+
+function pruneObsoleteSingleTemplates() {
+  const removedIds = [];
+  for (let index = templates.length - 1; index >= 0; index -= 1) {
+    const template = templates[index];
+    if (!template?.id) continue;
+    if (isSummaryTemplate(template)) continue;
+    if (isAllowedSingleTemplate(template)) continue;
+    removedIds.push(template.id);
+    templates.splice(index, 1);
+  }
+
+  if (!removedIds.length) return false;
+
+  removedIds.forEach((templateId) => {
+    delete templateDefaults[templateId];
+    delete state.layouts[templateId];
+    delete state.remoteTemplateIds[templateId];
+  });
+
+  const currentSelectedId = $("templateSelect")?.value || "";
+  const fallbackTemplateId = templates.find((template) => !isSummaryTemplate(template))?.id
+    || defaultSingleTemplateIdForGroup("blessing");
+
+  rebuildTemplateOptions(
+    removedIds.includes(currentSelectedId) ? fallbackTemplateId : currentSelectedId
+  );
+
+  return true;
+}
+
 function defaultSingleVariantKeyForGroup(group = currentDataGroup()) {
   return singleVariantPresetsByType[group]?.[0]?.key || singleVariantPresets[0].key;
 }
@@ -345,7 +361,7 @@ function defaultSingleVariantKeyForTemplate(template = currentTemplate()) {
 }
 
 const controls = [
-  "templateSelect", "paperSelect", "paperWidth", "paperHeight", "tabletType", "singleVariant",
+  "templateSelect", "paperSelect", "paperWidth", "paperHeight", "singleVariant",
   "singleFont", "singleOffsetY", "singleVertical",
   "styleField", "fieldFontSize", "fieldColor", "fieldFontFamily", "fieldTextAlign", "fieldVerticalAlign", "fieldWrapMode", "staticFieldText",
   "showBg", "enableDuplex",
@@ -354,6 +370,7 @@ const controls = [
 ].map($).filter(Boolean);
 
 function init() {
+  ensureBuiltinSingleTemplates();
   migrateStoredLayouts();
   const templateSelect = $("templateSelect");
   if (templateDesignerMode) {
@@ -470,14 +487,6 @@ function init() {
       handleSummaryGroupChange(true);
       return;
     }
-    if (control.id === "tabletType") {
-      state.pageIndex = 0;
-      buildFieldMapping();
-      buildStyleEditor();
-      renderTable();
-      updateDataHint();
-      ensureLayout(currentLayoutKey());
-    }
     if (control.id === "summaryVariant") {
       handleSummaryVariantChange();
       return;
@@ -513,6 +522,7 @@ function init() {
 function handleSingleVariantChange() {
   if (state.mode !== "single") return;
   state.singleVariantKey = normalizeSingleVariantKey($("singleVariant")?.value || state.singleVariantKey);
+  state.singleVariantManualOverride = true;
   if ($("singleVariant")) $("singleVariant").value = state.singleVariantKey;
   const layout = ensureLayout(currentLayoutKey());
   layout.singleVariantKey = state.singleVariantKey;
@@ -636,6 +646,7 @@ function applyPaperPreset() {
 function applyTemplate() {
   const template = currentTemplate();
   ensureLayout(template.id);
+  state.singleVariantManualOverride = false;
   if (isSummaryTemplate(template)) state.editSide = "front";
   syncControlsFromSelectedTemplate();
   if (isSummaryTemplate(template)) {
@@ -750,6 +761,11 @@ function syncControlsFromSelectedTemplate() {
   const summaryVariant = $("summaryVariant");
   const singleFont = $("singleFont");
   const singleVertical = $("singleVertical");
+  const templateTypeLabel = $("templateTypeLabel");
+
+  if (templateTypeLabel) {
+    templateTypeLabel.textContent = template?.dataGroup === "deliverance" ? "往生牌位模板" : "延生禄位模板";
+  }
 
   if (isSummaryTemplate(template)) {
     const paper = layout.paper || summaryTemplatePaper(template.id);
@@ -809,12 +825,15 @@ function syncSingleVariantControls() {
   wrap.hidden = state.mode !== "single" || state.editSide === "back";
   const layout = ensureLayout(currentLayoutKey());
   const presets = singleVariantPresetsForCurrentType();
-  state.singleVariantKey = normalizeSingleVariantKey(layout.singleVariantKey || state.singleVariantKey || presets[0].key);
-  refreshSingleVariantOptions();
-  if (!$("singleVariant")?.value) $("singleVariant").value = presets[0].key;
   const row = currentRows()[state.pageIndex];
+  const detectedKey = normalizeSingleVariantKey(row?.__variant || "");
+  const selectedKey = normalizeSingleVariantKey(layout.singleVariantKey || state.singleVariantKey || presets[0].key);
+  const shouldFollowDetected = detectedKey && (!templateDesignerMode || !state.singleVariantManualOverride);
+  state.singleVariantKey = shouldFollowDetected ? detectedKey : selectedKey;
+  refreshSingleVariantOptions();
+  if ($("singleVariant")) $("singleVariant").value = state.singleVariantKey || presets[0].key;
+  updateSingleVariantTabState();
   if (row && state.mode === "single") {
-    const detectedKey = row.__variant || "";
     wrap.dataset.detectedVariant = detectedKey;
   } else {
     delete wrap.dataset.detectedVariant;
@@ -849,7 +868,7 @@ function renderSingleVariantTabs() {
 function singleVariantPresetsForCurrentType() {
   const type = state.mode === "single"
     ? currentDataGroup()
-    : normalizeTabletType($("tabletType")?.value || currentTemplate()?.tabletType || "blessing");
+    : normalizeTabletType(currentTemplate()?.tabletType || "blessing");
   return singleVariantPresetsByType[type] || singleVariantPresetsByType.blessing;
 }
 
@@ -1238,6 +1257,7 @@ function loadRows(rows) {
     .map((row, index) => normalizeRow(row, group, index));
   state.selectedRowIds[group].clear();
   state.pageIndex = 0;
+  state.singleVariantManualOverride = false;
   buildFieldMapping();
   buildStyleEditor();
   renderTable();
@@ -1320,6 +1340,7 @@ async function loadSystemPlaques(group) {
     state.datasets[group] = rows;
     state.selectedRowIds[group].clear();
     state.pageIndex = 0;
+    state.singleVariantManualOverride = false;
     if (previousMode === "summary") $("summaryDataGroup").value = group;
     buildFieldMapping();
     buildStyleEditor();
@@ -1386,6 +1407,7 @@ async function applyLaunchParams() {
     state.selectedRowIds[group].clear();
     selectedIds.forEach((id) => state.selectedRowIds[group].add(id));
     state.pageIndex = Math.max(0, rows.findIndex((row) => selectedIds.has(row.__rowId)));
+    state.singleVariantManualOverride = false;
     buildFieldMapping();
     buildStyleEditor();
     renderTable();
@@ -1513,7 +1535,8 @@ function normalizeRow(row, group, index) {
   return normalized;
 }
 
-function summaryVariantPresetsFor(group = currentDataGroup()) {
+function summaryVariantPresetsFor(group) {
+  if (!group) return summaryVariantPresets.deliverance;
   return summaryVariantPresets[group] || summaryVariantPresets.deliverance;
 }
 
@@ -1547,8 +1570,9 @@ function normalizeSingleVariantKey(key) {
 
 function currentSingleVariantBaseKey(row = null, forPrint = false) {
   if (state.mode !== "single") return "";
-  if (forPrint && row?.__variant) {
-    return normalizeSingleVariantKey(row.__variant);
+  const detectedKey = normalizeSingleVariantKey(row?.__variant || "");
+  if ((forPrint || !templateDesignerMode) && detectedKey) {
+    return detectedKey;
   }
   return normalizeSingleVariantKey(state.singleVariantKey || $("singleVariant")?.value || singleVariantPresetsForCurrentType()[0].key);
 }
@@ -1718,8 +1742,11 @@ function summaryFieldDefinitions(group = currentDataGroup()) {
   ];
 }
 
-function summaryFieldsForVariant(variantKey = currentSummaryVariantKey(), row = null) {
-  const preset = summaryVariantPresetsFor().find((item) => item.key === variantKey) || summaryVariantPresetForRow(row) || summaryVariantPresetsFor()[0];
+function summaryFieldsForVariant(variantKey, row = null) {
+  if (!variantKey) variantKey = currentSummaryVariantKey();
+  const group = variantKey?.startsWith("blessing_") ? "blessing" : variantKey?.startsWith("deliverance_") ? "deliverance" : null;
+  const presets = group ? (summaryVariantPresets[group] || summaryVariantPresetsFor()) : summaryVariantPresetsFor();
+  const preset = presets.find((item) => item.key === variantKey) || summaryVariantPresetForRow(row) || presets[0];
   const layout = ensureLayout(currentLayoutKey());
   const toggles = layout.summaryFieldToggles?.[variantKey] || {};
   const definitions = summaryFieldDefinitions();
@@ -2328,7 +2355,12 @@ function renderSingle() {
   const total = Math.max(rows.length, 1);
   state.pageIndex = clamp(state.pageIndex, 0, total - 1);
   $("preview").innerHTML = singleSheet(row, state.editSide);
+  const previousVariantKey = state.singleVariantKey;
   syncSingleVariantControls();
+  if (previousVariantKey !== state.singleVariantKey) {
+    buildFieldMapping();
+    buildStyleEditor();
+  }
   bindDragHandles();
   fitAllFields();
   $("statusText").textContent = rows.length ? `${currentTabletType().name}：${fieldValue(row, "subject") || `第 ${state.pageIndex + 1} 条`}` : "暂无数据";
@@ -2862,11 +2894,13 @@ function jumpToPage() {
     ? Math.max(Math.ceil(currentRows().length / (Number($("columnCount").value) || 3)), 1) - 1
     : Math.max(currentRows().length, 1) - 1;
   state.pageIndex = clamp(target - 1, 0, maxIndex);
+  if (state.mode === "single") state.singleVariantManualOverride = false;
   render();
 }
 
 function changePage(delta) {
   state.pageIndex += delta;
+  if (state.mode === "single") state.singleVariantManualOverride = false;
   render();
 }
 
@@ -2928,9 +2962,10 @@ function currentDataGroupName() {
 }
 
 function loadAllSamples() {
-  state.datasets.blessing = sampleData.blessing;
-  state.datasets.deliverance = sampleData.deliverance;
+  state.datasets.blessing = sampleData.blessing.map((row, index) => normalizeRow(row, "blessing", index));
+  state.datasets.deliverance = sampleData.deliverance.map((row, index) => normalizeRow(row, "deliverance", index));
   state.pageIndex = 0;
+  state.singleVariantManualOverride = false;
   buildFieldMapping();
   buildStyleEditor();
   renderTable();
@@ -3004,15 +3039,15 @@ function currentFieldMappings() {
 
 function loadLayouts() {
   try {
-    const parsed = JSON.parse(localStorage.getItem("tabletPrintLayouts") || "{}");
-    return migrateLegacySingleVariantLayouts(parsed);
+    const parsed = JSON.parse(safeStorageGet("tabletPrintLayouts") || "{}");
+    return migrateLegacySingleVariantLayouts(deserializeStoredLayouts(parsed));
   } catch {
     return {};
   }
 }
 
 function saveLayouts() {
-  localStorage.setItem("tabletPrintLayouts", JSON.stringify(state.layouts));
+  safeStorageSet("tabletPrintLayouts", JSON.stringify(serializeLayoutsForStorage(state.layouts)));
 }
 
 function migrateLegacySingleVariantLayouts(layouts) {
@@ -3058,6 +3093,39 @@ function migrateLegacyScopedKeys(bucket) {
   return migrated;
 }
 
+function serializeLayoutsForStorage(layouts) {
+  if (!layouts || typeof layouts !== "object") return {};
+  const serialized = {};
+  Object.entries(layouts).forEach(([layoutId, layout]) => {
+    if (!layout || typeof layout !== "object") {
+      serialized[layoutId] = layout;
+      return;
+    }
+    const nextLayout = clone(layout);
+    if (typeof nextLayout.background === "string" && nextLayout.background.startsWith("data:")) {
+      delete nextLayout.background;
+    }
+    serialized[layoutId] = nextLayout;
+  });
+  return serialized;
+}
+
+function deserializeStoredLayouts(layouts) {
+  if (!layouts || typeof layouts !== "object") return {};
+  const restored = {};
+  Object.entries(layouts).forEach(([layoutId, layout]) => {
+    if (!layout || typeof layout !== "object") {
+      restored[layoutId] = layout;
+      return;
+    }
+    restored[layoutId] = {
+      ...layout,
+      background: typeof layout.background === "string" ? layout.background : "",
+    };
+  });
+  return restored;
+}
+
 function migrateLegacyVariantVisibility(visibility) {
   const migrated = { ...visibility };
   if (Object.prototype.hasOwnProperty.call(migrated, "blessing_bodhisattva")) {
@@ -3101,18 +3169,18 @@ async function persistTemplateMutation(options = {}) {
 
 function loadRemoteTemplateIds() {
   try {
-    return JSON.parse(localStorage.getItem("tabletPrintRemoteIds") || "{}");
+    return JSON.parse(safeStorageGet("tabletPrintRemoteIds") || "{}");
   } catch {
     return {};
   }
 }
 
 function saveRemoteTemplateIds() {
-  localStorage.setItem("tabletPrintRemoteIds", JSON.stringify(state.remoteTemplateIds));
+  safeStorageSet("tabletPrintRemoteIds", JSON.stringify(state.remoteTemplateIds));
 }
 
 function authToken() {
-  return localStorage.getItem("token") || "";
+  return safeStorageGet("token") || "";
 }
 
 function authHeaders() {
@@ -3170,12 +3238,16 @@ function renderDebugInfo() {
 async function loadServerTemplates() {
   if (isDesktopRuntime()) {
     try {
-      const localTemplates = await listDesktopRows("plaque_templates");
+      const localTemplates = dedupeTemplateRecords(await listDesktopRows("plaque_templates"));
       localTemplates
         .filter((template) => template?.elements?.source === "tablet-print")
         .forEach(importServerTemplate);
+      if (pruneObsoleteSingleTemplates()) {
+        saveRemoteTemplateIds();
+      }
       saveLayouts();
       saveCustomTemplatesToStorage();
+      if (templateDesignerMode || $("templateSelect")?.options?.length) applyTemplate();
     } catch (error) {
       console.warn("加载本地模板失败，继续使用内置模板:", error);
     }
@@ -3184,15 +3256,47 @@ async function loadServerTemplates() {
 
   if (!authToken()) return;
   try {
-    const serverTemplates = await fetchJson("/api/plaque-templates", { headers: authHeaders() });
+    const serverTemplates = dedupeTemplateRecords(await fetchJson("/api/plaque-templates", { headers: authHeaders() }));
     serverTemplates
       .filter((template) => template?.elements?.source === "tablet-print")
       .forEach(importServerTemplate);
+    if (pruneObsoleteSingleTemplates()) {
+      saveRemoteTemplateIds();
+    }
     saveLayouts();
     saveCustomTemplatesToStorage();
+    if (templateDesignerMode || $("templateSelect")?.options?.length) applyTemplate();
   } catch (error) {
     console.warn("加载服务器模板失败，继续使用本地模板:", error);
   }
+}
+
+function templateRecordLogicalId(record) {
+  return String(record?.elements?.template?.id || record?.template?.id || record?.id || "").trim();
+}
+
+function templateRecordTimestamp(record) {
+  return Date.parse(
+    record?.elements?.layout?.updatedAt
+    || record?.updatedAt
+    || record?.elements?.updatedAt
+    || record?.createdAt
+    || ""
+  ) || 0;
+}
+
+function dedupeTemplateRecords(records) {
+  if (!Array.isArray(records)) return [];
+  const latestByTemplateId = new Map();
+  records.forEach((record) => {
+    const logicalId = templateRecordLogicalId(record);
+    if (!logicalId) return;
+    const previous = latestByTemplateId.get(logicalId);
+    if (!previous || templateRecordTimestamp(record) >= templateRecordTimestamp(previous)) {
+      latestByTemplateId.set(logicalId, record);
+    }
+  });
+  return Array.from(latestByTemplateId.values());
 }
 
 function importServerTemplate(template) {
@@ -3260,7 +3364,9 @@ function exportCurrentTemplatePayload() {
       height: Number($("paperHeight").value) || template.height,
       font: template.font,
       vertical: state.mode === "summary" ? false : $("singleVertical").checked,
-      tabletType: state.mode === "summary" ? undefined : ($("tabletType").value === "custom" ? "custom" : $("tabletType").value),
+      tabletType: state.mode === "summary"
+        ? undefined
+        : normalizeTabletType(template?.tabletType || template?.dataGroup || "blessing"),
       backgroundImage: layout.background || "",
     },
     defaults,
@@ -3275,7 +3381,9 @@ function exportCurrentTemplatePayload() {
 
 async function syncCurrentTemplateToServer() {
   const payload = exportCurrentTemplatePayload();
-  const remoteId = state.remoteTemplateIds[payload.template.id];
+  const mappedRemoteId = state.remoteTemplateIds[payload.template.id];
+  const hasRealRemoteId = Boolean(mappedRemoteId) && mappedRemoteId !== payload.template.id;
+  let remoteId = hasRealRemoteId ? mappedRemoteId : "";
   const body = {
     name: payload.template.name,
     type: payload.template.dataGroup === "blessing" ? "LONGEVITY" : "DELIVERANCE",
@@ -3284,6 +3392,30 @@ async function syncCurrentTemplateToServer() {
   };
 
   if (isDesktopRuntime()) {
+    if (authToken()) {
+      if (remoteId) {
+        await fetchJson(`/api/plaque-templates/${remoteId}`, {
+          method: "PUT",
+          headers: authHeaders(),
+          body: JSON.stringify(body),
+          allowDesktopApi: true,
+        });
+      } else {
+        const response = await fetchJson("/api/plaque-templates", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify(body),
+          allowDesktopApi: true,
+        });
+        const created = response.data || response;
+        if (created?.id) {
+          remoteId = created.id;
+          state.remoteTemplateIds[payload.template.id] = created.id;
+          saveRemoteTemplateIds();
+        }
+      }
+    }
+
     const localId = remoteId || payload.template.id;
     await upsertDesktopRows("plaque_templates", [{
       id: localId,
@@ -3293,8 +3425,10 @@ async function syncCurrentTemplateToServer() {
       elements: payload,
       updatedAt: new Date().toISOString(),
     }]);
-    state.remoteTemplateIds[payload.template.id] = localId;
-    saveRemoteTemplateIds();
+    if (remoteId) {
+      state.remoteTemplateIds[payload.template.id] = remoteId;
+      saveRemoteTemplateIds();
+    }
     return;
   }
 
@@ -3322,6 +3456,8 @@ async function syncCurrentTemplateToServer() {
 
 function migrateStoredLayouts() {
   let changed = false;
+
+  ensureBuiltinSingleTemplates();
 
   HIDDEN_LEGACY_TEMPLATE_IDS.forEach((id) => {
     if (state.layouts[id]) {
@@ -3362,6 +3498,8 @@ function migrateStoredLayouts() {
     }
     if (repairSummaryTemplateLayout(id)) changed = true;
   });
+
+  if (pruneObsoleteSingleTemplates()) changed = true;
 
   if (changed) saveLayouts();
 }
@@ -3463,6 +3601,7 @@ function positionFor(key, variantKey = currentSummaryVariantKey()) {
 async function saveCurrentLayout() {
   const layoutKey = currentLayoutKey();
   const layout = ensureLayout(layoutKey);
+  layout.updatedAt = new Date().toISOString();
   layout.paper = {
     width: Number($("paperWidth").value) || 210,
     height: Number($("paperHeight").value) || 297,
@@ -3485,18 +3624,18 @@ async function saveCurrentLayout() {
   const shouldSync = isDesktopRuntime() || Boolean(authToken());
   $("statusText").textContent = shouldSync ? "模板已保存，正在同步..." : "模板已保存到本机";
   if (!shouldSync) return;
-  syncCurrentTemplateToServer()
-    .then(() => {
-      state.layouts[layoutKey] = layout;
-      saveLayouts();
-      $("statusText").textContent = isDesktopRuntime() ? "模板已保存到本地数据库" : "模板已保存到服务器";
-    })
-    .catch((error) => {
-      console.error("同步模板失败", error);
-      $("statusText").textContent = isDesktopRuntime()
-        ? "模板已保存到本机，但本地数据库同步失败"
-        : "模板已保存到本机，但服务器同步失败";
-    });
+  try {
+    await syncCurrentTemplateToServer();
+    state.layouts[layoutKey] = layout;
+    saveLayouts();
+    if (layoutKey.startsWith("custom_")) saveCustomTemplatesToStorage();
+    $("statusText").textContent = isDesktopRuntime() ? "模板已保存到本地数据库" : "模板已保存到服务器";
+  } catch (error) {
+    console.error("同步模板失败", error);
+    $("statusText").textContent = isDesktopRuntime()
+      ? "模板已保存到本机，但本地数据库同步失败"
+      : "模板已保存到本机，但服务器同步失败";
+  }
 }
 
 function resetCurrentLayout() {
@@ -4215,11 +4354,11 @@ function summaryTemplateIds() {
 }
 
 function defaultSummaryTemplateId() {
-  return summaryTemplateIds()[0] || "a4summary";
+  return summaryTemplateIds()[0] || "cmozim1oi0002hmbwceevwp7z";
 }
 
 function defaultSingleTemplateIdForGroup(group) {
-  return group === "blessing" ? "blessing" : "deliverance";
+  return group === "blessing" ? "cmowkqe9o00002rdg542nvmls" : "cmoy8qpet023lp6guzs8mne81";
 }
 
 function isBlessingGroup(group) {
@@ -4734,7 +4873,6 @@ function saveCustomTemplatesToStorage() {
         height: layout?.paper?.height || t.height,
         vertical: layout?.paper?.vertical ?? t.vertical,
         fieldKeys: resolveTemplateFieldKeys(t),
-        background: layout?.background || "",
         singleVariantKey: normalizeSingleVariantKey(layout?.singleVariantKey || defaultSingleVariantKeyForTemplate(t)),
         summary: layout?.summary,
         staticFields: layout?.staticFields || [],
@@ -4750,13 +4888,13 @@ function saveCustomTemplatesToStorage() {
         }))
       };
     });
-  localStorage.setItem("customTemplates", JSON.stringify(customTemplates));
+  safeStorageSet("customTemplates", JSON.stringify(customTemplates));
 }
 
 function loadCustomTemplatesFromStorage(options = {}) {
   const includeLocalOnly = options.includeLocalOnly !== false;
   try {
-    const stored = localStorage.getItem("customTemplates");
+    const stored = safeStorageGet("customTemplates");
     if (!stored) return;
 
     const customTemplates = JSON.parse(stored);
@@ -4802,10 +4940,6 @@ function loadCustomTemplatesFromStorage(options = {}) {
           const layout = ensureLayout(ct.id);
           layout.staticFields = ct.staticFields;
         }
-        if (ct.background) {
-          const layout = ensureLayout(ct.id);
-          layout.background = ct.background;
-        }
         if (ct.singleVariantKey) {
           const layout = ensureLayout(ct.id);
           layout.singleVariantKey = normalizeSingleVariantKey(ct.singleVariantKey);
@@ -4844,6 +4978,25 @@ function loadCustomTemplatesFromStorage(options = {}) {
     if (changed) saveLayouts();
   } catch (e) {
     console.error("加载自定义模板失败:", e);
+  }
+}
+
+function safeStorageGet(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (error) {
+    console.warn(`读取本地存储失败: ${key}`, error);
+    return null;
+  }
+}
+
+function safeStorageSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (error) {
+    console.warn(`写入本地存储失败: ${key}`, error);
+    return false;
   }
 }
 

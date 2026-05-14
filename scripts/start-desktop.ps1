@@ -1,5 +1,8 @@
 $ErrorActionPreference = "Stop"
 
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+chcp 65001 | Out-Null
+
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $DesktopDir = Join-Path $ProjectRoot "desktop-app"
 $FrontendDir = Join-Path $ProjectRoot "frontend"
