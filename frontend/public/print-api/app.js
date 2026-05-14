@@ -1079,7 +1079,7 @@ async function deleteCurrentTemplate() {
   delete templateDefaults[template.id];
   delete state.layouts[template.id];
   const remoteId = state.remoteTemplateIds[template.id];
-  if (remoteId && authToken()) {
+  if (remoteId && canSyncServerTemplates()) {
     try {
       await fetchJson(`/api/plaque-templates/${remoteId}`, {
         method: "DELETE",
@@ -3222,7 +3222,7 @@ async function persistTemplateMutation(options = {}) {
   saveLayouts();
   if (layoutKey.startsWith("custom_")) saveCustomTemplatesToStorage();
 
-  const shouldSync = syncTemplate && (isDesktopRuntime() || Boolean(authToken()));
+  const shouldSync = syncTemplate && canSyncServerTemplates();
   if (!shouldSync) {
     if (localMessage) $("statusText").textContent = localMessage;
     return;
@@ -3257,6 +3257,10 @@ function authToken() {
 function authHeaders() {
   const token = authToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function canSyncServerTemplates() {
+  return !isDesktopRuntime() || Boolean(authToken());
 }
 
 function authFetchOptions(options = {}) {
@@ -3510,8 +3514,6 @@ async function syncCurrentTemplateToServer() {
     return;
   }
 
-  if (!authToken()) return;
-
   if (remoteId) {
     await fetchJson(`/api/plaque-templates/${remoteId}`, {
       method: "PUT",
@@ -3699,7 +3701,7 @@ async function saveCurrentLayout() {
   state.layouts[layoutKey] = layout;
   saveLayouts();
   if (layoutKey.startsWith("custom_")) saveCustomTemplatesToStorage();
-  const shouldSync = isDesktopRuntime() || Boolean(authToken());
+  const shouldSync = canSyncServerTemplates();
   $("statusText").textContent = shouldSync ? "模板已保存，正在同步..." : "模板已保存到本机";
   if (!shouldSync) return;
   try {
