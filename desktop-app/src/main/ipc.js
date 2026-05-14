@@ -1,3 +1,5 @@
+const fs = require('fs')
+const os = require('os')
 const path = require('path')
 
 function registerIpcHandlers({
@@ -156,7 +158,16 @@ function registerIpcHandlers({
       },
     })
 
-    await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(options.html || '')}`)
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'temple-os-print-'))
+    const tempHtmlPath = path.join(tempDir, 'print.html')
+    fs.writeFileSync(tempHtmlPath, options.html || '', 'utf8')
+
+    try {
+      await printWindow.loadFile(tempHtmlPath)
+    } catch (error) {
+      fs.rmSync(tempDir, { recursive: true, force: true })
+      throw error
+    }
 
     return new Promise((resolve) => {
       printWindow.webContents.print({
@@ -166,6 +177,7 @@ function registerIpcHandlers({
         printBackground: options.printBackground !== false,
       }, (success, failureReason) => {
         printWindow.close()
+        fs.rmSync(tempDir, { recursive: true, force: true })
         resolve({ success, failureReason: failureReason || '' })
       })
     })

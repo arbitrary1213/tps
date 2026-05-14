@@ -126,6 +126,21 @@ label {
   margin-bottom: 10px;
 }
 
+.template-type-badge {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.template-type-label {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #f7f3ea;
+  color: var(--text);
+  font-size: 14px;
+}
+
 .control-label {
   color: var(--muted);
   font-size: 13px;

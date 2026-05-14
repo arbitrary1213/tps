@@ -162,15 +162,10 @@
 
       <section id="singleSettings">
         <h2>牌位设置</h2>
-        <label>
-          牌位分类
-          <select id="tabletType">
-            <option value="blessing">延生禄位</option>
-            <option value="deliveranceDetail">超度牌位 - 详细</option>
-            <option value="deliveranceSimple">超度牌位 - 简单</option>
-            <option value="custom">自定义模板</option>
-          </select>
-        </label>
+        <div class="template-type-badge">
+          <span class="control-label">当前模板类型</span>
+          <div id="templateTypeLabel" class="template-type-label">延生禄位模板</div>
+        </div>
         <div id="singleVariantWrap" class="variant-switcher">
           <div class="control-label">编辑版式</div>
           <div id="singleVariantTabs" class="segmented compact" role="group" aria-label="编辑版式"></div>
@@ -178,6 +173,16 @@
             <option value="layout_one">版式一</option>
             <option value="layout_two">版式二</option>
           </select>
+        </div>
+        <div hidden aria-hidden="true">
+          <label>
+            主体字号
+            <input id="singleFont" type="number" min="8" max="120" value="36">
+          </label>
+          <label>
+            上偏移
+            <input id="singleOffsetY" type="number" value="0">
+          </label>
         </div>
         <div id="fieldMapping" class="field-mapping"></div>
         <div class="static-field-tools">
@@ -411,6 +416,22 @@
   <dialog id="newTemplateDialog">
     <h2>新建模板</h2>
     <form method="dialog" id="newTemplateForm">
+      <div class="grid-2">
+        <label>
+          模板类型
+          <select id="newTemplateType">
+            <option value="blessing">延生禄位模板</option>
+            <option value="deliverance">往生牌位模板</option>
+          </select>
+        </label>
+        <label>
+          创建方式
+          <select id="newTemplateMode">
+            <option value="preset">按内置版式创建</option>
+            <option value="manual">手动选择字段</option>
+          </select>
+        </label>
+      </div>
       <label>
         模板名称
         <input id="newTemplateName" type="text" required>
@@ -442,6 +463,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=20260513-0010"></script>
+  <script src="app.js?v=20260514-1408"></script>
 </body>
 </html>

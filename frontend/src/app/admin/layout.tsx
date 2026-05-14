@@ -65,18 +65,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [_hasHydrated, token, router])
 
   useEffect(() => {
-    if (!_hasHydrated || !token) return
+    if (!_hasHydrated || !token || !isDesktop) return
     let cancelled = false
 
-    const syncTasks = [
-      { label: '统计', run: () => businessAPI.getStats(token, { preferRemote: true }) },
-      { label: '待审批登记', run: () => registrationAPI.getRequests(token, { status: 'PENDING' }, { preferRemote: true }) },
+    const coreSyncTasks = [
       { label: '牌位', run: () => businessAPI.getPlaques(token, undefined, { preferRemote: true }) },
-      { label: '信众', run: () => businessAPI.getDevotees(token, undefined, { preferRemote: true }) },
-      { label: '法会', run: () => businessAPI.getRituals(undefined, { preferRemote: true }) },
       { label: '打印任务', run: () => businessAPI.getPrintJobs(token, { status: 'PENDING' }, { preferRemote: true }) },
       { label: '模板', run: () => businessAPI.getPlaqueTemplates(token, { preferRemote: true }) },
       { label: '系统设置', run: () => systemAPI.getSettings({ preferRemote: true }) },
+    ]
+    const secondarySyncTasks = [
+      { label: '统计', run: () => businessAPI.getStats(token, { preferRemote: true }) },
+      { label: '待审批登记', run: () => registrationAPI.getRequests(token, { status: 'PENDING' }, { preferRemote: true }) },
+      { label: '信众', run: () => businessAPI.getDevotees(token, undefined, { preferRemote: true }) },
+      { label: '法会', run: () => businessAPI.getRituals(undefined, { preferRemote: true }) },
     ]
 
     const run = async () => {
@@ -91,26 +93,43 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }))
       let ok = 0
       let failed = 0
-      for (const task of syncTasks) {
-        try {
-          await task.run()
-          ok += 1
-          if (!cancelled) {
-            setSyncState((prev) => ({ ...prev, ok, failed, message: `正在同步：${task.label}` }))
+      const runTaskGroup = async (tasks: Array<{ label: string; run: () => Promise<unknown> }>) => {
+        for (const task of tasks) {
+          try {
+            await task.run()
+            ok += 1
+            if (!cancelled) {
+              setSyncState((prev) => ({ ...prev, ok, failed, message: `正在同步：${task.label}` }))
+            }
+          } catch (error) {
+            failed += 1
           }
-        } catch (error) {
-          failed += 1
         }
       }
 
+      await runTaskGroup(coreSyncTasks)
+
       const localDb = await window.templeDesktop?.getLocalDbInfo?.().catch(() => null)
+      if (!cancelled) {
+        setSyncState({
+          status: failed ? 'partial' : 'done',
+          message: failed ? '核心同步完成，部分数据失败' : '核心同步完成',
+          ok,
+          failed,
+          localDb: localDb || null,
+        })
+      }
+
+      await runTaskGroup(secondarySyncTasks)
+
+      const refreshedLocalDb = await window.templeDesktop?.getLocalDbInfo?.().catch(() => null)
       if (!cancelled) {
         setSyncState({
           status: failed ? 'partial' : 'done',
           message: failed ? '同步完成，部分数据失败' : '同步完成',
           ok,
           failed,
-          localDb: localDb || null,
+          localDb: refreshedLocalDb || localDb || null,
         })
       }
     }
@@ -121,7 +140,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           status: 'error',
           message: error instanceof Error ? error.message : '同步失败',
           ok: 0,
-          failed: syncTasks.length,
+          failed: coreSyncTasks.length + secondarySyncTasks.length,
           localDb: null,
         })
       }
@@ -130,7 +149,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return () => {
       cancelled = true
     }
-  }, [_hasHydrated, token])
+  }, [_hasHydrated, token, isDesktop])
 
   useEffect(() => {
     setSidebarOpen(false)

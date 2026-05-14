@@ -120,7 +120,7 @@ function createFrontendRuntime({ session, processRef, projectRoot, frontendPort,
     const frontendDir = path.join(projectRoot, 'frontend')
     const standaloneDir = path.join(frontendDir, '.next', 'standalone')
     const standaloneServer = path.join(standaloneDir, 'server.js')
-    const useStandalone = fs.existsSync(standaloneServer)
+    const useStandalone = processRef.env.TEMPLE_DESKTOP_USE_STANDALONE === '1' && fs.existsSync(standaloneServer)
 
     frontendProcess = spawn(
       processRef.execPath,
