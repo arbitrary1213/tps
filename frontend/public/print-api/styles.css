@@ -828,6 +828,12 @@ body.print-preview-mode .print-settings-panel label {
   font-size: 14px;
 }
 
+html.print-preview-mode .print-settings-panel label.print-settings-checkbox,
+body.print-preview-mode .print-settings-panel label.print-settings-checkbox {
+  grid-template-columns: auto minmax(0, 1fr);
+  justify-content: start;
+}
+
 html.print-preview-mode .print-settings-panel input,
 html.print-preview-mode .print-settings-panel select,
 body.print-preview-mode .print-settings-panel input,
@@ -837,6 +843,12 @@ body.print-preview-mode .print-settings-panel select {
   border-color: #5d6268;
   border-radius: 7px;
   background: #2c2e31;
+}
+
+html.print-preview-mode .print-settings-panel input[type="checkbox"],
+body.print-preview-mode .print-settings-panel input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
 }
 
 html.print-preview-mode .print-more-settings,
@@ -963,7 +975,8 @@ body.print-preview-mode .resize-handle {
   }
 
   .template-bg {
-    display: none;
+    display: block;
+    opacity: 1;
   }
 
   .is-placeholder {

@@ -70,6 +70,7 @@ jobs:
           node --check index.js
           node --check ../frontend/public/print-api/app.js
           node --check ../frontend/public/print-api/launch-template-order.test.cjs
+          node --check ../frontend/public/print-api/pdf-print-quality.test.cjs
         working-directory: print-service
 
   deploy:

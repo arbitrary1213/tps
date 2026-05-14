@@ -250,6 +250,7 @@ const PDFJS_WORKER_CANDIDATES = [
   `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.js`,
   `https://unpkg.com/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.js`,
 ];
+const PDF_PRINT_DPI = 300;
 
 const SUMMARY_LAYOUT_REPAIR_VERSION = 3;
 const APP_BUILD = "2026-05-11-2240";
@@ -1194,7 +1195,7 @@ async function ensurePdfjsReady() {
   throw lastError || new Error("PDF 预览组件加载失败");
 }
 
-function mmToPx(mm, dpi = 144) {
+function mmToPx(mm, dpi = PDF_PRINT_DPI) {
   return Math.max(1, Math.round((mm / 25.4) * dpi));
 }
 
@@ -1248,6 +1249,12 @@ async function importPdfBackground(file) {
     failureMessage: isDesktopRuntime() ? "PDF 底图已保存到本机，但本地数据库同步失败" : "PDF 底图已保存到本机，但服务器同步失败",
   });
   render();
+}
+
+function shouldPrintTemplateBackground(forPrint = false) {
+  if (!$("showBg")?.checked) return false;
+  if (!forPrint) return true;
+  return $("printBackgroundGraphics")?.checked ?? true;
 }
 
 function parseDelimited(text) {
@@ -2517,7 +2524,7 @@ function singleSheet(row, side = state.editSide, forPrint = false) {
   const layout = side === "back" ? backLayoutFor(currentLayoutKey()) : ensureLayout(currentLayoutKey());
   const singleFontValue = Number($("singleFont")?.value) || Number(normalizeFieldStyle(styleFor("subject")).fontSize) || 36;
   const singleOffsetYValue = Number($("singleOffsetY")?.value) || 0;
-  const background = layout.background && $("showBg").checked
+  const background = layout.background && shouldPrintTemplateBackground(forPrint)
     ? `<img class="template-bg" src="${layout.background}" alt="">`
     : "";
   if (side === "back") {
@@ -2714,7 +2721,7 @@ function summarySheet(pageRows, forPrint = false) {
   const verticalClass = $("summaryVertical").checked ? " vertical-text" : "";
   const pageMargin = Number($("pageMargin").value) || 0;
   const columnGap = Number($("columnGap").value) || 0;
-  const background = layout.background && $("showBg").checked
+  const background = layout.background && shouldPrintTemplateBackground(forPrint)
     ? `<img class="template-bg" src="${layout.background}" alt="">`
     : "";
   const selectedVariantKey = currentSummaryVariantKey();
