@@ -72,6 +72,7 @@ jobs:
           node --check ../frontend/public/print-api/launch-template-order.test.cjs
           node --check ../frontend/public/print-api/pdf-print-quality.test.cjs
           node --check ../frontend/public/print-api/print-output.test.cjs
+          node --check ../frontend/public/print-api/template-load-order.test.cjs
           node --check ../frontend/public/print-api/template-server-sync.test.cjs
         working-directory: print-service
 

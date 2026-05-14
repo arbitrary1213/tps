@@ -541,13 +541,13 @@ async function init() {
     handleSummaryVariantChange();
   });
   relocateSharedStyleEditor();
+  loadAllSamples();
+  await loadServerTemplates();
   if (templateDesignerMode || $("templateSelect")?.options?.length) {
     applyTemplate();
   } else {
     render();
   }
-  loadAllSamples();
-  await loadServerTemplates();
   loadRitualOptions();
   loadDedicationTypeOptions();
   applyLaunchParams();
