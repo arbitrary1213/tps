@@ -10,7 +10,22 @@ const templates = [
 ];
 
 const HIDDEN_LEGACY_TEMPLATE_IDS = new Set(["deliveranceDetail", "deliveranceSimple", "rebirth", "a4summary", "a3summary", "blessing", "deliverance"]);
-const BUILTIN_SINGLE_TEMPLATE_IDS = new Set(["cmp15pgnz000op0s9vkqcx9wt", "cmozm19an001ahmbwqm8nmi1q", "cmoy8qpet023lp6guzs8mne81"]);
+const BUILTIN_SINGLE_TEMPLATE_IDS = new Set(["cmowkqe9o00002rdg542nvmls", "cmozm19an001ahmbwqm8nmi1q"]);
+const TEMPLATE_CATALOG = {
+  cmowkqe9o00002rdg542nvmls: { name: "延生禄位", groupLabel: "内置单张牌位模板", groupOrder: 1, order: 1, mode: "single", dataGroup: "blessing" },
+  cmozm19an001ahmbwqm8nmi1q: { name: "往生牌位", groupLabel: "内置单张牌位模板", groupOrder: 1, order: 2, mode: "single", dataGroup: "deliverance" },
+  cmoz9dtgc015wcyyxjcwqcumq: { name: "延生｜红牒", groupLabel: "延生牒模板", groupOrder: 2, order: 1, mode: "single", dataGroup: "blessing" },
+  cmp0u7lde04xmhmbwtueb8v4d: { name: "延生｜红壳", groupLabel: "延生牒模板", groupOrder: 2, order: 2, mode: "single", dataGroup: "blessing" },
+  cmoy8qpet023lp6guzs8mne81: { name: "往生｜黄牒", groupLabel: "往生牒模板", groupOrder: 3, order: 1, mode: "single", dataGroup: "deliverance" },
+  cmp15pgnz000op0s9vkqcx9wt: { name: "往生｜黄壳", groupLabel: "往生牒模板", groupOrder: 3, order: 2, mode: "single", dataGroup: "deliverance" },
+  cmozim1oi0002hmbwceevwp7z: { name: "延生通名", groupLabel: "汇总多列模板", groupOrder: 4, order: 1, mode: "summary", dataGroup: "blessing" },
+  cmowl79v5000a2rdgs4czs9bo: { name: "往生通名", groupLabel: "汇总多列模板", groupOrder: 4, order: 2, mode: "summary", dataGroup: "deliverance" },
+};
+const CATALOG_SINGLE_TEMPLATE_IDS = new Set(
+  Object.entries(TEMPLATE_CATALOG)
+    .filter(([, item]) => item.mode === "single")
+    .map(([id]) => id)
+);
 
 const templateDefaults = {
   cmp15pgnz000op0s9vkqcx9wt: {
@@ -212,7 +227,7 @@ const singleVariantLayoutDefaults = {
 
 const BUILTIN_SINGLE_TEMPLATES = [];
 
-const SUMMARY_TEMPLATE_IDS = new Set(["cmozim1oi0002hmbwceevwp7z", "cmowl79v5000a2rdgs4czs9bo", "cmoz9dtgc015wcyyxjcwqcumq", "cmowkqe9o00002rdg542nvmls", "cmp0u7lde04xmhmbwtueb8v4d"]);
+const SUMMARY_TEMPLATE_IDS = new Set(["cmozim1oi0002hmbwceevwp7z", "cmowl79v5000a2rdgs4czs9bo"]);
 
 const legacySingleVariantKeyMap = {
   blessing_bodhisattva: "layout_one",
@@ -303,8 +318,21 @@ function isBuiltinSingleTemplate(template) {
 
 function isAllowedSingleTemplate(template) {
   if (!template || isSummaryTemplate(template)) return true;
+  if (CATALOG_SINGLE_TEMPLATE_IDS.has(template.id)) return true;
   if (isBuiltinSingleTemplate(template)) return true;
   return Boolean(template?.id?.startsWith("custom_"));
+}
+
+function normalizeCatalogTemplate(template) {
+  const catalog = TEMPLATE_CATALOG[template?.id || ""];
+  if (!catalog) return template;
+  return {
+    ...template,
+    name: catalog.name,
+    mode: catalog.mode,
+    dataGroup: catalog.dataGroup,
+    tabletType: catalog.mode === "summary" ? undefined : catalog.dataGroup,
+  };
 }
 
 function ensureBuiltinSingleTemplates() {
@@ -369,7 +397,10 @@ const controls = [
   "summaryLineGap", "pageMargin", "columnGap", "summaryVertical",
 ].map($).filter(Boolean);
 
-function init() {
+async function init() {
+  templates.forEach((template, index) => {
+    templates[index] = normalizeCatalogTemplate(template);
+  });
   ensureBuiltinSingleTemplates();
   migrateStoredLayouts();
   const templateSelect = $("templateSelect");
@@ -513,7 +544,7 @@ function init() {
     render();
   }
   loadAllSamples();
-  loadServerTemplates();
+  await loadServerTemplates();
   loadRitualOptions();
   loadDedicationTypeOptions();
   applyLaunchParams();
@@ -669,6 +700,8 @@ function currentTemplate() {
 
 function templateDisplayName(template) {
   if (!template?.id) return "";
+  const catalog = TEMPLATE_CATALOG[template.id];
+  if (catalog) return catalog.name;
   const builtinNames = {
     blessing: "延生禄位模板",
     deliverance: "往生牌位模板",
@@ -685,14 +718,18 @@ function templateDisplayName(template) {
 }
 
 function templateGroupLabel(template) {
+  const catalog = TEMPLATE_CATALOG[template?.id || ""];
+  if (catalog) return catalog.groupLabel;
   if (isSummaryTemplate(template)) return "汇总多列模板";
   if (template?.id?.startsWith("custom_")) {
-    return template.dataGroup === "deliverance" ? "往生自定义模板" : "延生自定义模板";
+    return template.dataGroup === "deliverance" ? "往生牒模板" : "延生牒模板";
   }
   return "内置单张牌位模板";
 }
 
 function templateGroupOrder(template) {
+  const catalog = TEMPLATE_CATALOG[template?.id || ""];
+  if (catalog) return catalog.groupOrder;
   if (isSummaryTemplate(template)) return 4;
   if (template?.id?.startsWith("custom_")) {
     return template.dataGroup === "deliverance" ? 3 : 2;
@@ -701,6 +738,8 @@ function templateGroupOrder(template) {
 }
 
 function templateOrderInGroup(template) {
+  const catalog = TEMPLATE_CATALOG[template?.id || ""];
+  if (catalog) return catalog.order;
   const order = {
     blessing: 1,
     deliverance: 2,
@@ -1747,8 +1786,7 @@ function summaryFieldsForVariant(variantKey, row = null) {
   const group = variantKey?.startsWith("blessing_") ? "blessing" : variantKey?.startsWith("deliverance_") ? "deliverance" : null;
   const presets = group ? (summaryVariantPresets[group] || summaryVariantPresetsFor()) : summaryVariantPresetsFor();
   const preset = presets.find((item) => item.key === variantKey) || summaryVariantPresetForRow(row) || presets[0];
-  const layout = ensureLayout(currentLayoutKey());
-  const toggles = layout.summaryFieldToggles?.[variantKey] || {};
+  const toggles = state.layouts[summaryTemplateIds()[0]]?.summaryFieldToggles?.[variantKey] || {};
   const definitions = summaryFieldDefinitions();
   const map = new Map(definitions.map((field) => [field.key, field]));
   const builtins = (preset?.fields || [])
@@ -1759,7 +1797,12 @@ function summaryFieldsForVariant(variantKey, row = null) {
 }
 
 function summaryDefaultPosition(key, variantKey = currentSummaryVariantKey()) {
-  const fields = summaryFieldsForVariant(variantKey);
+  const group = variantKey?.startsWith("blessing_")
+    ? "blessing"
+    : variantKey?.startsWith("deliverance_")
+      ? "deliverance"
+      : currentDataGroup();
+  const fields = summaryFieldsForVariantByGroup(group, variantKey || summaryVariantPresetsForGroup(group)[0]?.key);
   const index = Math.max(fields.findIndex((field) => field.key === key), 0);
   const topMap = {
     summary_subject: 10,
@@ -1805,6 +1848,8 @@ function summaryTemplateDataGroup(templateId) {
 }
 
 function isSummaryTemplateId(templateId) {
+  if (TEMPLATE_CATALOG[templateId]?.mode === "single") return false;
+  if (TEMPLATE_CATALOG[templateId]?.mode === "summary") return true;
   const template = summaryTemplateById(templateId);
   if (template) return isSummaryTemplate(template);
   return Boolean(state.layouts[templateId]?.summary);
@@ -3188,6 +3233,13 @@ function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+function authFetchOptions(options = {}) {
+  return {
+    credentials: "include",
+    ...options,
+  };
+}
+
 function isDesktopRuntime() {
   return Boolean(window.templeDesktop);
 }
@@ -3211,7 +3263,7 @@ async function fetchJson(url, options = {}) {
     ...(options.body ? { "Content-Type": "application/json" } : {}),
     ...(options.headers || {}),
   };
-  const response = await fetch(url, { cache: "no-store", ...options, headers });
+  const response = await fetch(url, { cache: "no-store", credentials: "include", ...options, headers });
   const json = await response.json().catch(() => ({}));
   if (!response.ok || json.success === false) {
     throw new Error(json.error || `请求失败：${response.status}`);
@@ -3254,9 +3306,8 @@ async function loadServerTemplates() {
     return;
   }
 
-  if (!authToken()) return;
   try {
-    const serverTemplates = dedupeTemplateRecords(await fetchJson("/api/plaque-templates", { headers: authHeaders() }));
+    const serverTemplates = dedupeTemplateRecords(await fetchJson("/api/plaque-templates", authFetchOptions({ headers: authHeaders() })));
     serverTemplates
       .filter((template) => template?.elements?.source === "tablet-print")
       .forEach(importServerTemplate);
@@ -3310,11 +3361,12 @@ function importServerTemplate(template) {
     tabletType: normalizeImportedTabletType(data.template.tabletType),
     name: data.template.name || template.name || templateDisplayName(data.template),
   };
+  const normalizedTemplate = normalizeCatalogTemplate(localTemplate);
   const index = templates.findIndex((item) => item.id === localTemplate.id);
   if (index >= 0) {
-    templates[index] = { ...templates[index], ...localTemplate };
+    templates[index] = { ...templates[index], ...normalizedTemplate };
   } else {
-    templates.push(localTemplate);
+    templates.push(normalizedTemplate);
   }
   rebuildTemplateOptions(selectedId || localTemplate.id);
   if (data.defaults) templateDefaults[localTemplate.id] = data.defaults;
@@ -4358,7 +4410,7 @@ function defaultSummaryTemplateId() {
 }
 
 function defaultSingleTemplateIdForGroup(group) {
-  return group === "blessing" ? "cmowkqe9o00002rdg542nvmls" : "cmoy8qpet023lp6guzs8mne81";
+  return group === "blessing" ? "cmowkqe9o00002rdg542nvmls" : "cmozm19an001ahmbwqm8nmi1q";
 }
 
 function isBlessingGroup(group) {
@@ -4403,6 +4455,8 @@ function summaryTemplatePaperPreset(templateId) {
 }
 
 function isSummaryTemplate(template) {
+  const catalog = TEMPLATE_CATALOG[template?.id || ""];
+  if (catalog) return catalog.mode === "summary";
   return SUMMARY_TEMPLATE_IDS.has(template.id) || template.mode === "summary";
 }
 

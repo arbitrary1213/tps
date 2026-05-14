@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const isDev = process.env.NODE_ENV !== 'production'
+
 const nextConfig = {
   output: 'standalone',
 
@@ -34,7 +36,7 @@ const nextConfig = {
             "img-src 'self' data: blob:",
             "font-src 'self' data:",
             "style-src 'self' 'unsafe-inline'",
-            "script-src 'self' 'unsafe-inline'",
+            `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
             "connect-src 'self' http: https: ws: wss:",
           ].join('; '),
         },
