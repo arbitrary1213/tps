@@ -920,12 +920,13 @@ async function syncData(fullSync = false) {
   const markers = fullSync ? {} : (state.syncMarkers || {})
   const since = (key) => markers[key] ? `&updatedSince=${encodeURIComponent(markers[key])}` : ''
 
-  const [requests, plaques, devotees, jobs, calendarEvents] = await Promise.all([
+  const [requests, plaques, devotees, jobs, calendarEvents, templates] = await Promise.all([
     apiRequest(`/api/registration/requests?status=PENDING${since('requests')}`).catch(() => state.data.requests),
     apiRequest(`/api/plaques?${since('plaques')}`).catch(() => state.data.plaques),
     apiRequest(`/api/devotees?${since('devotees')}`).catch(() => state.data.devotees),
     apiRequest(`/api/print-jobs?status=PENDING${since('jobs')}`).catch(() => state.data.jobs),
     apiRequest(`/api/calendar-events?${since('calendarEvents')}`).catch(() => state.data.calendarEvents),
+    apiRequest(`/api/plaque-templates?${since('templates')}`).catch(() => state.data.templates),
   ])
 
   const newRequests = Array.isArray(requests?.list) ? requests.list : (Array.isArray(requests) ? requests : requests?.data || [])
@@ -933,6 +934,7 @@ async function syncData(fullSync = false) {
   const newDevotees = Array.isArray(devotees) ? devotees : []
   const newJobs = Array.isArray(jobs) ? jobs : []
   const newCalendarEvents = Array.isArray(calendarEvents) ? calendarEvents : []
+  const newTemplates = Array.isArray(templates) ? templates : []
 
   if (fullSync) {
     state.data = {
@@ -941,6 +943,7 @@ async function syncData(fullSync = false) {
       devotees: newDevotees,
       jobs: newJobs,
       calendarEvents: newCalendarEvents,
+      templates: newTemplates,
     }
   } else {
     // merge: upsert by id, keep local items that don't exist on server
@@ -954,9 +957,10 @@ async function syncData(fullSync = false) {
     state.data.devotees = mergeById(state.data.devotees, newDevotees)
     state.data.jobs = mergeById(state.data.jobs, newJobs)
     state.data.calendarEvents = mergeById(state.data.calendarEvents, newCalendarEvents)
+    state.data.templates = mergeById(state.data.templates || [], newTemplates)
   }
 
-  state.syncMarkers = { plaques: now, devotees: now, requests: now, jobs: now, calendarEvents: now }
+  state.syncMarkers = { plaques: now, devotees: now, requests: now, jobs: now, calendarEvents: now, templates: now }
   await saveConfig({ recentData: state.data })
   await window.templeDesktop.setCache('syncMarkers', state.syncMarkers)
 
@@ -971,6 +975,7 @@ async function syncData(fullSync = false) {
     persistRows('registration_request', state.data.requests),
     persistRows('print_job', state.data.jobs),
     persistRows('calendar_event', state.data.calendarEvents),
+    persistRows('plaque_template', state.data.templates),
   ])
 
   setStatus(`已同步：${new Date().toLocaleString()}`)
