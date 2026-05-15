@@ -328,11 +328,16 @@ function renderPlaques() {
       <p class="hint">共 ${plaques.length} 条 · 可离线新增，联网后自动上传</p>
       <div class="actions">
         <button id="newPlaqueBtn" class="primary">+ 新建牌位</button>
+        <button id="selectAllPlaquesBtn">全选</button>
+        <button id="batchDeletePlaquesBtn" class="danger">批量删除</button>
+        <span id="plaqueSelectCount" class="hint"></span>
       </div>
     </div>
     <div class="table" id="plaqueTable">
+      ${plaques.length ? '<div class="row header"><span></span><span>名称</span><span>类型</span><span>电话</span><span>状态</span><span></span></div>' : ''}
       ${plaques.map((item) => `
         <div class="row">
+          <input type="checkbox" data-plaque-check="${escapeAttr(item.id)}" />
           <span>${escapeHtml(item.holderName || item.deceasedName || item.dedicationType || '-')}</span>
           <span>${escapeHtml(typeLabel(item.plaqueType))}</span>
           <span>${escapeHtml(item.phone || '-')}</span>
@@ -413,6 +418,39 @@ function renderPlaques() {
       render()
     }
   })
+
+  const updatePlaqueSelectCount = () => {
+    const checked = document.querySelectorAll('[data-plaque-check]:checked')
+    $('#plaqueSelectCount').textContent = checked.length ? `已选 ${checked.length} 条` : ''
+  }
+
+  document.querySelectorAll('[data-plaque-check]').forEach((cb) => {
+    cb.onchange = updatePlaqueSelectCount
+  })
+
+  $('#selectAllPlaquesBtn').onclick = () => {
+    const all = document.querySelectorAll('[data-plaque-check]')
+    const anyUnchecked = Array.from(all).some((cb) => !cb.checked)
+    all.forEach((cb) => { cb.checked = anyUnchecked })
+    updatePlaqueSelectCount()
+  }
+
+  $('#batchDeletePlaquesBtn').onclick = async () => {
+    const checked = document.querySelectorAll('[data-plaque-check]:checked')
+    if (!checked.length) { alert('请先选择要删除的牌位'); return }
+    if (!confirm(`确定删除选中的 ${checked.length} 条牌位？`)) return
+    let deleted = 0
+    for (const cb of checked) {
+      const id = cb.dataset.plaqueCheck
+      if (!String(id).startsWith('local_')) {
+        await apiRequest(`/api/plaques/${id}`, { method: 'DELETE' }).catch(() => null)
+      }
+      state.data.plaques = (state.data.plaques || []).filter((item) => item.id !== id)
+      deleted++
+    }
+    await saveConfig({ recentData: state.data })
+    render()
+  }
 }
 
 function renderDevotees() {
@@ -423,11 +461,16 @@ function renderDevotees() {
       <p class="hint">共 ${devotees.length} 条 · 可离线新增，联网后自动上传</p>
       <div class="actions">
         <button id="newDevoteeBtn" class="primary">+ 新建信众</button>
+        <button id="selectAllDevoteesBtn">全选</button>
+        <button id="batchDeleteDevoteesBtn" class="danger">批量删除</button>
+        <span id="devoteeSelectCount" class="hint"></span>
       </div>
     </div>
     <div class="table">
+      ${devotees.length ? '<div class="row header"><span></span><span>姓名</span><span>电话</span><span>地址</span><span>创建日期</span><span></span></div>' : ''}
       ${devotees.map((item) => `
         <div class="row">
+          <input type="checkbox" data-devotee-check="${escapeAttr(item.id)}" />
           <span>${escapeHtml(item.name || '-')}</span>
           <span>${escapeHtml(item.phone || '-')}</span>
           <span>${escapeHtml(item.address || '-')}</span>
@@ -498,6 +541,37 @@ function renderDevotees() {
       render()
     }
   })
+
+  const updateDevoteeSelectCount = () => {
+    const checked = document.querySelectorAll('[data-devotee-check]:checked')
+    $('#devoteeSelectCount').textContent = checked.length ? `已选 ${checked.length} 条` : ''
+  }
+
+  document.querySelectorAll('[data-devotee-check]').forEach((cb) => {
+    cb.onchange = updateDevoteeSelectCount
+  })
+
+  $('#selectAllDevoteesBtn').onclick = () => {
+    const all = document.querySelectorAll('[data-devotee-check]')
+    const anyUnchecked = Array.from(all).some((cb) => !cb.checked)
+    all.forEach((cb) => { cb.checked = anyUnchecked })
+    updateDevoteeSelectCount()
+  }
+
+  $('#batchDeleteDevoteesBtn').onclick = async () => {
+    const checked = document.querySelectorAll('[data-devotee-check]:checked')
+    if (!checked.length) { alert('请先选择要删除的信众'); return }
+    if (!confirm(`确定删除选中的 ${checked.length} 条信众？`)) return
+    for (const cb of checked) {
+      const id = cb.dataset.devoteeCheck
+      if (!String(id).startsWith('local_')) {
+        await apiRequest(`/api/devotees/${id}`, { method: 'DELETE' }).catch(() => null)
+      }
+      state.data.devotees = (state.data.devotees || []).filter((item) => item.id !== id)
+    }
+    await saveConfig({ recentData: state.data })
+    render()
+  }
 }
 
 function renderPrint() {
