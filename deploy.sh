@@ -87,7 +87,7 @@ restart_backend() {
 
 update_backend_db() {
   echo "[5/6] Updating backend database schema..."
-  docker exec "$BACKEND_CONTAINER" npx prisma db push --skip-generate >/dev/null
+  docker exec "$BACKEND_CONTAINER" npx prisma db push --accept-data-loss --skip-generate >/dev/null
   docker exec "$BACKEND_CONTAINER" npx prisma generate >/dev/null
 }
 
