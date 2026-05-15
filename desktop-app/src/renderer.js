@@ -908,6 +908,7 @@ async function login() {
   state.token = result.data?.token || result.token
   state.user = result.data?.user || result.user
   await saveConfig({ auth: { token: state.token, user: state.user } })
+  try { localStorage.setItem('token', state.token) } catch {}
   setStatus(`已连接：${serverUrl}`)
   await flushSyncQueue()
   await syncData(true)

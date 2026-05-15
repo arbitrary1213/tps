@@ -3425,7 +3425,7 @@ function renderDebugInfo() {
 async function loadServerTemplates() {
   if (isDesktopRuntime()) {
     try {
-      const localTemplates = dedupeTemplateRecords(await listDesktopRows("plaque_templates"));
+      const localTemplates = dedupeTemplateRecords(await listDesktopRows("plaque_template"));
       localTemplates
         .filter((template) => template?.elements?.source === "tablet-print")
         .forEach(importServerTemplate);
@@ -3608,7 +3608,7 @@ async function syncCurrentTemplateToServer() {
     }
 
     const localId = remoteId || payload.template.id;
-    await upsertDesktopRows("plaque_templates", [{
+    await upsertDesktopRows("plaque_template", [{
       id: localId,
       name: body.name,
       type: body.type,
