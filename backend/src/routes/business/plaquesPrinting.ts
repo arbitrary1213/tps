@@ -804,8 +804,10 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), async (req
           plaqueData.longevitySubtype = getOptionalValue(row, '禄位类型')
           plaqueData.size = getOptionalValue(row, '规格')
           plaqueData.gender = getOptionalValue(row, '性别')
-          plaqueData.birthDate = getOptionalValue(row, '出生日期')
+          plaqueData.birthDate = getOptionalValue(row, '出生日期') || getOptionalValue(row, '生日')
           plaqueData.birthLunar = getValue(row, '农历') === '是'
+          plaqueData.zodiac = getOptionalValue(row, '属相')
+          plaqueData.age = getOptionalValue(row, '年龄')
           plaqueData.blessingText = getOptionalValue(row, '祝福语')
         } else if (plaqueData.plaqueType === 'REBIRTH') {
           const deceasedName = getValue(row, '亡者姓名')
@@ -816,7 +818,7 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), async (req
           plaqueData.deceasedName = deceasedName
           plaqueData.size = getOptionalValue(row, '规格')
           plaqueData.gender = getOptionalValue(row, '性别')
-          plaqueData.birthDate = getOptionalValue(row, '出生日期')
+          plaqueData.birthDate = getOptionalValue(row, '出生日期') || getOptionalValue(row, '生日')
           plaqueData.birthLunar = getValue(row, '亡者农历') === '是' || getValue(row, '农历') === '是'
           plaqueData.deathDate = getOptionalValue(row, '忌日')
           plaqueData.deathLunar = getValue(row, '忌日农历') === '是'
@@ -825,6 +827,8 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), async (req
           plaqueData.birthDate2 = getOptionalValue(row, '亡者二生日') || getOptionalValue(row, '第二亡者生日')
           plaqueData.deathDate2 = getOptionalValue(row, '亡者二忌日') || getOptionalValue(row, '第二亡者忌日')
           plaqueData.yinGeng2 = getOptionalValue(row, '亡者二阴庚') || getOptionalValue(row, '第二亡者阴庚')
+          plaqueData.zodiac = getOptionalValue(row, '属相')
+          plaqueData.age = getOptionalValue(row, '年龄')
         } else if (plaqueData.plaqueType === 'DELIVERANCE') {
           const dedicationType = getValue(row, '牌位主体')
           if (!dedicationType) {
@@ -841,6 +845,8 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), async (req
           plaqueData.yinGeng2 = getOptionalValue(row, '亡者二阴庚')
           plaqueData.birthDate2 = getOptionalValue(row, '亡者二生日')
           plaqueData.deathDate2 = getOptionalValue(row, '亡者二忌日')
+          plaqueData.zodiac = getOptionalValue(row, '属相')
+          plaqueData.age = getOptionalValue(row, '年龄')
         }
 
         const key = buildPlaqueImportDuplicateKey(createImportIdentity(plaqueData.plaqueType, row))

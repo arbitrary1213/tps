@@ -235,8 +235,10 @@ export default function PlaquesPage() {
         '禄位类型': '',
         '规格': '',
         '性别': '',
-        '出生日期': '',
+        '生日': '',
         '农历': '是/否',
+        '属相': '',
+        '年龄': '',
         '电话': '',
         '地址': '',
         '寄语': '',
@@ -249,8 +251,10 @@ export default function PlaquesPage() {
         '禄位类型': '标准',
         '规格': '大',
         '性别': '男',
-        '出生日期': '1978年正月初三',
+        '生日': '1978年正月初三',
         '农历': '是',
+        '属相': '马',
+        '年龄': '46',
         '电话': '',
         '地址': '本市东街一号',
         '寄语': '',
@@ -262,7 +266,8 @@ export default function PlaquesPage() {
     XLSX.utils.book_append_sheet(wb, ws, '延生禄位导入模板')
     const colWidths = [
       { wch: 12 }, { wch: 15 }, { wch: 8 }, { wch: 15 }, { wch: 8 },
-      { wch: 15 }, { wch: 15 }, { wch: 8 }, { wch: 14 }, { wch: 30 }, { wch: 20 }, { wch: 20 },
+      { wch: 15 }, { wch: 15 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
+      { wch: 14 }, { wch: 30 }, { wch: 20 }, { wch: 20 },
     ]
     ws['!cols'] = colWidths
     downloadWorkbook(wb, '延生禄位导入模板.xlsx')
@@ -279,12 +284,14 @@ export default function PlaquesPage() {
         '亡者二阴庚': '',
         '规格': '',
         '性别': '',
-        '出生日期': '',
+        '生日': '',
         '亡者农历': '是/否',
         '忌日': '',
         '忌日农历': '是/否',
         '亡者二生日': '',
         '亡者二忌日': '',
+        '属相': '',
+        '年龄': '',
         '阳上': '',
         '寄语': '',
         '祝福语': '',
@@ -301,7 +308,7 @@ export default function PlaquesPage() {
         '亡者二阴庚': '',
         '规格': '大',
         '性别': '男',
-        '出生日期': '甲午年三月十二',
+        '生日': '甲午年三月十二',
         '亡者农历': '否',
         '忌日': '八月初一',
         '忌日农历': '是',
@@ -322,8 +329,8 @@ export default function PlaquesPage() {
     ws['!cols'] = [
       { wch: 12 }, { wch: 14 }, { wch: 18 }, { wch: 10 }, { wch: 16 },
       { wch: 8 }, { wch: 8 }, { wch: 16 }, { wch: 8 }, { wch: 14 },
-      { wch: 10 }, { wch: 16 }, { wch: 16 }, { wch: 14 },
-      { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 30 }, { wch: 14 }, { wch: 14 },
+      { wch: 10 }, { wch: 16 }, { wch: 16 }, { wch: 8 }, { wch: 8 },
+      { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 30 }, { wch: 14 }, { wch: 14 },
     ]
     downloadWorkbook(wb, '往生莲位导入模板.xlsx')
   }
