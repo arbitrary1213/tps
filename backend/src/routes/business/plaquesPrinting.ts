@@ -724,7 +724,7 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), async (req
       size: getValue(row, '规格'),
       gender: getValue(row, '性别'),
       birthDate: getValue(row, '亡者生日') || getValue(row, '出生日期'),
-      birthLunar: getValue(row, '农历') === '是' || getValue(row, '亡者农历') === '是',
+      birthLunar: getValue(row, '农历') === '是' || getValue(row, '亡者农历') === '是' || getValue(row, '生日农历') === '是',
       deceasedName: getValue(row, '亡者') || getValue(row, '亡者姓名'),
       deceasedName2: getValue(row, '亡者二') || getValue(row, '第二亡者'),
       yinGeng: getValue(row, '亡者阴庚') || getValue(row, '阴庚'),
@@ -819,7 +819,7 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), async (req
           plaqueData.size = getOptionalValue(row, '规格')
           plaqueData.gender = getOptionalValue(row, '性别')
           plaqueData.birthDate = getOptionalValue(row, '出生日期') || getOptionalValue(row, '生日')
-          plaqueData.birthLunar = getValue(row, '亡者农历') === '是' || getValue(row, '农历') === '是'
+          plaqueData.birthLunar = getValue(row, '亡者农历') === '是' || getValue(row, '农历') === '是' || getValue(row, '生日农历') === '是'
           plaqueData.deathDate = getOptionalValue(row, '忌日')
           plaqueData.deathLunar = getValue(row, '忌日农历') === '是'
           plaqueData.yinGeng = getOptionalValue(row, '亡者阴庚') || getOptionalValue(row, '阴庚')
