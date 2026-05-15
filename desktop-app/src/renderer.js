@@ -408,14 +408,18 @@ function renderPlaques() {
 
   document.querySelectorAll('[data-plaque-delete]').forEach((button) => {
     button.onclick = async () => {
-      const id = button.dataset.plaqueDelete
+      const id = String(button.dataset.plaqueDelete)
       if (!confirm('确定删除该牌位？')) return
-      if (!String(id).startsWith('local_')) {
-        await apiRequest(`/api/plaques/${id}`, { method: 'DELETE' }).catch(() => null)
+      try {
+        if (!id.startsWith('local_')) {
+          await apiRequest(`/api/plaques/${id}`, { method: 'DELETE' })
+        }
+        state.data.plaques = (state.data.plaques || []).filter((item) => String(item.id) !== id)
+        await saveConfig({ recentData: state.data })
+        render()
+      } catch (e) {
+        alert('删除失败: ' + e.message)
       }
-      state.data.plaques = (state.data.plaques || []).filter((item) => item.id !== id)
-      await saveConfig({ recentData: state.data })
-      render()
     }
   })
 
@@ -439,17 +443,23 @@ function renderPlaques() {
     const checked = document.querySelectorAll('[data-plaque-check]:checked')
     if (!checked.length) { alert('请先选择要删除的牌位'); return }
     if (!confirm(`确定删除选中的 ${checked.length} 条牌位？`)) return
-    let deleted = 0
-    for (const cb of checked) {
-      const id = cb.dataset.plaqueCheck
-      if (!String(id).startsWith('local_')) {
-        await apiRequest(`/api/plaques/${id}`, { method: 'DELETE' }).catch(() => null)
+    const ids = Array.from(checked).map((cb) => String(cb.dataset.plaqueCheck))
+    let success = 0; let failed = 0
+    for (const id of ids) {
+      try {
+        if (!id.startsWith('local_')) {
+          await apiRequest(`/api/plaques/${id}`, { method: 'DELETE' })
+        }
+        state.data.plaques = (state.data.plaques || []).filter((item) => String(item.id) !== id)
+        success++
+      } catch (e) {
+        failed++
+        console.error('删除牌位失败:', id, e.message)
       }
-      state.data.plaques = (state.data.plaques || []).filter((item) => item.id !== id)
-      deleted++
     }
     await saveConfig({ recentData: state.data })
     render()
+    alert(`删除完成：成功 ${success} 条${failed ? `，失败 ${failed} 条` : ''}`)
   }
 }
 
@@ -531,14 +541,18 @@ function renderDevotees() {
 
   document.querySelectorAll('[data-devotee-delete]').forEach((button) => {
     button.onclick = async () => {
-      const id = button.dataset.devoteeDelete
+      const id = String(button.dataset.devoteeDelete)
       if (!confirm('确定删除该信众？')) return
-      if (!String(id).startsWith('local_')) {
-        await apiRequest(`/api/devotees/${id}`, { method: 'DELETE' }).catch(() => null)
+      try {
+        if (!id.startsWith('local_')) {
+          await apiRequest(`/api/devotees/${id}`, { method: 'DELETE' })
+        }
+        state.data.devotees = (state.data.devotees || []).filter((item) => String(item.id) !== id)
+        await saveConfig({ recentData: state.data })
+        render()
+      } catch (e) {
+        alert('删除失败: ' + e.message)
       }
-      state.data.devotees = (state.data.devotees || []).filter((item) => item.id !== id)
-      await saveConfig({ recentData: state.data })
-      render()
     }
   })
 
@@ -562,15 +576,23 @@ function renderDevotees() {
     const checked = document.querySelectorAll('[data-devotee-check]:checked')
     if (!checked.length) { alert('请先选择要删除的信众'); return }
     if (!confirm(`确定删除选中的 ${checked.length} 条信众？`)) return
-    for (const cb of checked) {
-      const id = cb.dataset.devoteeCheck
-      if (!String(id).startsWith('local_')) {
-        await apiRequest(`/api/devotees/${id}`, { method: 'DELETE' }).catch(() => null)
+    const ids = Array.from(checked).map((cb) => String(cb.dataset.devoteeCheck))
+    let success = 0; let failed = 0
+    for (const id of ids) {
+      try {
+        if (!id.startsWith('local_')) {
+          await apiRequest(`/api/devotees/${id}`, { method: 'DELETE' })
+        }
+        state.data.devotees = (state.data.devotees || []).filter((item) => String(item.id) !== id)
+        success++
+      } catch (e) {
+        failed++
+        console.error('删除信众失败:', id, e.message)
       }
-      state.data.devotees = (state.data.devotees || []).filter((item) => item.id !== id)
     }
     await saveConfig({ recentData: state.data })
     render()
+    alert(`删除完成：成功 ${success} 条${failed ? `，失败 ${failed} 条` : ''}`)
   }
 }
 
