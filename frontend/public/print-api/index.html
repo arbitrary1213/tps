@@ -18,6 +18,33 @@
     </div>
   </header>
 
+  <section id="workflowStatus" class="workflow-status" aria-label="打印状态">
+    <div class="workflow-status-item">
+      <span class="workflow-status-label">当前入口</span>
+      <strong id="launchSourceValue" class="workflow-status-value">模板设计页</strong>
+    </div>
+    <div class="workflow-status-item">
+      <span class="workflow-status-label">运行环境</span>
+      <strong id="runtimeStatusValue" class="workflow-status-value">网页端</strong>
+    </div>
+    <div class="workflow-status-item">
+      <span class="workflow-status-label">数据来源</span>
+      <strong id="dataSourceValue" class="workflow-status-value">尚未导入</strong>
+    </div>
+    <div class="workflow-status-item">
+      <span class="workflow-status-label">模板来源</span>
+      <strong id="templateSourceValue" class="workflow-status-value">内置模板</strong>
+    </div>
+    <div class="workflow-status-item">
+      <span class="workflow-status-label">模板同步</span>
+      <strong id="templateSyncValue" class="workflow-status-value">未检查</strong>
+    </div>
+    <div class="workflow-status-item">
+      <span class="workflow-status-label">存储模型</span>
+      <strong id="storageModelValue" class="workflow-status-value">服务器主库 + 桌面缓存 + 浏览器配置</strong>
+    </div>
+  </section>
+
   <main class="workspace">
     <aside class="panel controls">
       <section>

@@ -258,6 +258,15 @@ const launchParams = new URLSearchParams(window.location.search);
 const launchPrintPreviewMode = launchParams.get("preview") === "1" || launchParams.get("printPreview") === "1";
 const templateDesignerMode = launchParams.get("desktopWindow") === "template-designer" || launchParams.get("designer") === "1";
 
+const workflowStatus = {
+  launchSource: "模板设计页",
+  runtime: "网页端",
+  dataSource: "尚未导入",
+  templateSource: "内置模板",
+  templateSync: "未检查",
+  storageModel: "服务器主库 + 桌面缓存 + 浏览器配置",
+};
+
 if (launchPrintPreviewMode) {
   document.documentElement.classList.add("print-preview-mode");
   document.body?.classList.add("print-preview-mode");
@@ -399,6 +408,18 @@ const controls = [
 ].map($).filter(Boolean);
 
 async function init() {
+  workflowStatus.runtime = isDesktopRuntime() ? "桌面端" : "网页端";
+  if (launchParams.get("plaqueId") || launchParams.get("plaqueIds")) {
+    workflowStatus.launchSource = "牌位管理入口";
+  } else if (launchPrintPreviewMode) {
+    workflowStatus.launchSource = "打印预览入口";
+  } else if (templateDesignerMode) {
+    workflowStatus.launchSource = "模板设计页";
+  } else {
+    workflowStatus.launchSource = "打印中心";
+  }
+  setWorkflowStatus();
+
   templates.forEach((template, index) => {
     templates[index] = normalizeCatalogTemplate(template);
   });
@@ -1309,6 +1330,7 @@ function splitLine(line, delimiter) {
 
 function loadRows(rows) {
   const group = currentDataGroup();
+  setDataSourceStatus("手动导入数据");
   state.datasets[group] = rows
     .filter((row) => Object.values(row).some((value) => String(value).trim()))
     .map((row, index) => normalizeRow(row, group, index));
@@ -1345,6 +1367,7 @@ async function loadSystemPlaques(group) {
   }
 
   try {
+    setDataSourceStatus("系统牌位数据");
     setBusy(`正在读取${dataGroupLoadLabel(group)}数据...`);
     const selectedType = $("systemPlaqueType").value;
     const subtype = $("systemPlaqueSubtype").value;
@@ -1373,11 +1396,6 @@ async function loadSystemPlaques(group) {
         ].some((value) => String(value || "").includes(keyword));
       }));
     } else {
-      const token = authToken();
-      if (!token) {
-        alert("请先登录后台系统，再读取系统牌位数据。");
-        return;
-      }
       batches = await Promise.all(plaqueTypes.map((plaqueType) => fetchJson(`/api/plaques?${new URLSearchParams({
         plaqueType,
         ...(status ? { status } : {}),
@@ -1422,6 +1440,7 @@ async function applyLaunchParams() {
     .filter(Boolean);
   const type = params.get("type");
   const templateId = params.get("templateId");
+  const launchMode = params.get("mode");
   const autoPrint = params.get("autoPrint") === "1";
   const printPreviewMode = launchPrintPreviewMode;
   if (!plaqueId && !plaqueIds.length && !type && !templateId) return;
@@ -1432,8 +1451,10 @@ async function applyLaunchParams() {
   }
 
   const group = dataGroupForPlaqueType(type);
-  if (state.mode !== "single") setMode("single");
+  const targetMode = launchMode === "summary" ? "summary" : "single";
+  if (state.mode !== targetMode) setMode(targetMode);
   $("summaryDataGroup").value = group;
+  setDataSourceStatus("牌位管理选中数据");
   applyLaunchTemplate(templateId);
 
   try {
@@ -1516,7 +1537,6 @@ async function loadRitualOptions() {
     return;
   }
 
-  if (!authToken()) return;
   try {
     const rituals = await fetchJson("/api/rituals", { headers: authHeaders() });
     const select = $("systemRitual");
@@ -3224,10 +3244,12 @@ async function persistTemplateMutation(options = {}) {
 
   const shouldSync = syncTemplate && canSyncServerTemplates();
   if (!shouldSync) {
+    markTemplateSavedLocally();
     if (localMessage) $("statusText").textContent = localMessage;
     return;
   }
 
+  markTemplateSyncing();
   if (syncingMessage) $("statusText").textContent = syncingMessage;
   try {
     await syncCurrentTemplateToServer();
@@ -3314,6 +3336,52 @@ function setBusy(message) {
   $("statusText").textContent = message;
 }
 
+function setWorkflowStatus() {
+  if ($("launchSourceValue")) $("launchSourceValue").textContent = workflowStatus.launchSource;
+  if ($("runtimeStatusValue")) $("runtimeStatusValue").textContent = workflowStatus.runtime;
+  if ($("dataSourceValue")) $("dataSourceValue").textContent = workflowStatus.dataSource;
+  if ($("templateSourceValue")) $("templateSourceValue").textContent = workflowStatus.templateSource;
+  if ($("templateSyncValue")) $("templateSyncValue").textContent = workflowStatus.templateSync;
+  if ($("storageModelValue")) $("storageModelValue").textContent = workflowStatus.storageModel;
+}
+
+function setLaunchSourceStatus(value) {
+  workflowStatus.launchSource = value;
+  setWorkflowStatus();
+}
+
+function setDataSourceStatus(value) {
+  workflowStatus.dataSource = value;
+  setWorkflowStatus();
+}
+
+function setTemplateStatus(source, sync) {
+  workflowStatus.templateSource = source;
+  workflowStatus.templateSync = sync;
+  setWorkflowStatus();
+}
+
+function setStorageModelStatus(value) {
+  workflowStatus.storageModel = value;
+  setWorkflowStatus();
+}
+
+function markTemplateSavedLocally() {
+  setTemplateStatus(isDesktopRuntime() ? "桌面本地模板" : "浏览器本地配置", "仅本机已保存");
+}
+
+function markTemplateSyncing() {
+  setTemplateStatus(isDesktopRuntime() ? "桌面本地模板" : "服务器模板", "正在同步");
+}
+
+function markTemplateSynced() {
+  setTemplateStatus(isDesktopRuntime() ? "本地已同步模板" : "服务器模板", isDesktopRuntime() ? "本地数据库已保存" : "服务器已保存");
+}
+
+function markTemplateSyncFailed() {
+  setTemplateStatus(isDesktopRuntime() ? "桌面本地模板" : "浏览器本地配置", isDesktopRuntime() ? "本地数据库同步失败" : "服务器同步失败");
+}
+
 function renderDebugInfo() {
 }
 
@@ -3329,8 +3397,10 @@ async function loadServerTemplates() {
       }
       saveLayouts();
       saveCustomTemplatesToStorage();
+      setTemplateStatus(localTemplates.length ? "本地已同步模板" : "内置模板", localTemplates.length ? "本地已同步" : "未发现本地模板");
       if (templateDesignerMode || $("templateSelect")?.options?.length) applyTemplate();
     } catch (error) {
+      setTemplateStatus("内置模板", "本地模板读取失败");
       console.warn("加载本地模板失败，继续使用内置模板:", error);
     }
     return;
@@ -3346,8 +3416,10 @@ async function loadServerTemplates() {
     }
     saveLayouts();
     saveCustomTemplatesToStorage();
+    setTemplateStatus(serverTemplates.length ? "服务器模板" : "内置模板", serverTemplates.length ? "服务器已同步" : "服务器无模板");
     if (templateDesignerMode || $("templateSelect")?.options?.length) applyTemplate();
   } catch (error) {
+    setTemplateStatus("本地/内置模板", "服务器模板读取失败");
     console.warn("加载服务器模板失败，继续使用本地模板:", error);
   }
 }
@@ -3702,15 +3774,22 @@ async function saveCurrentLayout() {
   saveLayouts();
   if (layoutKey.startsWith("custom_")) saveCustomTemplatesToStorage();
   const shouldSync = canSyncServerTemplates();
+  if (shouldSync) {
+    markTemplateSyncing();
+  } else {
+    markTemplateSavedLocally();
+  }
   $("statusText").textContent = shouldSync ? "模板已保存，正在同步..." : "模板已保存到本机";
   if (!shouldSync) return;
   try {
     await syncCurrentTemplateToServer();
+    markTemplateSynced();
     state.layouts[layoutKey] = layout;
     saveLayouts();
     if (layoutKey.startsWith("custom_")) saveCustomTemplatesToStorage();
     $("statusText").textContent = isDesktopRuntime() ? "模板已保存到本地数据库" : "模板已保存到服务器";
   } catch (error) {
+    markTemplateSyncFailed();
     console.error("同步模板失败", error);
     $("statusText").textContent = isDesktopRuntime()
       ? "模板已保存到本机，但本地数据库同步失败"

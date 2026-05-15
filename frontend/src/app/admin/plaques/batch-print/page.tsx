@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
 import { useAuthStore } from '@/stores/authStore'
 import { businessAPI } from '@/lib/api'
 import { Button, Card, Table, Select, Input, Checkbox } from '@/components/ui'
@@ -352,6 +353,19 @@ export default function BatchPrintPage() {
 
   const selectedPlaques = plaques.filter(p => selectedIds.has(p.id))
 
+  const openUnifiedPrintPreview = () => {
+    if (selectedIds.size === 0) return
+    const selected = Array.from(selectedIds)
+    const query = new URLSearchParams({
+      preview: '1',
+      mode: 'summary',
+      plaqueIds: selected.join(','),
+    })
+    if (printType !== 'ALL') query.set('type', printType)
+    if (selectedTemplate) query.set('templateId', selectedTemplate)
+    window.open(`/print-api/index.html?${query.toString()}`, '_blank')
+  }
+
   const handlePrint = () => {
     const printContent = printRef.current
     if (!printContent) return
@@ -440,6 +454,19 @@ export default function BatchPrintPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-3 rounded-lg border border-[#E8E0D0] bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-ink">历史入口</div>
+          <div className="text-xs text-tea/60 mt-1">推荐从打印中心进入，旧页继续保留兼容。</div>
+        </div>
+        <Link
+          href="/admin/print-center"
+          className="inline-flex items-center justify-center rounded border border-vermilion px-6 py-2.5 text-sm font-medium tracking-wider text-vermilion hover:bg-vermilion-light"
+        >
+          打开打印中心
+        </Link>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-medium text-ink">批量打印</h2>
@@ -449,10 +476,20 @@ export default function BatchPrintPage() {
           <Button variant="secondary" onClick={() => window.history.back()}>
             返回
           </Button>
-          <Button onClick={handlePrint} disabled={selectedIds.size === 0}>
-            打印 ({selectedIds.size} 张)
+          <Button
+            onClick={openUnifiedPrintPreview}
+            disabled={selectedIds.size === 0}
+          >
+            统一预览 ({selectedIds.size} 张)
           </Button>
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <span>旧版直接打印仅作兼容。</span>
+        <Button variant="secondary" size="sm" onClick={handlePrint} disabled={selectedIds.size === 0}>
+          仍用旧版打印 ({selectedIds.size} 张)
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
