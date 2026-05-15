@@ -41,6 +41,11 @@ docker/.env
 # Vercel
 .vercel
 
+# Tool configs
+.claude/
+.codex/
+tps/
+
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
