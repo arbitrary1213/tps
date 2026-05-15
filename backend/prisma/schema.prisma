@@ -287,12 +287,15 @@ model Devotee {
 /// 牌位
 model MemorialPlaque {
   id               String   @id @default(cuid())
+  code             String?  @unique // 数字编码，自动生成，用于快速查询和打印
   plaqueType       String   // LONGEVITY / REBIRTH / DELIVERANCE
   holderName       String?  // 持名者（延生禄位）
   deceasedName     String?  // 亡者姓名（往生/超度）
   deceasedName2    String?  // 第二亡者
+  yinGeng          String?  // 阴庚（第一亡者干支纪年）
   birthDate2       String?  // 第二亡者生日
   deathDate2       String?  // 第二亡者忌日
+  yinGeng2         String?  // 阴庚（第二亡者干支纪年）
   zodiac2          String?  // 第二亡者属相
   gender2          String?  // 第二亡者性别
   gender           String?  // 性别

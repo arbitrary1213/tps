@@ -49,6 +49,7 @@ const tabletTypes = {
   blessing: {
     name: "延生禄位模板",
     fields: [
+      { key: "code", label: "编码", aliases: ["编码", "编号", "code"] },
       { key: "subject", label: "牌位主体", aliases: ["牌位主体", "主体", "姓名", "名称"] },
       { key: "believer", label: "信人", aliases: ["信人", "阳上", "阳上人"] },
       { key: "age", label: "年龄", aliases: ["年龄", "岁数"] },
@@ -61,13 +62,18 @@ const tabletTypes = {
   deliverance: {
     name: "往生牌位模板",
     fields: [
+      { key: "code", label: "编码", aliases: ["编码", "编号", "code"] },
       { key: "subject", label: "牌位主体", aliases: ["牌位主体", "主体", "姓名", "名称"] },
-      { key: "deceasedInfo", label: "亡者信息", aliases: ["亡者信息", "亡者", "第二亡者"] },
-      { key: "deceasedPrimary", label: "第一亡者", aliases: ["第一亡者", "亡者1", "亡者一", "亡者姓名1", "亡者姓名", "亡者"] },
-      { key: "deceasedSecondary", label: "第二亡者", aliases: ["第二亡者", "亡者2", "亡者二", "亡者姓名2", "附名亡者"] },
+      { key: "deceasedInfo", label: "亡者信息", aliases: ["亡者信息", "亡者", "亡者二", "第二亡者"] },
+      { key: "deceasedPrimary", label: "亡者", aliases: ["亡者", "第一亡者", "亡者1", "亡者一", "亡者姓名1", "亡者姓名"] },
+      { key: "deceasedSecondary", label: "亡者二", aliases: ["亡者二", "第二亡者", "亡者2", "亡者姓名2", "附名亡者"] },
+      { key: "yinGeng", label: "亡者阴庚", aliases: ["亡者阴庚", "阴庚", "亡者阴庚", "yinGeng"] },
+      { key: "yinGeng2", label: "亡者二阴庚", aliases: ["亡者二阴庚", "亡者二阴庚", "yinGeng2"] },
       { key: "age", label: "年龄", aliases: ["年龄", "岁数"] },
-      { key: "birthday", label: "生日", aliases: ["生日", "出生日期", "生辰"] },
-      { key: "deathday", label: "忌日", aliases: ["忌日", "往生日", "死亡日期"] },
+      { key: "birthday", label: "亡者生日", aliases: ["亡者生日", "生日", "出生日期", "生辰", "亡者生日"] },
+      { key: "deathday", label: "亡者忌日", aliases: ["亡者忌日", "忌日", "往生日", "死亡日期", "亡者忌日"] },
+      { key: "birthday2", label: "亡者二生日", aliases: ["亡者二生日", "亡者二生日", "birthday2"] },
+      { key: "deathday2", label: "亡者二忌日", aliases: ["亡者二忌日", "亡者二忌日", "deathday2"] },
       { key: "yangshang", label: "阳上", aliases: ["阳上", "阳上人", "信人"] },
       { key: "address", label: "地址", aliases: ["地址", "住址"] },
       { key: "wish", label: "寄语", aliases: ["寄语", "祈福语", "祈愿", "备注"] },
@@ -125,8 +131,8 @@ const singleVariantFieldKeysByType = {
   },
   deliverance: {
     layout_one: ["subject", "yangshang", "address"],
-    layout_two: ["subject", "age", "birthday", "deathday", "yangshang", "address", "wish"],
-    layout_three: ["subject", "deceasedPrimary", "deceasedSecondary", "yangshang", "address", "wish"],
+    layout_two: ["subject", "deceasedPrimary", "yinGeng", "birthday", "deathday", "yangshang", "address", "wish"],
+    layout_three: ["subject", "deceasedPrimary", "yinGeng", "birthday", "deathday", "deceasedSecondary", "yinGeng2", "birthday2", "deathday2", "yangshang", "address", "wish"],
   },
 };
 
@@ -187,7 +193,8 @@ const singleVariantLayoutDefaults = {
     layout_two: {
       positions: {
         subject: { x: 50, y: 27 },
-        age: { x: 73, y: 18 },
+        deceasedPrimary: { x: 84, y: 14 },
+        yinGeng: { x: 73, y: 14 },
         birthday: { x: 62, y: 18 },
         deathday: { x: 51, y: 18 },
         yangshang: { x: 22, y: 20 },
@@ -196,7 +203,8 @@ const singleVariantLayoutDefaults = {
       },
       sizes: {
         subject: { w: 28, h: 44 },
-        age: { w: 9, h: 32 },
+        deceasedPrimary: { w: 10, h: 14 },
+        yinGeng: { w: 9, h: 14 },
         birthday: { w: 9, h: 36 },
         deathday: { w: 9, h: 36 },
         yangshang: { w: 11, h: 42 },
@@ -207,16 +215,28 @@ const singleVariantLayoutDefaults = {
     layout_three: {
       positions: {
         subject: { x: 50, y: 27 },
-        deceasedPrimary: { x: 84, y: 17 },
-        deceasedSecondary: { x: 73, y: 17 },
+        deceasedPrimary: { x: 84, y: 14 },
+        deceasedSecondary: { x: 72, y: 14 },
+        yinGeng: { x: 84, y: 26 },
+        yinGeng2: { x: 72, y: 26 },
+        birthday: { x: 84, y: 36 },
+        birthday2: { x: 72, y: 36 },
+        deathday: { x: 84, y: 46 },
+        deathday2: { x: 72, y: 46 },
         yangshang: { x: 22, y: 20 },
         address: { x: 16, y: 37 },
         wish: { x: 48, y: 74 },
       },
       sizes: {
         subject: { w: 28, h: 44 },
-        deceasedPrimary: { w: 10, h: 42 },
-        deceasedSecondary: { w: 10, h: 42 },
+        deceasedPrimary: { w: 10, h: 14 },
+        deceasedSecondary: { w: 10, h: 14 },
+        yinGeng: { w: 10, h: 12 },
+        yinGeng2: { w: 10, h: 12 },
+        birthday: { w: 10, h: 10 },
+        birthday2: { w: 10, h: 10 },
+        deathday: { w: 10, h: 10 },
+        deathday2: { w: 10, h: 10 },
         yangshang: { w: 11, h: 42 },
         address: { w: 11, h: 45 },
         wish: { w: 56, h: 18 },
@@ -235,8 +255,8 @@ const legacySingleVariantKeyMap = {
 };
 
 const SINGLE_TABLE_FIELDS = {
-  blessing: ["牌位主体", "信人", "年龄", "属相", "生日", "地址", "祈福语"],
-  deliverance: ["牌位主体", "第一亡者", "第二亡者", "阳上", "年龄", "生日", "忌日", "寄语", "地址"],
+  blessing: ["编码", "牌位主体", "信人", "年龄", "属相", "生日", "地址", "祈福语"],
+  deliverance: ["编码", "牌位主体", "亡者", "亡者阴庚", "亡者生日", "亡者忌日", "亡者二", "亡者二阴庚", "亡者二生日", "亡者二忌日", "阳上", "寄语", "地址"],
 };
 
 const PDFJS_VERSION = "3.11.174";
@@ -278,8 +298,9 @@ const sampleData = {
   { "牌位主体": "谢释迦摩尼佛", "信人": "王五", "年龄": "", "属相": "", "生日": "", "地址": "本市南街二号", "祈福语": "身体康泰 所求如意" },
   ],
   deliverance: [
-  { "牌位主体": "王五超度莲位", "第一亡者": "王五", "第二亡者": "", "阳上": "王家眷属", "年龄": "", "生日": "", "忌日": "", "寄语": "", "地址": "本市西街三号", "亡者信息": "王五" },
-  { "牌位主体": "赵六超度莲位", "第一亡者": "赵六", "第二亡者": "孙七", "阳上": "赵氏后人", "年龄": "七十一岁", "生日": "四月十八", "忌日": "十月初二", "寄语": "蒙佛接引 莲品增上", "地址": "本市北街四号", "亡者信息": "赵六\\n孙七" },
+  { "编码": "000001", "牌位主体": "地基主", "亡者": "", "第一亡者": "", "阴庚": "", "亡者阴庚": "", "亡者生日": "", "亡者忌日": "", "亡者二": "", "第二亡者": "", "亡者二阴庚": "", "亡者二生日": "", "亡者二忌日": "", "阳上": "陈氏家人", "生日": "", "忌日": "", "寄语": "", "地址": "本市东街一号", "亡者信息": "" },
+  { "编码": "000002", "牌位主体": "李四", "亡者": "李四", "第一亡者": "李四", "阴庚": "戊午年正月初三日建生", "亡者阴庚": "戊午年正月初三日建生", "亡者生日": "1978-01-15", "亡者忌日": "2020-03-15", "亡者二": "", "第二亡者": "", "亡者二阴庚": "", "亡者二生日": "", "亡者二忌日": "", "阳上": "李四家人", "生日": "1978-01-15", "忌日": "2020-03-15", "寄语": "蒙佛接引 莲品增上", "地址": "本市南街五号", "亡者信息": "李四" },
+  { "编码": "000003", "牌位主体": "赵六 李四", "亡者": "赵六", "第一亡者": "赵六", "阴庚": "甲午年三月十二日建生", "亡者阴庚": "甲午年三月十二日建生", "亡者生日": "1954-04-15", "亡者忌日": "2010-08-20", "亡者二": "李四", "第二亡者": "李四", "亡者二阴庚": "丙申年九月初九日建生", "亡者二生日": "1956-10-12", "亡者二忌日": "2015-12-03", "阳上": "赵李两家后人", "生日": "1954-04-15", "忌日": "2010-08-20", "寄语": "早登极乐 莲品增上", "地址": "本市北街四号", "亡者信息": "赵六\\n李四" },
   ],
 };
 
@@ -1681,8 +1702,8 @@ function detectSingleVariantForGroup(row, group = currentDataGroup()) {
     return believer ? "layout_one" : "layout_two";
   }
 
-  const deceasedPrimary = firstRowValue(row, ["第一亡者", "亡者姓名", "亡者", "deceasedPrimary"]);
-  const deceasedSecondary = firstRowValue(row, ["第二亡者", "附名亡者", "deceasedSecondary"]);
+  const deceasedPrimary = firstRowValue(row, ["亡者", "第一亡者", "亡者姓名", "deceasedPrimary"]);
+  const deceasedSecondary = firstRowValue(row, ["亡者二", "第二亡者", "附名亡者", "deceasedSecondary"]);
   const deceasedInfo = firstRowValue(row, ["亡者信息", "deceasedInfo"]);
   const normalizedLines = deceasedInfo
     .split(/\r?\n/)
@@ -1694,11 +1715,8 @@ function detectSingleVariantForGroup(row, group = currentDataGroup()) {
       ? 1
       : (normalizedLines.length >= 2 ? 2 : 1);
   if (deceasedCount >= 2) return "layout_three";
-
-  const hasAge = Boolean(firstRowValue(row, ["年龄", "age"]));
-  const hasBirthday = Boolean(firstRowValue(row, ["生日", "出生日期", "birthday"]));
-  const hasDeathday = Boolean(firstRowValue(row, ["忌日", "deathday"]));
-  return hasAge || hasBirthday || hasDeathday ? "layout_two" : "layout_one";
+  if (deceasedCount >= 1) return "layout_two";
+  return "layout_one";
 }
 
 function dynamicFieldsForCurrentContext(variantKey = currentContextVariantKey()) {
@@ -1974,6 +1992,7 @@ function plaqueToRow(plaque) {
   const ageValue = plaque.age || "";
   const wishValue = plaque.message || plaque.blessingText || "";
   return {
+    "编码": plaque.code || "",
     "牌位主体": subject || plaque.holderName || plaque.deceasedName || plaque.dedicationType || plaque.customDedicationType || "",
     "信人": plaque.yangShang || "",
     "年龄": ageValue,
@@ -1984,8 +2003,23 @@ function plaqueToRow(plaque) {
     "地址": plaque.address || "",
     "祈福语": wishValue,
     "寄语": wishValue,
+    "亡者": primaryDeceased,
     "第一亡者": primaryDeceased,
+    "亡者二": secondaryDeceased,
     "第二亡者": secondaryDeceased,
+    "阴庚": plaque.yinGeng || "",
+    "亡者阴庚": plaque.yinGeng || "",
+    "亡者阴庚": plaque.yinGeng || "",
+    "亡者二阴庚": plaque.yinGeng2 || "",
+    "亡者二阴庚": plaque.yinGeng2 || "",
+    "亡者生日": plaque.birthDate || "",
+    "亡者生日": plaque.birthDate || "",
+    "亡者忌日": plaque.deathDate || "",
+    "亡者忌日": plaque.deathDate || "",
+    "亡者二生日": plaque.birthDate2 || "",
+    "亡者二生日": plaque.birthDate2 || "",
+    "亡者二忌日": plaque.deathDate2 || "",
+    "亡者二忌日": plaque.deathDate2 || "",
     "亡者信息": deceasedInfo,
     "电话": plaque.phone || "",
     "牌位类型": plaque.plaqueType || "",

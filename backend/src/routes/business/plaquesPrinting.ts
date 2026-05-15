@@ -19,16 +19,28 @@ import {
 
 const router = Router()
 
+async function generatePlaqueCode(): Promise<string> {
+  const latest = await prisma.memorialPlaque.findFirst({
+    where: { code: { not: null } },
+    orderBy: { code: 'desc' },
+    select: { code: true },
+  })
+  const next = latest?.code ? parseInt(latest.code, 10) + 1 : 1
+  return String(next).padStart(6, '0')
+}
+
 router.get('/plaques', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { plaqueType, status, keyword, devoteeId, ritualId } = req.query
+    const { plaqueType, status, keyword, devoteeId, ritualId, updatedSince } = req.query
     const where: any = {}
     if (plaqueType) where.plaqueType = plaqueType
     if (status) where.status = status
     if (devoteeId) where.devoteeId = devoteeId
     if (ritualId) where.ritualId = ritualId
+    if (updatedSince) where.updatedAt = { gte: new Date(updatedSince as string) }
     if (keyword) {
       where.OR = [
+        { code: { contains: keyword as string } },
         { holderName: { contains: keyword as string } },
         { yangShang: { contains: keyword as string } },
       ]
@@ -43,7 +55,7 @@ router.get('/plaques', authMiddleware, async (req: AuthRequest, res: Response) =
 
 router.post('/plaques', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const validFields = ['id', 'plaqueType', 'holderName', 'deceasedName', 'deceasedName2', 'birthDate2', 'deathDate2', 'zodiac2', 'gender2', 'gender', 'zodiac', 'age', 'birthDate', 'birthLunar', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'dedicationType', 'longevitySubtype', 'size', 'startDate', 'endDate', 'message', 'blessingText', 'status', 'remarks', 'templateId', 'devoteeId', 'ritualId', 'createdBy', 'createdAt', 'updatedAt']
+    const validFields = ['code', 'id', 'plaqueType', 'holderName', 'deceasedName', 'deceasedName2', 'yinGeng', 'birthDate2', 'deathDate2', 'yinGeng2', 'zodiac2', 'gender2', 'gender', 'zodiac', 'age', 'birthDate', 'birthLunar', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'dedicationType', 'longevitySubtype', 'size', 'startDate', 'endDate', 'message', 'blessingText', 'status', 'remarks', 'templateId', 'devoteeId', 'ritualId', 'createdBy', 'createdAt', 'updatedAt']
     const data: any = {}
     for (const key of validFields) {
       if (req.body[key] !== undefined) data[key] = req.body[key]
@@ -58,6 +70,8 @@ router.post('/plaques', authMiddleware, async (req: AuthRequest, res: Response) 
     if (data.startDate && data.endDate && data.endDate < data.startDate) {
       return res.status(400).json({ success: false, error: '结束日期不能早于开始日期' })
     }
+
+    if (!data.code) data.code = await generatePlaqueCode()
 
     const plaque = await prisma.memorialPlaque.create({ data })
     await logOperation(req.user, 'CREATE', 'memorial_plaque', plaque.id, null, plaque)
@@ -216,7 +230,7 @@ router.put('/plaques/batch', authMiddleware, async (req: AuthRequest, res: Respo
 
 router.put('/plaques/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const validFields = ['id', 'plaqueType', 'holderName', 'deceasedName', 'deceasedName2', 'birthDate2', 'deathDate2', 'zodiac2', 'gender2', 'gender', 'zodiac', 'age', 'birthDate', 'birthLunar', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'dedicationType', 'longevitySubtype', 'size', 'startDate', 'endDate', 'message', 'blessingText', 'status', 'remarks', 'templateId', 'devoteeId', 'ritualId', 'createdBy', 'createdAt', 'updatedAt']
+    const validFields = ['code', 'id', 'plaqueType', 'holderName', 'deceasedName', 'deceasedName2', 'yinGeng', 'birthDate2', 'deathDate2', 'yinGeng2', 'zodiac2', 'gender2', 'gender', 'zodiac', 'age', 'birthDate', 'birthLunar', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'dedicationType', 'longevitySubtype', 'size', 'startDate', 'endDate', 'message', 'blessingText', 'status', 'remarks', 'templateId', 'devoteeId', 'ritualId', 'createdBy', 'createdAt', 'updatedAt']
     const data: any = {}
     for (const key of validFields) {
       if (req.body[key] !== undefined) data[key] = req.body[key]
@@ -256,10 +270,11 @@ router.delete('/plaques/:id', authMiddleware, async (req: AuthRequest, res: Resp
 
 router.get('/print-jobs', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { status, sourceType } = req.query
+    const { status, sourceType, updatedSince } = req.query
     const where: any = {}
     if (status) where.status = status
     if (sourceType) where.sourceType = sourceType
+    if (updatedSince) where.updatedAt = { gte: new Date(updatedSince as string) }
     const jobs = await prisma.printJob.findMany({
       where,
       include: {
@@ -536,9 +551,12 @@ router.post('/local-print/jobs/:jobId/items/:itemId/report', async (req: Request
   }
 })
 
-router.get('/plaque-templates', authMiddleware, async (_req: AuthRequest, res: Response) => {
+router.get('/plaque-templates', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const templates = await prisma.plaqueTemplate.findMany({ orderBy: { createdAt: 'desc' } })
+    const { updatedSince } = req.query
+    const where: any = {}
+    if (updatedSince) where.updatedAt = { gte: new Date(updatedSince as string) }
+    const templates = await prisma.plaqueTemplate.findMany({ where, orderBy: { createdAt: 'desc' } })
     res.json({ success: true, data: templates })
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
@@ -639,16 +657,33 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), async (req
     }
 
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' })
-    const sheetName = workbook.SheetNames[0]
-    const worksheet = workbook.Sheets[sheetName]
-    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][]
 
-    if (data.length < 2) {
+    const allRows: any[][] = []
+    let headers: string[] = []
+
+    for (const sheetName of workbook.SheetNames) {
+      const worksheet = workbook.Sheets[sheetName]
+      const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][]
+
+      if (data.length < 2) continue
+
+      const sheetHeaders = data[0].map((h: any) => String(h).trim())
+
+      if (headers.length === 0) {
+        headers = sheetHeaders
+      } else if (sheetHeaders.join(',') !== headers.join(',')) {
+        continue
+      }
+
+      const sheetRows = data.slice(1).filter((row) => row.some((cell) => cell !== null && cell !== undefined && cell !== ''))
+      allRows.push(...sheetRows)
+    }
+
+    if (headers.length === 0 || allRows.length === 0) {
       return res.status(400).json({ success: false, error: 'Excel 文件为空或格式不正确' })
     }
 
-    const headers = data[0].map((h) => String(h).trim())
-    const rows = data.slice(1).filter((row) => row.some((cell) => cell !== null && cell !== undefined && cell !== ''))
+    const rows = allRows
 
     const columnMap: Record<string, number> = {}
     headers.forEach((h, i) => { columnMap[h] = i })
@@ -688,14 +723,16 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), async (req
       longevitySubtype: getValue(row, '禄位类型'),
       size: getValue(row, '规格'),
       gender: getValue(row, '性别'),
-      birthDate: getValue(row, '出生日期'),
+      birthDate: getValue(row, '亡者生日') || getValue(row, '出生日期'),
       birthLunar: getValue(row, '农历') === '是' || getValue(row, '亡者农历') === '是',
-      deceasedName: getValue(row, '亡者姓名'),
-      deceasedName2: getValue(row, '第二亡者'),
-      deathDate: getValue(row, '忌日'),
+      deceasedName: getValue(row, '亡者') || getValue(row, '亡者姓名'),
+      deceasedName2: getValue(row, '亡者二') || getValue(row, '第二亡者'),
+      yinGeng: getValue(row, '亡者阴庚') || getValue(row, '阴庚'),
+      deathDate: getValue(row, '亡者忌日') || getValue(row, '忌日'),
       deathLunar: getValue(row, '忌日农历') === '是',
-      birthDate2: getValue(row, '第二亡者生日'),
-      deathDate2: getValue(row, '第二亡者忌日'),
+      birthDate2: getValue(row, '亡者二生日') || getValue(row, '第二亡者生日'),
+      deathDate2: getValue(row, '亡者二忌日') || getValue(row, '第二亡者忌日'),
+      yinGeng2: getValue(row, '亡者二阴庚') || getValue(row, '第二亡者阴庚'),
       dedicationType: getValue(row, '牌位主体'),
       yangShang: getValue(row, '阳上'),
       phone: getValue(row, '电话'),
@@ -719,11 +756,11 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), async (req
       }) : [],
       importKeys.some((k) => k.startsWith('REBIRTH|')) ? prisma.memorialPlaque.findMany({
         where: { plaqueType: 'REBIRTH', status: 'ACTIVE' },
-        select: { deceasedName: true, deceasedName2: true, size: true, gender: true, birthDate: true, birthLunar: true, deathDate: true, deathLunar: true, birthDate2: true, deathDate2: true, yangShang: true, phone: true, address: true, startDate: true, endDate: true },
+        select: { deceasedName: true, deceasedName2: true, yinGeng: true, size: true, gender: true, birthDate: true, birthLunar: true, deathDate: true, deathLunar: true, birthDate2: true, deathDate2: true, yinGeng2: true, yangShang: true, phone: true, address: true, startDate: true, endDate: true },
       }) : [],
       importKeys.some((k) => k.startsWith('DELIVERANCE|')) ? prisma.memorialPlaque.findMany({
         where: { plaqueType: 'DELIVERANCE', status: 'ACTIVE' },
-        select: { dedicationType: true, size: true, yangShang: true, phone: true, address: true, startDate: true, endDate: true },
+        select: { dedicationType: true, deceasedName: true, deceasedName2: true, yinGeng: true, size: true, birthDate: true, deathDate: true, yinGeng2: true, birthDate2: true, deathDate2: true, yangShang: true, phone: true, address: true, startDate: true, endDate: true },
       }) : [],
     ])
 
@@ -732,10 +769,10 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), async (req
       existingKeySet.add(buildPlaqueImportDuplicateKey({ plaqueType: 'LONGEVITY', holderName: p.holderName, longevitySubtype: p.longevitySubtype, size: p.size, gender: p.gender, birthDate: p.birthDate, birthLunar: p.birthLunar, yangShang: p.yangShang, phone: p.phone, address: p.address, blessingText: p.blessingText, startDate: p.startDate, endDate: p.endDate }))
     })
     existingRebirth.forEach((p) => {
-      existingKeySet.add(buildPlaqueImportDuplicateKey({ plaqueType: 'REBIRTH', deceasedName: p.deceasedName, deceasedName2: p.deceasedName2, size: p.size, gender: p.gender, birthDate: p.birthDate, birthLunar: p.birthLunar, deathDate: p.deathDate, deathLunar: p.deathLunar, birthDate2: p.birthDate2, deathDate2: p.deathDate2, yangShang: p.yangShang, phone: p.phone, address: p.address, startDate: p.startDate, endDate: p.endDate }))
+      existingKeySet.add(buildPlaqueImportDuplicateKey({ plaqueType: 'REBIRTH', deceasedName: p.deceasedName, deceasedName2: p.deceasedName2, yinGeng: p.yinGeng, size: p.size, gender: p.gender, birthDate: p.birthDate, birthLunar: p.birthLunar, deathDate: p.deathDate, deathLunar: p.deathLunar, birthDate2: p.birthDate2, deathDate2: p.deathDate2, yinGeng2: p.yinGeng2, yangShang: p.yangShang, phone: p.phone, address: p.address, startDate: p.startDate, endDate: p.endDate }))
     })
     existingDeliverance.forEach((p) => {
-      existingKeySet.add(buildPlaqueImportDuplicateKey({ plaqueType: 'DELIVERANCE', dedicationType: p.dedicationType, size: p.size, yangShang: p.yangShang, phone: p.phone, address: p.address, startDate: p.startDate, endDate: p.endDate }))
+      existingKeySet.add(buildPlaqueImportDuplicateKey({ plaqueType: 'DELIVERANCE', dedicationType: p.dedicationType, deceasedName: p.deceasedName, deceasedName2: p.deceasedName2, yinGeng: p.yinGeng, size: p.size, birthDate: p.birthDate, deathDate: p.deathDate, yinGeng2: p.yinGeng2, birthDate2: p.birthDate2, deathDate2: p.deathDate2, yangShang: p.yangShang, phone: p.phone, address: p.address, startDate: p.startDate, endDate: p.endDate }))
     })
 
     const successCount = { current: 0 }
@@ -783,9 +820,11 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), async (req
           plaqueData.birthLunar = getValue(row, '亡者农历') === '是'
           plaqueData.deathDate = getOptionalValue(row, '忌日')
           plaqueData.deathLunar = getValue(row, '忌日农历') === '是'
-          plaqueData.deceasedName2 = getOptionalValue(row, '第二亡者')
-          plaqueData.birthDate2 = getOptionalValue(row, '第二亡者生日')
-          plaqueData.deathDate2 = getOptionalValue(row, '第二亡者忌日')
+          plaqueData.yinGeng = getOptionalValue(row, '亡者阴庚') || getOptionalValue(row, '阴庚')
+          plaqueData.deceasedName2 = getOptionalValue(row, '亡者二') || getOptionalValue(row, '第二亡者')
+          plaqueData.birthDate2 = getOptionalValue(row, '亡者二生日') || getOptionalValue(row, '第二亡者生日')
+          plaqueData.deathDate2 = getOptionalValue(row, '亡者二忌日') || getOptionalValue(row, '第二亡者忌日')
+          plaqueData.yinGeng2 = getOptionalValue(row, '亡者二阴庚') || getOptionalValue(row, '第二亡者阴庚')
         } else if (plaqueData.plaqueType === 'DELIVERANCE') {
           const dedicationType = getValue(row, '牌位主体')
           if (!dedicationType) {
@@ -794,6 +833,14 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), async (req
           }
           plaqueData.dedicationType = dedicationType
           plaqueData.size = getOptionalValue(row, '规格')
+          plaqueData.deceasedName = getOptionalValue(row, '亡者')
+          plaqueData.yinGeng = getOptionalValue(row, '亡者阴庚')
+          plaqueData.birthDate = getOptionalValue(row, '亡者生日')
+          plaqueData.deathDate = getOptionalValue(row, '亡者忌日')
+          plaqueData.deceasedName2 = getOptionalValue(row, '亡者二')
+          plaqueData.yinGeng2 = getOptionalValue(row, '亡者二阴庚')
+          plaqueData.birthDate2 = getOptionalValue(row, '亡者二生日')
+          plaqueData.deathDate2 = getOptionalValue(row, '亡者二忌日')
         }
 
         const key = buildPlaqueImportDuplicateKey(createImportIdentity(plaqueData.plaqueType, row))
@@ -812,6 +859,8 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), async (req
         plaqueData.yangShang = getOptionalValue(row, '阳上')
         plaqueData.phone = getOptionalValue(row, '电话')
         plaqueData.address = getOptionalValue(row, '地址')
+        plaqueData.message = getOptionalValue(row, '寄语')
+        if (!plaqueData.blessingText) plaqueData.blessingText = plaqueData.message
 
         const parsedStartDate = parseSpreadsheetDateValue(getRawValue(row, '开始日期'))
         const parsedEndDate = parseSpreadsheetDateValue(getRawValue(row, '结束日期'))
@@ -823,6 +872,7 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), async (req
         }
 
         plaqueData.remarks = getOptionalValue(row, '备注')
+        if (!plaqueData.code) plaqueData.code = await generatePlaqueCode()
 
         await prisma.memorialPlaque.create({ data: plaqueData })
         await logOperation(req.user, 'CREATE', 'plaque', 'import_' + i, null, plaqueData)

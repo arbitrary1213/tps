@@ -89,7 +89,7 @@ export const FIELD_DEFINITIONS: Record<string, { key: string; label: string; typ
     { label: '性别', key: 'gender', type: 'REBIRTH' },
     { label: '出生日期', key: 'birthDate', type: 'REBIRTH' },
     { label: '忌日', key: 'deathDate', type: 'REBIRTH' },
-    { label: '第二亡者', key: 'deceasedName2', type: 'REBIRTH' },
+    { label: '亡者二', key: 'deceasedName2', type: 'REBIRTH' },
     { label: '阳上', key: 'yangShang', type: 'REBIRTH' },
   ],
   DELIVERANCE: [

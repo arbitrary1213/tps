@@ -92,6 +92,7 @@ export interface RitualRecord {
 
 export interface PlaqueRecord {
   id: string
+  code?: string
   plaqueType: string
   longevitySubtype?: string
   size?: string
@@ -105,7 +106,9 @@ export interface PlaqueRecord {
   birthLunar: boolean
   deathDate?: string
   deathLunar: boolean
+  yinGeng?: string
   deceasedName2?: string
+  yinGeng2?: string
   birthDate2?: string
   birthLunar2?: boolean
   deathDate2?: string

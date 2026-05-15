@@ -13,8 +13,10 @@ export type PlaqueDuplicateIdentity = {
   deceasedName?: unknown
   deceasedName2?: unknown
   deathLunar?: unknown
+  yinGeng?: unknown
   birthDate2?: unknown
   deathDate2?: unknown
+  yinGeng2?: unknown
   dedicationType?: unknown
   yangShang?: unknown
   phone?: unknown
@@ -142,8 +144,10 @@ export function buildPlaqueImportDuplicateKey(identity: PlaqueDuplicateIdentity)
       normalizePlaqueKeyFlag(identity.birthLunar),
       normalizePlaqueKeyText(identity.deathDate),
       normalizePlaqueKeyFlag(identity.deathLunar),
+      normalizePlaqueKeyText(identity.yinGeng),
       normalizePlaqueKeyText(identity.birthDate2),
       normalizePlaqueKeyText(identity.deathDate2),
+      normalizePlaqueKeyText(identity.yinGeng2),
       normalizePlaqueKeyText(identity.yangShang),
       normalizePlaqueKeyText(identity.phone),
       normalizePlaqueKeyText(identity.address),
@@ -155,7 +159,15 @@ export function buildPlaqueImportDuplicateKey(identity: PlaqueDuplicateIdentity)
   return [
     'DELIVERANCE',
     normalizePlaqueKeyText(identity.dedicationType),
+    normalizePlaqueKeyText(identity.deceasedName),
+    normalizePlaqueKeyText(identity.deceasedName2),
     normalizePlaqueKeyText(identity.size),
+    normalizePlaqueKeyText(identity.yinGeng),
+    normalizePlaqueKeyText(identity.birthDate),
+    normalizePlaqueKeyText(identity.deathDate),
+    normalizePlaqueKeyText(identity.yinGeng2),
+    normalizePlaqueKeyText(identity.birthDate2),
+    normalizePlaqueKeyText(identity.deathDate2),
     normalizePlaqueKeyText(identity.yangShang),
     normalizePlaqueKeyText(identity.phone),
     normalizePlaqueKeyText(identity.address),

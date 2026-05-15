@@ -277,11 +277,12 @@ router.delete('/tasks/:id', authMiddleware, async (req: AuthRequest, res: Respon
 // 获取登记请求列表（需认证）
 router.get('/requests', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { taskType, status, startDate, endDate, page = 1, pageSize = 20 } = req.query
+    const { taskType, status, startDate, endDate, updatedSince, page = 1, pageSize = 20 } = req.query
 
     const where: any = {}
     if (taskType) where.taskType = taskType
     if (status) where.status = status
+    if (updatedSince) where.updatedAt = { gte: new Date(updatedSince as string) }
     if (startDate || endDate) {
       where.createdAt = {}
       if (startDate) where.createdAt.gte = new Date(startDate as string)

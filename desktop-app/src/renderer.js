@@ -10,6 +10,7 @@ const state = {
     jobs: [],
     calendarEvents: [],
   },
+  syncMarkers: null,
 }
 
 const $ = (selector) => document.querySelector(selector)
@@ -82,18 +83,8 @@ function render() {
     item.taskType || '-',
     item.status || '-',
   ])
-  if (state.view === 'plaques') return renderList('最近牌位', state.data.plaques, item => [
-    item.holderName || item.deceasedName || item.dedicationType || '-',
-    item.plaqueType || '-',
-    item.phone || '-',
-    item.status || '-',
-  ])
-  if (state.view === 'devotees') return renderList('信众信息', state.data.devotees, item => [
-    item.name || '-',
-    item.phone || '-',
-    item.address || '-',
-    item.createdAt ? item.createdAt.slice(0, 10) : '-',
-  ])
+  if (state.view === 'plaques') return renderPlaques()
+  if (state.view === 'devotees') return renderDevotees()
   if (state.view === 'print') return renderPrint()
   if (state.view === 'calendar') return renderCalendarSettings()
   if (state.view === 'diagnostics') return renderDiagnostics()
@@ -326,6 +317,159 @@ function renderList(title, rows, mapRow) {
       ${rows.map((row) => `<div class="row">${mapRow(row).map(value => `<span>${escapeHtml(value)}</span>`).join('')}<span></span></div>`).join('') || '<p class="muted">暂无数据</p>'}
     </div>
   `
+}
+
+function renderPlaques() {
+  const plaques = state.data.plaques || []
+  const typeLabel = (t) => ({ LONGEVITY: '延生禄位', REBIRTH: '往生莲位', DELIVERANCE: '超度牌位' }[t] || t || '-')
+  content.innerHTML = `
+    <div class="panel">
+      <h2>牌位管理</h2>
+      <p class="hint">共 ${plaques.length} 条 · 可离线新增，联网后自动上传</p>
+      <div class="actions">
+        <button id="newPlaqueBtn" class="primary">+ 新建牌位</button>
+      </div>
+    </div>
+    <div class="table" id="plaqueTable">
+      ${plaques.map((item) => `
+        <div class="row">
+          <span>${escapeHtml(item.holderName || item.deceasedName || item.dedicationType || '-')}</span>
+          <span>${escapeHtml(typeLabel(item.plaqueType))}</span>
+          <span>${escapeHtml(item.phone || '-')}</span>
+          <span>${escapeHtml(item.status || '-')}</span>
+        </div>
+      `).join('') || '<p class="muted">暂无牌位</p>'}
+    </div>
+    <div id="plaqueFormPanel" class="panel hidden">
+      <h3>新建牌位</h3>
+      <div class="grid">
+        <label>牌位类型
+          <select id="plaqueType">
+            <option value="LONGEVITY">延生禄位</option>
+            <option value="REBIRTH">往生莲位</option>
+            <option value="DELIVERANCE">超度牌位</option>
+          </select>
+        </label>
+        <label>持名者/亡者姓名<input id="plaqueName" placeholder="牌位主体姓名" /></label>
+        <label>阳上（供奉人）<input id="plaqueYangShang" placeholder="供奉人姓名" /></label>
+        <label>电话<input id="plaquePhone" placeholder="联系电话" /></label>
+        <label>地址<input id="plaqueAddress" placeholder="地址" /></label>
+      </div>
+      <div class="actions">
+        <button id="savePlaqueBtn" class="primary">保存牌位</button>
+        <button id="cancelPlaqueBtn">取消</button>
+      </div>
+      <pre id="plaqueOutput" class="hint output"></pre>
+    </div>
+  `
+  $('#newPlaqueBtn').onclick = () => {
+    $('#plaqueFormPanel').classList.remove('hidden')
+    $('#newPlaqueBtn').style.display = 'none'
+  }
+  $('#cancelPlaqueBtn').onclick = () => {
+    $('#plaqueFormPanel').classList.add('hidden')
+    $('#newPlaqueBtn').style.display = ''
+    $('#plaqueOutput').textContent = ''
+  }
+  $('#savePlaqueBtn').onclick = async () => {
+    const plaqueType = $('#plaqueType').value
+    const name = $('#plaqueName').value.trim()
+    const yangShang = $('#plaqueYangShang').value.trim()
+    if (!name) { $('#plaqueOutput').textContent = '请输入持名者/亡者姓名'; return }
+    const payload = {
+      plaqueType,
+      holderName: plaqueType === 'LONGEVITY' ? name : '',
+      deceasedName: plaqueType !== 'LONGEVITY' ? name : '',
+      yangShang: yangShang || '',
+      phone: $('#plaquePhone').value.trim(),
+      address: $('#plaqueAddress').value.trim(),
+      status: 'ACTIVE',
+    }
+    const result = await offlineAwareSave('plaque', '/api/plaques', 'POST', payload)
+    if (result._offline) {
+      $('#plaqueOutput').textContent = '已离线保存，联网后自动上传'
+      state.data.plaques = [result, ...state.data.plaques]
+      await saveConfig({ recentData: state.data })
+    } else {
+      $('#plaqueOutput').textContent = '已保存到服务器'
+      state.data.plaques = [result, ...state.data.plaques]
+      await saveConfig({ recentData: state.data })
+    }
+    $('#plaqueFormPanel').classList.add('hidden')
+    $('#newPlaqueBtn').style.display = ''
+    render()
+  }
+}
+
+function renderDevotees() {
+  const devotees = state.data.devotees || []
+  content.innerHTML = `
+    <div class="panel">
+      <h2>信众管理</h2>
+      <p class="hint">共 ${devotees.length} 条 · 可离线新增，联网后自动上传</p>
+      <div class="actions">
+        <button id="newDevoteeBtn" class="primary">+ 新建信众</button>
+      </div>
+    </div>
+    <div class="table">
+      ${devotees.map((item) => `
+        <div class="row">
+          <span>${escapeHtml(item.name || '-')}</span>
+          <span>${escapeHtml(item.phone || '-')}</span>
+          <span>${escapeHtml(item.address || '-')}</span>
+          <span>${item.createdAt ? item.createdAt.slice(0, 10) : '-'}</span>
+        </div>
+      `).join('') || '<p class="muted">暂无信众</p>'}
+    </div>
+    <div id="devoteeFormPanel" class="panel hidden">
+      <h3>新建信众</h3>
+      <div class="grid">
+        <label>姓名<input id="devoteeName" placeholder="信众姓名" /></label>
+        <label>电话<input id="devoteePhone" placeholder="联系电话" /></label>
+        <label>地址<input id="devoteeAddress" placeholder="地址" /></label>
+        <label>微信<input id="devoteeWechat" placeholder="微信号" /></label>
+      </div>
+      <div class="actions">
+        <button id="saveDevoteeBtn" class="primary">保存信众</button>
+        <button id="cancelDevoteeBtn">取消</button>
+      </div>
+      <pre id="devoteeOutput" class="hint output"></pre>
+    </div>
+  `
+  $('#newDevoteeBtn').onclick = () => {
+    $('#devoteeFormPanel').classList.remove('hidden')
+    $('#newDevoteeBtn').style.display = 'none'
+  }
+  $('#cancelDevoteeBtn').onclick = () => {
+    $('#devoteeFormPanel').classList.add('hidden')
+    $('#newDevoteeBtn').style.display = ''
+    $('#devoteeOutput').textContent = ''
+  }
+  $('#saveDevoteeBtn').onclick = async () => {
+    const name = $('#devoteeName').value.trim()
+    if (!name) { $('#devoteeOutput').textContent = '请输入姓名'; return }
+    const payload = {
+      name,
+      phone: $('#devoteePhone').value.trim(),
+      address: $('#devoteeAddress').value.trim(),
+      wechat: $('#devoteeWechat').value.trim(),
+      tags: [],
+      totalDonation: 0,
+    }
+    const result = await offlineAwareSave('devotee', '/api/devotees', 'POST', payload)
+    if (result._offline) {
+      $('#devoteeOutput').textContent = '已离线保存，联网后自动上传'
+      state.data.devotees = [result, ...state.data.devotees]
+      await saveConfig({ recentData: state.data })
+    } else {
+      $('#devoteeOutput').textContent = '已保存到服务器'
+      state.data.devotees = [result, ...state.data.devotees]
+      await saveConfig({ recentData: state.data })
+    }
+    $('#devoteeFormPanel').classList.add('hidden')
+    $('#newDevoteeBtn').style.display = ''
+    render()
+  }
 }
 
 function renderPrint() {
@@ -577,7 +721,9 @@ async function bindSettingsControls() {
 
   $('#clearCacheBtn').onclick = async () => {
     state.data = { requests: [], plaques: [], devotees: [], jobs: [], calendarEvents: [] }
+    state.syncMarkers = null
     await saveConfig({ recentData: state.data, cachedJobs: [], pendingReports: [] })
+    await window.templeDesktop.setCache('syncMarkers', null)
     $('#settingsOutput').textContent = '本地缓存已清除，登录信息和服务器地址已保留。'
     render()
   }
@@ -601,7 +747,8 @@ function renderDiagnostics() {
       </div>
       <div class="actions">
         <button id="diagHealthBtn" class="primary">检测 /api/health</button>
-        <button id="diagSyncBtn">同步数据</button>
+        <button id="diagSyncBtn">增量同步</button>
+        <button id="diagFullSyncBtn">全量同步</button>
         <button id="diagSetupBtn">重新配置</button>
       </div>
       <pre id="diagOutput" class="hint output"></pre>
@@ -616,8 +763,11 @@ function renderDiagnostics() {
       $('#diagOutput').textContent = `连接失败：${error.message}`
     }
   }
-  $('#diagSyncBtn').onclick = () => syncData().catch((error) => {
+  $('#diagSyncBtn').onclick = () => syncData(false).catch((error) => {
     $('#diagOutput').textContent = `同步失败：${error.message}`
+  })
+  $('#diagFullSyncBtn').onclick = () => syncData(true).catch((error) => {
+    $('#diagOutput').textContent = `全量同步失败：${error.message}`
   })
   $('#diagSetupBtn').onclick = () => window.templeDesktop.openSetup()
 }
@@ -635,28 +785,110 @@ async function login() {
   state.user = result.user
   await saveConfig({ auth: { token: result.token, user: result.user } })
   setStatus(`已连接：${serverUrl}`)
-  await syncData()
+  await flushSyncQueue()
+  await syncData(true)
 }
 
-async function syncData() {
+async function syncData(fullSync = false) {
   if (!state.token) return
+
+  const now = new Date().toISOString()
+  const markers = fullSync ? {} : (state.syncMarkers || {})
+  const since = (key) => markers[key] ? `&updatedSince=${encodeURIComponent(markers[key])}` : ''
+
   const [requests, plaques, devotees, jobs, calendarEvents] = await Promise.all([
-    apiRequest('/api/registration/requests?status=PENDING').catch(() => state.data.requests),
-    apiRequest('/api/plaques').catch(() => state.data.plaques),
-    apiRequest('/api/devotees').catch(() => state.data.devotees),
-    apiRequest('/api/print-jobs?status=PENDING').catch(() => state.data.jobs),
-    apiRequest('/api/calendar-events').catch(() => state.data.calendarEvents),
+    apiRequest(`/api/registration/requests?status=PENDING${since('requests')}`).catch(() => state.data.requests),
+    apiRequest(`/api/plaques?${since('plaques')}`).catch(() => state.data.plaques),
+    apiRequest(`/api/devotees?${since('devotees')}`).catch(() => state.data.devotees),
+    apiRequest(`/api/print-jobs?status=PENDING${since('jobs')}`).catch(() => state.data.jobs),
+    apiRequest(`/api/calendar-events?${since('calendarEvents')}`).catch(() => state.data.calendarEvents),
   ])
-  state.data = {
-    requests: Array.isArray(requests?.items) ? requests.items : (Array.isArray(requests) ? requests : requests?.data || []),
-    plaques: Array.isArray(plaques) ? plaques : [],
-    devotees: Array.isArray(devotees) ? devotees : [],
-    jobs: Array.isArray(jobs) ? jobs : [],
-    calendarEvents: Array.isArray(calendarEvents) ? calendarEvents : [],
+
+  const newRequests = Array.isArray(requests?.items) ? requests.items : (Array.isArray(requests) ? requests : requests?.data || [])
+  const newPlaques = Array.isArray(plaques) ? plaques : []
+  const newDevotees = Array.isArray(devotees) ? devotees : []
+  const newJobs = Array.isArray(jobs) ? jobs : []
+  const newCalendarEvents = Array.isArray(calendarEvents) ? calendarEvents : []
+
+  if (fullSync) {
+    state.data = {
+      requests: newRequests,
+      plaques: newPlaques,
+      devotees: newDevotees,
+      jobs: newJobs,
+      calendarEvents: newCalendarEvents,
+    }
+  } else {
+    // merge: upsert by id, keep local items that don't exist on server
+    const mergeById = (existing, incoming) => {
+      const map = new Map(existing.map(item => [item.id, item]))
+      for (const item of incoming) map.set(item.id, item)
+      return [...map.values()]
+    }
+    state.data.requests = mergeById(state.data.requests, newRequests)
+    state.data.plaques = mergeById(state.data.plaques, newPlaques)
+    state.data.devotees = mergeById(state.data.devotees, newDevotees)
+    state.data.jobs = mergeById(state.data.jobs, newJobs)
+    state.data.calendarEvents = mergeById(state.data.calendarEvents, newCalendarEvents)
   }
+
+  state.syncMarkers = { plaques: now, devotees: now, requests: now, jobs: now, calendarEvents: now }
   await saveConfig({ recentData: state.data })
+  await window.templeDesktop.setCache('syncMarkers', state.syncMarkers)
+
+  // persist to local SQLite for offline access
+  const persistRows = (entityType, rows) => {
+    if (!rows || !rows.length) return
+    return window.templeDesktop.upsertLocalRows(entityType, rows).catch(() => {})
+  }
+  await Promise.all([
+    persistRows('plaque', state.data.plaques),
+    persistRows('devotee', state.data.devotees),
+    persistRows('registration_request', state.data.requests),
+    persistRows('print_job', state.data.jobs),
+    persistRows('calendar_event', state.data.calendarEvents),
+  ])
+
   setStatus(`已同步：${new Date().toLocaleString()}`)
   render()
+}
+
+async function flushSyncQueue() {
+  try {
+    const queue = await window.templeDesktop.getSyncQueue()
+    let flushed = 0
+    for (const item of queue) {
+      if (item.status !== 'PENDING') continue
+      try {
+        await apiRequest(item.endpoint, {
+          method: item.method,
+          body: item.payload,
+        })
+        flushed++
+      } catch {
+        break // stop on first failure to preserve order
+      }
+    }
+    if (flushed) setStatus(`已上传 ${flushed} 条离线操作`)
+  } catch {
+    // no-op if local DB not available
+  }
+}
+
+async function offlineAwareSave(entityType, apiPath, method, payload) {
+  try {
+    const result = await apiRequest(apiPath, { method, body: JSON.stringify(payload) })
+    return result
+  } catch {
+    await window.templeDesktop.offlineSave({
+      entityType,
+      operation: method === 'POST' ? 'CREATE' : 'UPDATE',
+      endpoint: apiPath,
+      method,
+      payload,
+    }).catch(() => {})
+    return { ...payload, id: `local_${Date.now()}`, _offline: true }
+  }
 }
 
 async function fetchNextPrintJob() {
@@ -749,6 +981,7 @@ async function init() {
   state.token = state.config.auth?.token || ''
   state.user = state.config.auth?.user || null
   state.data = state.config.recentData || state.data
+  state.syncMarkers = await window.templeDesktop.getCache('syncMarkers') || null
 
   $('#serverUrl').value = state.config.serverUrl || ''
   $('#loginBtn').onclick = () => login().catch((error) => alert(error.message))
@@ -772,8 +1005,30 @@ async function init() {
   if (state.config.serverUrl) setStatus(`服务器：${state.config.serverUrl}`)
   render()
   if (state.token) {
-    syncData().catch((error) => {
+    syncData().catch(async (error) => {
       setStatus(`离线模式：${error.message}`)
+      // fallback: load from local SQLite
+      try {
+        const [plaques, devotees, requests, jobs, calendarEvents] = await Promise.all([
+          window.templeDesktop.listLocalRows('plaque'),
+          window.templeDesktop.listLocalRows('devotee'),
+          window.templeDesktop.listLocalRows('registration_request'),
+          window.templeDesktop.listLocalRows('print_job'),
+          window.templeDesktop.listLocalRows('calendar_event'),
+        ])
+        if (plaques.length || devotees.length) {
+          state.data = {
+            requests: requests || [],
+            plaques: plaques || [],
+            devotees: devotees || [],
+            jobs: jobs || [],
+            calendarEvents: calendarEvents || [],
+          }
+          setStatus(`离线模式：已加载本地数据（${state.data.plaques.length} 牌位, ${state.data.devotees.length} 信众）`)
+        }
+      } catch {
+        // both server and local DB unavailable
+      }
       render()
     })
   }

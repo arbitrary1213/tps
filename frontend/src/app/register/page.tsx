@@ -98,10 +98,10 @@ const fieldDefs: Record<string, FieldDef> = {
     { label:'自定义',value:'custom' },
   ]},
   customDedicationType: { type: 'text', label: '新增牌位主体', placeholder:'请输入新的牌位主体名称' },
-  deceasedName2: { type: 'text', label: '第二亡者姓名' },
-  birthDate2: { type: 'date', label: '第二亡者出生日期' },
+  deceasedName2: { type: 'text', label: '亡者二姓名' },
+  birthDate2: { type: 'date', label: '亡者二出生日期' },
   birthLunar2: { type: 'checkbox', label: '农历', options:[{ label:'农历',value:'1' }] },
-  deathDate2: { type: 'date', label: '第二亡者忌日' },
+  deathDate2: { type: 'date', label: '亡者二忌日' },
   deathLunar2: { type: 'checkbox', label: '农历', options:[{ label:'农历',value:'1' }] },
 
   // --- 供灯 ---

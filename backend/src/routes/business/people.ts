@@ -241,7 +241,7 @@ router.post('/volunteer-attendance/sign-out', async (req: Request, res: Response
 
 router.get('/devotees', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { keyword, tag } = req.query
+    const { keyword, tag, updatedSince } = req.query
     const where: any = {}
     if (keyword) {
       where.OR = [
@@ -250,6 +250,7 @@ router.get('/devotees', authMiddleware, async (req: AuthRequest, res: Response) 
       ]
     }
     if (tag) where.tags = { has: tag as string }
+    if (updatedSince) where.updatedAt = { gte: new Date(updatedSince as string) }
 
     const devotees = await prisma.devotee.findMany({ where, orderBy: { createdAt: 'desc' } })
     res.json({ success: true, data: devotees })

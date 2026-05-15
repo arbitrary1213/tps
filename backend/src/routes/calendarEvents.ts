@@ -63,7 +63,8 @@ async function getOrCreateWechatIntegration() {
 router.get('/calendar-events', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const includeDisabled = req.query.includeDisabled === 'true'
-    const where = includeDisabled ? {} : { enabled: true }
+    const where: any = includeDisabled ? {} : { enabled: true }
+    if (req.query.updatedSince) where.updatedAt = { gte: new Date(req.query.updatedSince as string) }
     const events = await prisma.buddhistCalendarEvent.findMany({
       where,
       orderBy: [{ sort: 'asc' }, { date: 'asc' }, { lunarMonth: 'asc' }, { lunarDay: 'asc' }, { createdAt: 'desc' }],

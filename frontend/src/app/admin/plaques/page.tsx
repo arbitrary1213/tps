@@ -107,7 +107,9 @@ export default function PlaquesPage() {
     birthLunar: false,
     deathDate: '',
     deathLunar: true,
+    yinGeng: '',
     deceasedName2: '',
+    yinGeng2: '',
     birthDate2: '',
     birthLunar2: true,
     deathDate2: '',
@@ -229,34 +231,26 @@ export default function PlaquesPage() {
       {
         '牌位类型': '延生禄位',
         '牌位主体': '牌位主体 (必填)',
-        '禄位类型': '普通/祈福/化太岁/财神/文殊',
-        '规格': '小/中/大',
-        '性别': '男/女',
+        '阳上': '',
+        '禄位类型': '',
+        '规格': '',
+        '性别': '',
         '出生日期': '',
         '农历': '是/否',
-        '阳上': '',
-        '电话': '',
         '地址': '',
         '祝福语': '',
-        '开始日期': 'YYYY-MM-DD',
-        '结束日期': 'YYYY-MM-DD',
-        '备注': '',
       },
       {
         '牌位类型': '延生禄位',
-        '牌位主体': '王淑琴',
-        '禄位类型': '祈福',
-        '规格': '中',
-        '性别': '女',
-        '出生日期': '1982-06-05',
+        '牌位主体': '张三',
+        '阳上': '张三',
+        '禄位类型': '标准',
+        '规格': '大',
+        '性别': '男',
+        '出生日期': '1978年正月初三',
         '农历': '是',
-        '阳上': '马紫祥',
-        '电话': '',
-        '地址': '浙江省湖州市亿丰建材城1号楼301室',
-        '祝福语': '心想事成 万事如意',
-        '开始日期': '',
-        '结束日期': '',
-        '备注': '',
+        '地址': '本市东街一号',
+        '祝福语': '消灾延寿 福慧增长',
       },
     ]
     const ws = XLSX.utils.json_to_sheet(templateData)
@@ -276,85 +270,116 @@ export default function PlaquesPage() {
       {
         '牌位类型': '往生莲位',
         '亡者姓名': '亡者姓名 (必填)',
-        '规格': '小/中/大',
-        '性别': '男/女',
+        '阴庚': '',
+        '亡者二': '',
+        '亡者二阴庚': '',
+        '规格': '',
+        '性别': '',
         '出生日期': '',
-        '亡者农历': '是/否',
+        '农历': '是/否',
         '忌日': '',
         '忌日农历': '是/否',
-        '第二亡者': '',
-        '第二亡者生日': '',
-        '第二亡者忌日': '',
+        '亡者二生日': '',
+        '亡者二忌日': '',
         '阳上': '',
+        '寄语': '',
         '电话': '',
         '地址': '',
-        '开始日期': 'YYYY-MM-DD',
-        '结束日期': 'YYYY-MM-DD',
-        '备注': '',
+        '开始日期': '',
+        '结束日期': '',
       },
       {
         '牌位类型': '往生莲位',
-        '亡者姓名': '陈五喜',
-        '规格': '中',
+        '亡者姓名': '王五莲位',
+        '阴庚': '甲午年三月十二日建生',
+        '亡者二': '王小五',
+        '亡者二阴庚': '',
+        '规格': '大',
         '性别': '男',
-        '出生日期': '',
-        '亡者农历': '否',
-        '忌日': '',
-        '忌日农历': '否',
-        '第二亡者': '李某某',
-        '第二亡者生日': '',
-        '第二亡者忌日': '',
-        '阳上': '王淑琴',
-        '电话': '',
-        '地址': '浙江省湖州市亿丰建材城1号楼301室',
-        '开始日期': '',
-        '结束日期': '',
-        '备注': '先外公',
+        '出生日期': '甲午年三月十二',
+        '农历': '否',
+        '忌日': '八月初一',
+        '忌日农历': '是',
+        '亡者二生日': '',
+        '亡者二忌日': '',
+        '阳上': '王家眷属',
+        '寄语': '蒙佛接引 早登极乐',
+        '电话': '13800138002',
+        '地址': '本市西街三号',
+        '开始日期': '2024-01-01',
+        '结束日期': '2025-01-01',
       },
     ]
     const ws = XLSX.utils.json_to_sheet(templateData)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, '往生莲位导入模板')
     ws['!cols'] = [
-      { wch: 12 }, { wch: 14 }, { wch: 8 }, { wch: 8 }, { wch: 14 }, { wch: 10 },
-      { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 14 },
-      { wch: 14 }, { wch: 30 }, { wch: 14 }, { wch: 14 }, { wch: 20 },
+      { wch: 12 }, { wch: 14 }, { wch: 18 }, { wch: 10 }, { wch: 16 },
+      { wch: 8 }, { wch: 8 }, { wch: 16 }, { wch: 8 }, { wch: 14 },
+      { wch: 10 }, { wch: 16 }, { wch: 16 }, { wch: 14 },
+      { wch: 14 }, { wch: 24 }, { wch: 14 }, { wch: 30 }, { wch: 14 }, { wch: 14 },
     ]
     downloadWorkbook(wb, '往生莲位导入模板.xlsx')
   }
 
-  // 超度牌位导入模板
+  // 超度牌位导入模板（3个Sheet对应3种版式）
   const downloadDeliveranceTemplate = () => {
-    const templateData = [
+    const baseCols = ['牌位类型', '牌位主体', '亡者', '亡者阴庚', '亡者生日', '亡者忌日', '亡者二', '亡者二阴庚', '亡者二生日', '亡者二忌日', '阳上', '寄语', '地址', '电话', '开始日期', '结束日期']
+
+    const sheet1 = [
+      baseCols.reduce((obj, k) => ({ ...obj, [k]: '' }), {}),
       {
         '牌位类型': '超度牌位',
-        '牌位主体': '牌位主体 (必填)',
-        '规格': '小/中/大',
-        '阳上': '',
-        '电话': '',
-        '地址': '',
-        '开始日期': 'YYYY-MM-DD',
-        '结束日期': 'YYYY-MM-DD',
-        '备注': '',
-      },
-      {
-        '牌位类型': '超度牌位',
-        '牌位主体': '冤亲债主',
-        '规格': '中',
-        '阳上': '马紫祥',
-        '电话': '',
-        '地址': '',
-        '开始日期': '',
-        '结束日期': '',
-        '备注': '',
+        '牌位主体': '地基主',
+        '亡者': '', '亡者阴庚': '', '亡者生日': '', '亡者忌日': '',
+        '亡者二': '', '亡者二阴庚': '', '亡者二生日': '', '亡者二忌日': '',
+        '阳上': '陈氏家人', '寄语': '', '地址': '本市东街一号', '电话': '',
+        '开始日期': '2024-01-01', '结束日期': '2025-01-01',
       },
     ]
-    const ws = XLSX.utils.json_to_sheet(templateData)
+
+    const sheet2 = [
+      baseCols.reduce((obj, k) => ({ ...obj, [k]: '' }), {}),
+      {
+        '牌位类型': '超度牌位',
+        '牌位主体': '李四',
+        '亡者': '李四', '亡者阴庚': '戊午年正月初三日建生', '亡者生日': '1978-01-15', '亡者忌日': '2020-03-15',
+        '亡者二': '', '亡者二阴庚': '', '亡者二生日': '', '亡者二忌日': '',
+        '阳上': '李四家人', '寄语': '蒙佛接引 莲品增上', '地址': '本市南街五号', '电话': '13800138003',
+        '开始日期': '2024-01-01', '结束日期': '2025-01-01',
+      },
+    ]
+
+    const sheet3 = [
+      baseCols.reduce((obj, k) => ({ ...obj, [k]: '' }), {}),
+      {
+        '牌位类型': '超度牌位',
+        '牌位主体': '赵六 李四',
+        '亡者': '赵六', '亡者阴庚': '甲午年三月十二日建生', '亡者生日': '1954-04-15', '亡者忌日': '2010-08-20',
+        '亡者二': '李四', '亡者二阴庚': '丙申年九月初九日建生', '亡者二生日': '1956-10-12', '亡者二忌日': '2015-12-03',
+        '阳上': '赵李两家后人', '寄语': '早登极乐 莲品增上', '地址': '本市北街四号', '电话': '13900139004',
+        '开始日期': '2024-01-01', '结束日期': '2025-01-01',
+      },
+    ]
+
+    const colWidths = [
+      { wch: 12 }, { wch: 16 }, { wch: 14 }, { wch: 20 }, { wch: 14 },
+      { wch: 14 }, { wch: 14 }, { wch: 20 }, { wch: 14 }, { wch: 14 },
+      { wch: 14 }, { wch: 24 }, { wch: 30 }, { wch: 14 }, { wch: 14 },
+      { wch: 14 },
+    ]
+
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, '超度牌位导入模板')
-    ws['!cols'] = [
-      { wch: 12 }, { wch: 18 }, { wch: 8 }, { wch: 14 }, { wch: 14 }, { wch: 30 }, { wch: 14 }, { wch: 14 }, { wch: 20 },
-    ]
+    ;[
+      [sheet1, '版式一（无亡者）'],
+      [sheet2, '版式二（单亡者）'],
+      [sheet3, '版式三（双亡者）'],
+    ].forEach(([data, name]) => {
+      const ws = XLSX.utils.json_to_sheet(data as any[])
+      ws['!cols'] = colWidths
+      XLSX.utils.book_append_sheet(wb, ws, name as string)
+    })
+
     downloadWorkbook(wb, '超度牌位导入模板.xlsx')
   }
 
@@ -405,6 +430,7 @@ export default function PlaquesPage() {
   const filteredPlaques = plaques.filter(p => {
     const searchLower = search.toLowerCase()
     const matchesSearch = !searchLower || (
+      p.code?.toLowerCase().includes(searchLower) ||
       p.holderName?.toLowerCase().includes(searchLower) ||
       p.deceasedName?.toLowerCase().includes(searchLower) ||
       p.yangShang?.toLowerCase().includes(searchLower)
@@ -488,7 +514,9 @@ export default function PlaquesPage() {
       birthLunar: plaque.birthLunar || false,
       deathDate: plaque.deathDate || '',
       deathLunar: plaque.deathLunar ?? true,
+      yinGeng: plaque.yinGeng || '',
       deceasedName2: plaque.deceasedName2 || '',
+      yinGeng2: plaque.yinGeng2 || '',
       birthDate2: plaque.birthDate2 || '',
       birthLunar2: plaque.birthLunar2 ?? true,
       deathDate2: plaque.deathDate2 || '',
@@ -598,7 +626,9 @@ export default function PlaquesPage() {
       birthLunar: false,
       deathDate: '',
       deathLunar: true,
+      yinGeng: '',
       deceasedName2: '',
+      yinGeng2: '',
       birthDate2: '',
       birthLunar2: true,
       deathDate2: '',
@@ -721,6 +751,9 @@ export default function PlaquesPage() {
         />
       ),
     },
+    { key: 'code', title: '编码', render: (row: Plaque) => (
+      <span className="text-xs font-mono text-tea/70">{row.code || '-'}</span>
+    )},
     { key: 'plaqueType', title: '类型', render: (row: Plaque) => (
       <Badge variant="info">{plaqueTypeOptions.find(t => t.value === row.plaqueType)?.label || row.plaqueType}</Badge>
     )},
@@ -784,7 +817,7 @@ export default function PlaquesPage() {
           <SearchBar
             value={search}
             onChange={setSearch}
-            placeholder="搜索姓名或阳上..."
+            placeholder="搜索编码/姓名/阳上..."
             className="w-56 min-w-56 shrink-0"
           />
           <Select
@@ -889,7 +922,7 @@ export default function PlaquesPage() {
                 options={[{ value: '', label: '请选择' }, ...sizeOptions]}
               />
               <Input
-                label="牌位主体 *"
+                label="牌位主体"
                 value={formData.holderName}
                 onChange={(e) => setFormData({ ...formData, holderName: e.target.value })}
                 required
@@ -1008,6 +1041,12 @@ export default function PlaquesPage() {
                 required
               />
               <Input
+                label="阴庚（干支纪年）"
+                value={formData.yinGeng}
+                onChange={(e) => setFormData({ ...formData, yinGeng: e.target.value })}
+                placeholder="如：戊午年正月初三日建生"
+              />
+              <Input
                 label="信人"
                 value={formData.yangShang}
                 onChange={(e) => setFormData({ ...formData, yangShang: e.target.value })}
@@ -1065,7 +1104,7 @@ export default function PlaquesPage() {
               </div>
             </div>
             
-            {/* 第二亡者 - 可选择显示 */}
+            {/* 亡者二 - 可选择显示 */}
             {!showSecondDeceased ? (
               <div className="mt-4">
                 <button
@@ -1073,13 +1112,13 @@ export default function PlaquesPage() {
                   onClick={() => setShowSecondDeceased(true)}
                   className="text-sm text-vermilion hover:text-vermilion-dark flex items-center gap-1"
                 >
-                  <span>+</span> 增加第二亡者
+                  <span>+</span> 增加亡者二
                 </button>
               </div>
             ) : (
               <div className="mt-4 pt-4 border-t border-[#E8E0D0]">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-medium text-tea">第二亡者</p>
+                  <p className="text-sm font-medium text-tea">亡者二</p>
                   <button
                     type="button"
                     onClick={() => {
@@ -1093,10 +1132,16 @@ export default function PlaquesPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
-                    label="亡者姓名"
+                    label="亡者二姓名"
                     value={formData.deceasedName2}
                     onChange={(e) => setFormData({ ...formData, deceasedName2: e.target.value })}
-                    placeholder="请输入第二亡者姓名"
+                    placeholder="请输入亡者二姓名"
+                  />
+                  <Input
+                    label="阴庚（干支纪年）"
+                    value={formData.yinGeng2}
+                    onChange={(e) => setFormData({ ...formData, yinGeng2: e.target.value })}
+                    placeholder="如：甲子年五月初八日建生"
                   />
                   <Input
                     label="出生日期"
@@ -1196,7 +1241,7 @@ export default function PlaquesPage() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <Select
-                label="牌位主体 *"
+                label="牌位主体"
                 value={formData.dedicationType}
                 onChange={(e) => setFormData({ ...formData, dedicationType: e.target.value })}
                 options={getDedicationTypeOptions()}
@@ -1216,11 +1261,98 @@ export default function PlaquesPage() {
                 options={[{ value: '', label: '请选择' }, ...sizeOptions]}
               />
               <Input
+                label="亡者"
+                value={formData.deceasedName}
+                onChange={(e) => setFormData({ ...formData, deceasedName: e.target.value })}
+                placeholder="请输入亡者姓名"
+              />
+              <Input
+                label="阴庚"
+                value={formData.yinGeng}
+                onChange={(e) => setFormData({ ...formData, yinGeng: e.target.value })}
+                placeholder="如：戊午年正月初三日建生"
+              />
+              <Input
+                label="生日"
+                value={formData.birthDate}
+                onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                placeholder="如：1978-01-15"
+              />
+              <Input
+                label="忌日"
+                value={formData.deathDate}
+                onChange={(e) => setFormData({ ...formData, deathDate: e.target.value })}
+                placeholder="如：2020-03-15"
+              />
+            </div>
+
+            {/* 亡者二 - 可选择显示 */}
+            {!showSecondDeceased ? (
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowSecondDeceased(true)}
+                  className="text-sm text-vermilion hover:text-vermilion-dark flex items-center gap-1"
+                >
+                  <span>+</span> 增加亡者二
+                </button>
+              </div>
+            ) : (
+              <div className="mt-4 pt-4 border-t border-[#E8E0D0]">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-medium text-tea">亡者二</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSecondDeceased(false)
+                      setFormData({ ...formData, deceasedName2: '', yinGeng2: '', birthDate2: '', deathDate2: '' })
+                    }}
+                    className="text-sm text-tea/60 hover:text-vermilion"
+                  >
+                    移除
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label="亡者二"
+                    value={formData.deceasedName2}
+                    onChange={(e) => setFormData({ ...formData, deceasedName2: e.target.value })}
+                    placeholder="请输入亡者二姓名"
+                  />
+                  <Input
+                    label="阴庚"
+                    value={formData.yinGeng2}
+                    onChange={(e) => setFormData({ ...formData, yinGeng2: e.target.value })}
+                    placeholder="如：甲子年五月初八日建生"
+                  />
+                  <Input
+                    label="生日"
+                    value={formData.birthDate2}
+                    onChange={(e) => setFormData({ ...formData, birthDate2: e.target.value })}
+                    placeholder="如：1965-08-10"
+                  />
+                  <Input
+                    label="忌日"
+                    value={formData.deathDate2}
+                    onChange={(e) => setFormData({ ...formData, deathDate2: e.target.value })}
+                    placeholder="如：2021-05-20"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <Input
                 label="阳上（供奉人）"
                 value={formData.yangShang}
                 onChange={(e) => setFormData({ ...formData, yangShang: e.target.value })}
               />
-
+              <Input
+                label="寄语"
+                value={formData.message}
+                onChange={(e) => setFormData({ ...formData, message: e.target.value, blessingText: e.target.value })}
+                placeholder="请输入寄语"
+              />
               <div className="md:col-span-2">
                 <Input
                   label="地址"
@@ -1429,12 +1561,13 @@ export default function PlaquesPage() {
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
             <p className="text-sm text-amber-800 font-medium mb-2">导入说明</p>
             <ul className="text-xs text-amber-700 space-y-1 list-disc list-inside">
-              <li>模板已拆分为：延生禄位 / 往生莲位 / 超度牌位 3 份，请按类型分别下载</li>
-              <li>延生禄位必填"牌位主体"，往生莲位必填"亡者姓名"，超度牌位必填"牌位主体"</li>
-              <li>往生莲位如填写"第二亡者"，可继续填写"第二亡者生日"和"第二亡者忌日"</li>
-              <li>日期格式：YYYY-MM-DD，如 2024-01-15</li>
-              <li>农历列填写"是"或"否"</li>
-              <li>规格填写：大 / 中 / 小</li>
+              <li>日期格式：YYYY-MM-DD，如 2024-01-15；农历列填"是"或"否"；规格填 大/中/小</li>
+              <li><strong>延生禄位</strong>：必填"牌位主体"</li>
+              <li><strong>往生莲位</strong>：必填"亡者姓名"；可选填"阴庚"、"亡者二"等</li>
+              <li><strong>超度牌位</strong>（3种版式自动切换）：</li>
+              <li className="ml-4">版式一 — 只填"牌位主体"、"阳上"、"地址"，无需亡者信息</li>
+              <li className="ml-4">版式二 — 加填"亡者"（阴庚/生日/忌日选填）</li>
+              <li className="ml-4">版式三 — 再加填"亡者二"（对应阴庚/生日/忌日选填）</li>
             </ul>
           </div>
 
