@@ -513,7 +513,7 @@ async function bindPrintControls() {
         method: 'POST',
         body: JSON.stringify({ name, machineName: navigator.userAgent, defaultPrinter }),
       })
-      await saveConfig({ printClient: client, defaultPrinter })
+      await saveConfig({ printClient: client.data || client, defaultPrinter })
     } else {
       await apiRequest(`/api/local-print/clients/${state.config.printClient.id}/heartbeat`, {
         method: 'POST',
@@ -639,7 +639,7 @@ function bindCalendarSettingsControls() {
         method: 'POST',
         body: JSON.stringify(event),
       })
-      state.data.calendarEvents = [saved, ...(state.data.calendarEvents || [])]
+      state.data.calendarEvents = [saved.data || saved, ...(state.data.calendarEvents || [])]
       await saveConfig({ recentData: state.data })
     } catch {
       await saveConfig({ calendarEvents: [event, ...(state.config.calendarEvents || [])] })
@@ -683,7 +683,7 @@ function bindCalendarSettingsControls() {
             openIds: $('#reminderOpenIds').value,
           }),
         })
-        $('#calendarOutput').textContent = `已生成 ${result.count} 条公众号模板消息草稿，状态为 PENDING，需人工确认后发送。`
+        $('#calendarOutput').textContent = `已生成 ${result.data?.count || result.count || 0} 条公众号模板消息草稿，状态为 PENDING，需人工确认后发送。`
       } catch (error) {
         $('#calendarOutput').textContent = `生成失败：${error.message}`
       }
@@ -781,9 +781,9 @@ async function login() {
     method: 'POST',
     body: JSON.stringify({ username, password }),
   })
-  state.token = result.token
-  state.user = result.user
-  await saveConfig({ auth: { token: result.token, user: result.user } })
+  state.token = result.data?.token || result.token
+  state.user = result.data?.user || result.user
+  await saveConfig({ auth: { token: state.token, user: state.user } })
   setStatus(`已连接：${serverUrl}`)
   await flushSyncQueue()
   await syncData(true)
@@ -804,7 +804,7 @@ async function syncData(fullSync = false) {
     apiRequest(`/api/calendar-events?${since('calendarEvents')}`).catch(() => state.data.calendarEvents),
   ])
 
-  const newRequests = Array.isArray(requests?.items) ? requests.items : (Array.isArray(requests) ? requests : requests?.data || [])
+  const newRequests = Array.isArray(requests?.list) ? requests.list : (Array.isArray(requests) ? requests : requests?.data || [])
   const newPlaques = Array.isArray(plaques) ? plaques : []
   const newDevotees = Array.isArray(devotees) ? devotees : []
   const newJobs = Array.isArray(jobs) ? jobs : []
@@ -878,7 +878,7 @@ async function flushSyncQueue() {
 async function offlineAwareSave(entityType, apiPath, method, payload) {
   try {
     const result = await apiRequest(apiPath, { method, body: JSON.stringify(payload) })
-    return result
+    return result.data || result
   } catch {
     await window.templeDesktop.offlineSave({
       entityType,
