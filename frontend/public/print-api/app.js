@@ -3343,7 +3343,10 @@ async function upsertDesktopRows(entityType, rows) {
 
 async function fetchJson(url, options = {}) {
   if (isDesktopRuntime() && url.startsWith("/api/")) {
-    throw new Error("桌面打印工具只读取本地数据库，请先在主窗口完成同步。");
+    const allowedPaths = ["/api/plaque-templates", "/api/auth/", "/api/system/settings"];
+    if (!allowedPaths.some((prefix) => url.startsWith(prefix))) {
+      throw new Error("桌面打印工具只读取本地数据库，请先在主窗口完成同步。");
+    }
   }
   const headers = {
     ...(options.body ? { "Content-Type": "application/json" } : {}),

@@ -808,7 +808,7 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), async (req
           plaqueData.birthLunar = getValue(row, '农历') === '是'
           plaqueData.zodiac = getOptionalValue(row, '属相')
           plaqueData.age = getOptionalValue(row, '年龄')
-          plaqueData.blessingText = getOptionalValue(row, '祝福语')
+          plaqueData.blessingText = getOptionalValue(row, '祈愿语') || getOptionalValue(row, '祝福语')
         } else if (plaqueData.plaqueType === 'REBIRTH') {
           const deceasedName = getValue(row, '亡者姓名')
           if (!deceasedName) {
@@ -866,7 +866,7 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), async (req
         plaqueData.phone = getOptionalValue(row, '电话')
         plaqueData.address = getOptionalValue(row, '地址')
         plaqueData.message = getOptionalValue(row, '寄语')
-        plaqueData.blessingText = getOptionalValue(row, '祝福语')
+        plaqueData.blessingText = getOptionalValue(row, '祈愿语') || getOptionalValue(row, '祝福语')
         if (!plaqueData.blessingText) plaqueData.blessingText = plaqueData.message
 
         const parsedStartDate = parseSpreadsheetDateValue(getRawValue(row, '开始日期'))

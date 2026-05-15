@@ -242,7 +242,7 @@ export default function PlaquesPage() {
         '电话': '',
         '地址': '',
         '寄语': '',
-        '祝福语': '',
+        '祈愿语': '',
       },
       {
         '牌位类型': '延生禄位',
@@ -258,7 +258,7 @@ export default function PlaquesPage() {
         '电话': '',
         '地址': '本市东街一号',
         '寄语': '',
-        '祝福语': '消灾延寿 福慧增长',
+        '祈愿语': '消灾延寿 福慧增长',
       },
     ]
     const ws = XLSX.utils.json_to_sheet(templateData)
@@ -294,7 +294,6 @@ export default function PlaquesPage() {
         '年龄': '',
         '阳上': '',
         '寄语': '',
-        '祝福语': '',
         '电话': '',
         '地址': '',
         '开始日期': '',
@@ -316,7 +315,6 @@ export default function PlaquesPage() {
         '亡者二忌日': '',
         '阳上': '王家眷属',
         '寄语': '蒙佛接引 早登极乐',
-        '祝福语': '',
         '电话': '13800138002',
         '地址': '本市西街三号',
         '开始日期': '2024-01-01',
@@ -330,14 +328,14 @@ export default function PlaquesPage() {
       { wch: 12 }, { wch: 14 }, { wch: 18 }, { wch: 10 }, { wch: 16 },
       { wch: 8 }, { wch: 8 }, { wch: 16 }, { wch: 8 }, { wch: 14 },
       { wch: 10 }, { wch: 16 }, { wch: 16 }, { wch: 8 }, { wch: 8 },
-      { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 30 }, { wch: 14 }, { wch: 14 },
+      { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 30 }, { wch: 14 }, { wch: 14 },
     ]
     downloadWorkbook(wb, '往生莲位导入模板.xlsx')
   }
 
   // 超度牌位导入模板（3个Sheet对应3种版式）
   const downloadDeliveranceTemplate = () => {
-    const baseCols = ['牌位类型', '牌位主体', '亡者', '亡者阴庚', '亡者生日', '亡者忌日', '亡者二', '亡者二阴庚', '亡者二生日', '亡者二忌日', '规格', '阳上', '寄语', '祝福语', '地址', '电话', '开始日期', '结束日期']
+    const baseCols = ['牌位类型', '牌位主体', '亡者', '亡者阴庚', '亡者生日', '亡者忌日', '亡者二', '亡者二阴庚', '亡者二生日', '亡者二忌日', '规格', '阳上', '寄语', '地址', '电话', '开始日期', '结束日期']
 
     const sheet1 = [
       baseCols.reduce((obj, k) => ({ ...obj, [k]: '' }), {}),
@@ -378,7 +376,7 @@ export default function PlaquesPage() {
     const colWidths = [
       { wch: 12 }, { wch: 16 }, { wch: 14 }, { wch: 20 }, { wch: 14 },
       { wch: 14 }, { wch: 14 }, { wch: 20 }, { wch: 14 }, { wch: 14 },
-      { wch: 8 }, { wch: 14 }, { wch: 24 }, { wch: 14 }, { wch: 30 },
+      { wch: 8 }, { wch: 14 }, { wch: 24 }, { wch: 30 },
       { wch: 14 }, { wch: 14 }, { wch: 14 },
     ]
 
