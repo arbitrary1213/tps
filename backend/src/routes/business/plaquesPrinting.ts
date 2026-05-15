@@ -817,7 +817,7 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), async (req
           plaqueData.size = getOptionalValue(row, '规格')
           plaqueData.gender = getOptionalValue(row, '性别')
           plaqueData.birthDate = getOptionalValue(row, '出生日期')
-          plaqueData.birthLunar = getValue(row, '亡者农历') === '是'
+          plaqueData.birthLunar = getValue(row, '亡者农历') === '是' || getValue(row, '农历') === '是'
           plaqueData.deathDate = getOptionalValue(row, '忌日')
           plaqueData.deathLunar = getValue(row, '忌日农历') === '是'
           plaqueData.yinGeng = getOptionalValue(row, '亡者阴庚') || getOptionalValue(row, '阴庚')
