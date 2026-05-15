@@ -66,6 +66,7 @@ jobs:
           npm ci
           npm install --no-save playwright
           npx playwright install chromium
+          sudo npx playwright install-deps chromium
         working-directory: print-service
 
       - name: Check print service and run print-api tests
