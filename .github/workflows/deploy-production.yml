@@ -103,6 +103,18 @@ jobs:
     needs: verify
     if: github.ref == 'refs/heads/main'
     steps:
+      - name: Verify deploy secrets
+        run: |
+          if [ -z "$HOST" ]; then echo "ERROR: PRODUCTION_HOST is empty"; exit 1; fi
+          if [ -z "$USER" ]; then echo "ERROR: PRODUCTION_USER is empty"; exit 1; fi
+          if [ -z "$KEY" ]; then echo "ERROR: PRODUCTION_SSH_KEY is empty"; exit 1; fi
+          echo "Secrets OK: host=$HOST user=$USER port=${PORT:-22}"
+        env:
+          HOST: ${{ secrets.PRODUCTION_HOST }}
+          USER: ${{ secrets.PRODUCTION_USER }}
+          KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+          PORT: ${{ secrets.PRODUCTION_SSH_PORT }}
+
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
