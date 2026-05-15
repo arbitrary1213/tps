@@ -866,6 +866,7 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), async (req
         plaqueData.phone = getOptionalValue(row, '电话')
         plaqueData.address = getOptionalValue(row, '地址')
         plaqueData.message = getOptionalValue(row, '寄语')
+        plaqueData.blessingText = getOptionalValue(row, '祝福语')
         if (!plaqueData.blessingText) plaqueData.blessingText = plaqueData.message
 
         const parsedStartDate = parseSpreadsheetDateValue(getRawValue(row, '开始日期'))
