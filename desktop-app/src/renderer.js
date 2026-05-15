@@ -337,6 +337,7 @@ function renderPlaques() {
           <span>${escapeHtml(typeLabel(item.plaqueType))}</span>
           <span>${escapeHtml(item.phone || '-')}</span>
           <span>${escapeHtml(item.status || '-')}</span>
+          <button data-plaque-delete="${escapeAttr(item.id)}">删除</button>
         </div>
       `).join('') || '<p class="muted">暂无牌位</p>'}
     </div>
@@ -399,6 +400,19 @@ function renderPlaques() {
     $('#newPlaqueBtn').style.display = ''
     render()
   }
+
+  document.querySelectorAll('[data-plaque-delete]').forEach((button) => {
+    button.onclick = async () => {
+      const id = button.dataset.plaqueDelete
+      if (!confirm('确定删除该牌位？')) return
+      if (!String(id).startsWith('local_')) {
+        await apiRequest(`/api/plaques/${id}`, { method: 'DELETE' }).catch(() => null)
+      }
+      state.data.plaques = (state.data.plaques || []).filter((item) => item.id !== id)
+      await saveConfig({ recentData: state.data })
+      render()
+    }
+  })
 }
 
 function renderDevotees() {
@@ -418,6 +432,7 @@ function renderDevotees() {
           <span>${escapeHtml(item.phone || '-')}</span>
           <span>${escapeHtml(item.address || '-')}</span>
           <span>${item.createdAt ? item.createdAt.slice(0, 10) : '-'}</span>
+          <button data-devotee-delete="${escapeAttr(item.id)}">删除</button>
         </div>
       `).join('') || '<p class="muted">暂无信众</p>'}
     </div>
@@ -470,6 +485,19 @@ function renderDevotees() {
     $('#newDevoteeBtn').style.display = ''
     render()
   }
+
+  document.querySelectorAll('[data-devotee-delete]').forEach((button) => {
+    button.onclick = async () => {
+      const id = button.dataset.devoteeDelete
+      if (!confirm('确定删除该信众？')) return
+      if (!String(id).startsWith('local_')) {
+        await apiRequest(`/api/devotees/${id}`, { method: 'DELETE' }).catch(() => null)
+      }
+      state.data.devotees = (state.data.devotees || []).filter((item) => item.id !== id)
+      await saveConfig({ recentData: state.data })
+      render()
+    }
+  })
 }
 
 function renderPrint() {
