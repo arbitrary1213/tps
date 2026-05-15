@@ -116,7 +116,8 @@ jobs:
       - name: Build Print Service Docker Image
         uses: docker/build-push-action@v5
         with:
-          context: ./print-service
+          context: .
+          file: ./print-service/Dockerfile
           push: false
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/temple-print:${{ github.sha }}
