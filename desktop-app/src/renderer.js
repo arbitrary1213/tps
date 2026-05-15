@@ -1037,7 +1037,7 @@ async function fetchNextPrintJob() {
 async function printCachedJob(jobId) {
   const job = (state.config.cachedJobs || []).find((item) => item.id === jobId)
   if (!job) return
-  const html = buildPrintHtml(job)
+  const html = buildTemplatePrintHtml(job)
   const result = await window.templeDesktop.printHtml({
     html,
     deviceName: state.config.defaultPrinter || '',
@@ -1067,7 +1067,223 @@ async function reportPrintItem(job, item, status, errorMessage) {
   }
 }
 
-function buildPrintHtml(job) {
+const FIELD_ALIAS_TO_DB = {
+  subject: ['holderName', 'deceasedName', 'dedicationType'],
+  believer: ['yangShang'],
+  age: ['age'],
+  zodiac: ['zodiac'],
+  birthday: ['birthDate'],
+  address: ['address'],
+  wish: ['blessingText', 'message'],
+  deceasedPrimary: ['deceasedName'],
+  deceasedSecondary: ['deceasedName2'],
+  yinGeng: ['yinGeng'],
+  yinGeng2: ['yinGeng2'],
+  yangshang: ['yangShang'],
+  deathday: ['deathDate'],
+  birthday2: ['birthDate2'],
+  deathday2: ['deathDate2'],
+  code: ['code'],
+  deceasedInfo: ['deceasedName'],
+}
+
+const BLESSING_FIELDS = ['subject', 'believer', 'age', 'zodiac', 'birthday', 'address', 'wish']
+const BLESSING_LAYOUT_TWO_FIELDS = ['subject', 'age', 'zodiac', 'birthday', 'address', 'wish']
+const DELIVERANCE_LAYOUT_ONE_FIELDS = ['subject', 'yangshang', 'address']
+const DELIVERANCE_LAYOUT_TWO_FIELDS = ['subject', 'deceasedPrimary', 'yinGeng', 'birthday', 'deathday', 'yangshang', 'address', 'wish']
+const DELIVERANCE_LAYOUT_THREE_FIELDS = ['subject', 'deceasedPrimary', 'yinGeng', 'birthday', 'deathday', 'deceasedSecondary', 'yinGeng2', 'birthday2', 'deathday2', 'yangshang', 'address', 'wish']
+
+function resolveFieldValue(payload, fieldKey, layout) {
+  const mappings = layout?.mappings || {}
+  const mappedKey = mappings[fieldKey]
+  if (mappedKey && payload[mappedKey] != null && String(payload[mappedKey]).trim()) {
+    return String(payload[mappedKey])
+  }
+  const scopedKey = `single_variant_${layout.singleVariantKey || 'layout_one'}__${fieldKey}`
+  const scopedMapped = mappings[scopedKey]
+  if (scopedMapped && payload[scopedMapped] != null && String(payload[scopedMapped]).trim()) {
+    return String(payload[scopedMapped])
+  }
+  const aliases = FIELD_ALIAS_TO_DB[fieldKey]
+  if (aliases) {
+    for (const alias of aliases) {
+      if (payload[alias] != null && String(payload[alias]).trim()) {
+        return String(payload[alias])
+      }
+    }
+  }
+  return ''
+}
+
+function resolveVariantKey(snapshot, item) {
+  const layout = snapshot?.layout || {}
+  if (layout.singleVariantKey) return layout.singleVariantKey
+  const variant = item?.payload?.__variant || item?.payload?.__singleVariant || ''
+  if (variant) return variant
+  return 'layout_one'
+}
+
+function resolveFieldKeys(snapshot, variantKey) {
+  const tmpl = snapshot?.template || {}
+  const dataGroup = tmpl.dataGroup || tmpl.tabletType || 'blessing'
+  const layout = snapshot?.layout || {}
+
+  if (layout.dynamicFields && layout.dynamicFields.length > 0) {
+    const dynamicKeys = layout.dynamicFields.map((f) => f.key)
+    const baseKeys = variantKey === 'layout_three' ? DELIVERANCE_LAYOUT_THREE_FIELDS
+      : variantKey === 'layout_two'
+        ? (dataGroup === 'deliverance' ? DELIVERANCE_LAYOUT_TWO_FIELDS : BLESSING_LAYOUT_TWO_FIELDS)
+        : (dataGroup === 'deliverance' ? DELIVERANCE_LAYOUT_ONE_FIELDS : BLESSING_FIELDS)
+    const existing = new Set(baseKeys)
+    return [...baseKeys, ...dynamicKeys.filter((k) => !existing.has(k))]
+  }
+
+  if (dataGroup === 'deliverance') {
+    if (variantKey === 'layout_three') return DELIVERANCE_LAYOUT_THREE_FIELDS
+    if (variantKey === 'layout_two') return DELIVERANCE_LAYOUT_TWO_FIELDS
+    return DELIVERANCE_LAYOUT_ONE_FIELDS
+  }
+  if (variantKey === 'layout_two') return BLESSING_LAYOUT_TWO_FIELDS
+  return BLESSING_FIELDS
+}
+
+function getLayoutValue(layout, defaults, bucket, key, variantKey, fallback) {
+  if (layout && layout[bucket]) {
+    const scopedKey = `single_variant_${variantKey}__${key}`
+    if (layout[bucket][scopedKey] != null) return layout[bucket][scopedKey]
+    if (layout[bucket][key] != null) return layout[bucket][key]
+  }
+  if (defaults && defaults[bucket] && defaults[bucket][key] != null) {
+    return defaults[bucket][key]
+  }
+  return fallback
+}
+
+function buildTemplatePrintHtml(job) {
+  const snapshot = job.templateSnapshot
+  if (!snapshot || !snapshot.layout) {
+    return buildSimplePrintHtml(job)
+  }
+
+  const items = job.items || []
+  const tmpl = snapshot.template || {}
+  const layout = snapshot.layout || {}
+  const defaults = snapshot.defaults || {}
+
+  const width = job.paperWidthMm || tmpl.width || 210
+  const height = job.paperHeightMm || tmpl.height || 297
+  const bgImage = tmpl.backgroundImage || layout.background || ''
+  const dataGroup = tmpl.dataGroup || tmpl.tabletType || 'blessing'
+  const isVertical = tmpl.vertical !== false
+
+  const pages = items.map((item) => {
+    const payload = item.payload || {}
+    const variantKey = resolveVariantKey(snapshot, item)
+    const fieldKeys = resolveFieldKeys(snapshot, variantKey)
+
+    const fieldElements = fieldKeys.map((key) => {
+      const pos = getLayoutValue(layout, defaults, 'positions', key, variantKey, { x: 50, y: 50 })
+      const style = getLayoutValue(layout, defaults, 'styles', key, variantKey, {
+        fontSize: 18, color: '#16110d', fontFamily: 'SimSun, serif', textAlign: 'center', verticalAlign: 'center', wrapMode: 'anywhere',
+      })
+      const size = getLayoutValue(layout, defaults, 'sizes', key, variantKey, { w: 20, h: 20 })
+      const value = resolveFieldValue(payload, key, layout)
+
+      if (key === 'subject' && !value) {
+        const fallback = item.subject || payload.holderName || payload.deceasedName || payload.dedicationType || '牌位'
+        return renderPositionedField(key, fallback, pos, style, size, isVertical)
+      }
+      if (!value) return ''
+      return renderPositionedField(key, value, pos, style, size, isVertical)
+    }).join('')
+
+    const staticFields = (layout.staticFields || []).map((field) => {
+      const pos = field.position || getLayoutValue(layout, defaults, 'positions', field.key, variantKey, { x: 50, y: 50 })
+      const style = field.style || getLayoutValue(layout, defaults, 'styles', field.key, variantKey, {
+        fontSize: 18, color: '#16110d', fontFamily: 'SimSun, serif', textAlign: 'center', verticalAlign: 'center', wrapMode: 'anywhere',
+      })
+      const size = field.size || getLayoutValue(layout, defaults, 'sizes', field.key, variantKey, { w: 20, h: 20 })
+      return renderPositionedField(field.key, field.text || field.label || '', pos, style, size, isVertical)
+    }).join('')
+
+    return `
+      <section class="page">
+        ${bgImage ? `<img class="template-bg" src="${escapeAttr(bgImage)}" alt="">` : ''}
+        <div class="tablet tablet-${escapeAttr(dataGroup)}">
+          ${fieldElements}
+          ${staticFields}
+        </div>
+      </section>`
+  }).join('')
+
+  return `<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <style>
+    @page { size: ${width}mm ${height}mm; margin: 0; }
+    html, body { margin: 0; padding: 0; background: #fff; }
+    body { display: block; }
+    .page {
+      position: relative;
+      width: ${width}mm; height: ${height}mm;
+      overflow: hidden;
+      page-break-after: always;
+      break-after: page;
+    }
+    .page:last-child { page-break-after: auto; break-after: auto; }
+    .template-bg {
+      position: absolute; left: 0; top: 0;
+      width: 100%; height: 100%;
+      object-fit: fill; z-index: 0;
+    }
+    .tablet { position: relative; width: 100%; height: 100%; z-index: 1; }
+    .print-field {
+      position: absolute; box-sizing: border-box;
+      display: flex; overflow: hidden;
+    }
+    .print-field .field-inner {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .print-field.vertical .field-inner {
+      writing-mode: vertical-rl;
+    }
+  </style>
+</head>
+<body>${pages}</body>
+</html>`
+}
+
+function renderPositionedField(key, value, pos, style, size, vertical) {
+  const fontSize = style.fontSize || 18
+  const color = style.color || '#16110d'
+  const fontFamily = style.fontFamily || 'SimSun, serif'
+  const textAlign = style.textAlign || 'center'
+  const fontWeight = style.fontWeight || 'normal'
+  const fontStyle = style.italic ? 'italic' : 'normal'
+  const isVert = vertical && key !== 'code'
+  const vertClass = isVert ? ' vertical' : ''
+
+  const justifyContent = textAlign === 'left' ? 'flex-start' : (textAlign === 'right' ? 'flex-end' : 'center')
+  const alignItems = (style.verticalAlign || 'center') === 'start' ? 'flex-start' : ((style.verticalAlign || 'center') === 'end' ? 'flex-end' : 'center')
+
+  return `
+    <div class="print-field${vertClass}" style="
+      left:${pos.x}%; top:${pos.y}%;
+      width:${size.w}%; height:${size.h}%;
+      font-size:${fontSize}px; color:${color};
+      font-family:${fontFamily}; font-weight:${fontWeight}; font-style:${fontStyle};
+    ">
+      <div class="field-inner" style="
+        text-align:${textAlign};
+        justify-content:${justifyContent};
+        align-items:${alignItems};
+      ">${escapeHtml(value)}</div>
+    </div>`
+}
+
+function buildSimplePrintHtml(job) {
   const items = job.items || []
   return `
     <!doctype html>
