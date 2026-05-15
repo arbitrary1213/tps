@@ -115,18 +115,19 @@ export default function HallsPage() {
           <h2 className="text-xl font-medium text-ink">殿堂管理</h2>
           <p className="text-sm text-tea/60 mt-1">管理殿堂档案和预约</p>
         </div>
-        <Button onClick={() => { resetForm(); setEditing(null); setModalOpen(true); }}>
+        <Button onClick={() => { resetForm(); setEditing(null); setModalOpen(true); }} className="active:scale-[0.98] transition-all duration-200">
           新增殿堂
         </Button>
       </div>
 
       <Card>
-        <Table
+        <div className="overflow-x-auto rounded-xl border min-w-0"><Table
           columns={columns}
           data={halls}
           loading={loading}
           emptyText="暂无殿堂"
         />
+        </div>
       </Card>
 
       <Modal
@@ -170,8 +171,8 @@ export default function HallsPage() {
           />
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={() => { setModalOpen(false); setEditing(null); }}>取消</Button>
-          <Button onClick={handleSubmit}>保存</Button>
+          <Button variant="secondary" onClick={() => { setModalOpen(false); setEditing(null); }} className="active:scale-[0.98] transition-all duration-200">取消</Button>
+          <Button onClick={handleSubmit} className="active:scale-[0.98] transition-all duration-200">保存</Button>
         </div>
       </Modal>
     </div>

@@ -21,7 +21,7 @@ const sidebarNav = [
     { name: '功德管理', path: '/admin/donations' },
   ]},
   { group: '模板与打印', items: [
-    { name: '打印中心', path: '/admin/print-center' },
+    { name: '模板中心', path: '/admin/print-center' },
     { name: '模板库', path: '/admin/plaque-templates' },
     { name: '批量打印', path: '/admin/plaques/batch-print' },
   ]},

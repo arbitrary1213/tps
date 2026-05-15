@@ -175,7 +175,7 @@ export default function MonksPage() {
           <h2 className="text-xl font-medium text-ink">僧众管理</h2>
           <p className="text-sm text-tea/60 mt-1">管理僧众档案、职务和考勤</p>
         </div>
-        <Button onClick={() => { resetForm(); setEditing(null); setModalOpen(true); }}>
+        <Button onClick={() => { resetForm(); setEditing(null); setModalOpen(true); }} className="active:scale-[0.98] transition-all duration-200">
           新增僧众
         </Button>
       </div>
@@ -188,12 +188,12 @@ export default function MonksPage() {
             placeholder="搜索法名或字号..."
           />
         </div>
-        <Table
+        <div className="overflow-x-auto rounded-xl border min-w-0"><Table
           columns={columns}
           data={filteredMonks}
           loading={loading}
           emptyText="暂无僧众档案"
-        />
+        /></div>
       </Card>
 
       <Modal
@@ -258,8 +258,8 @@ export default function MonksPage() {
           />
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={() => { setModalOpen(false); setEditing(null); }}>取消</Button>
-          <Button onClick={handleSubmit}>保存</Button>
+          <Button variant="secondary" onClick={() => { setModalOpen(false); setEditing(null); }} className="active:scale-[0.98] transition-all duration-200">取消</Button>
+          <Button onClick={handleSubmit} className="active:scale-[0.98] transition-all duration-200">保存</Button>
         </div>
       </Modal>
     </div>

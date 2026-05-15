@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express'
+import { asyncHandler } from '../middleware/errorHandler'
 import { verifyURL, parseMessage, buildMessageResponse, WechatMessage, getWechatConfig, decryptMessage } from '../services/wechat'
 
 const router = Router()
 
-router.get('/verify', async (req: Request, res: Response) => {
+router.get('/verify', asyncHandler(async (req: Request, res: Response) => {
   try {
     const { signature, timestamp, nonce, echostr } = req.query
 
@@ -32,7 +33,7 @@ router.get('/verify', async (req: Request, res: Response) => {
   }
 })
 
-router.post('/verify', async (req: Request, res: Response) => {
+router.post('/verify', asyncHandler(async (req: Request, res: Response) => {
   try {
     const { msg_signature } = req.query
     const body = req.body.toString()

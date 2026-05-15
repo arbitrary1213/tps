@@ -20,33 +20,20 @@
 
   <section id="workflowStatus" class="workflow-status" aria-label="打印状态">
     <div class="workflow-status-item">
-      <span class="workflow-status-label">当前入口</span>
-      <strong id="launchSourceValue" class="workflow-status-value">模板设计页</strong>
-    </div>
-    <div class="workflow-status-item">
-      <span class="workflow-status-label">运行环境</span>
-      <strong id="runtimeStatusValue" class="workflow-status-value">网页端</strong>
-    </div>
-    <div class="workflow-status-item">
       <span class="workflow-status-label">数据来源</span>
       <strong id="dataSourceValue" class="workflow-status-value">尚未导入</strong>
     </div>
+    <span class="workflow-status-sep">·</span>
     <div class="workflow-status-item">
-      <span class="workflow-status-label">模板来源</span>
+      <span class="workflow-status-label">模板</span>
       <strong id="templateSourceValue" class="workflow-status-value">内置模板</strong>
-    </div>
-    <div class="workflow-status-item">
-      <span class="workflow-status-label">模板同步</span>
-      <strong id="templateSyncValue" class="workflow-status-value">未检查</strong>
-    </div>
-    <div class="workflow-status-item">
-      <span class="workflow-status-label">存储模型</span>
-      <strong id="storageModelValue" class="workflow-status-value">服务器主库 + 桌面缓存 + 浏览器配置</strong>
     </div>
   </section>
 
   <main class="workspace">
     <aside class="panel controls">
+      <button class="panel-toggle" type="button" title="折叠/展开左侧面板" aria-label="折叠左侧面板">◀</button>
+      <span class="panel-collapse-label">控制面板</span>
       <section>
         <h2>打印类型</h2>
         <div class="segmented" role="group" aria-label="打印类型">
@@ -373,6 +360,8 @@
     </section>
 
     <aside class="panel data-panel">
+      <button class="panel-toggle" type="button" title="折叠/展开右侧数据面板" aria-label="折叠右侧面板">▶</button>
+      <span class="panel-collapse-label">数据面板</span>
       <section>
         <h2>数据表</h2>
         <div class="data-actions">

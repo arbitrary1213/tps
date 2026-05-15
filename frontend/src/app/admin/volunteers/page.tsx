@@ -292,87 +292,68 @@ export default function VolunteersPage() {
   }
 
   const columns = [
-    { key: 'name', label: '姓名' },
-    { key: 'phone', label: '电话' },
-    { key: 'gender', label: '性别' },
-    { key: 'rank', label: '等级' },
-    { key: 'status', label: '状态' },
-    { key: 'totalHours', label: '服务时长' },
-    { key: 'actions', label: '操作' },
+    { key: 'name', title: '姓名' },
+    { key: 'phone', title: '电话' },
+    { key: 'gender', title: '性别', render: (row: Volunteer) => row.gender || '-' },
+    { key: 'rank', title: '等级', render: (row: Volunteer) => (
+      <Badge variant={row.rank === '五星' ? 'success' : 'gray'}>{row.rank}</Badge>
+    )},
+    { key: 'status', title: '状态', render: (row: Volunteer) => (
+      <Badge variant={row.status === 'ACTIVE' ? 'success' : 'gray'}>
+        {row.status === 'ACTIVE' ? '在职' : '离职'}
+      </Badge>
+    )},
+    { key: 'totalHours', title: '服务时长', render: (row: Volunteer) => `${row.totalHours}小时` },
+    { key: 'actions', title: '操作', render: (row: Volunteer) => (
+      <div className="flex gap-2">
+        <Button size="sm" variant="ghost" onClick={() => handleView(row)} className="active:scale-[0.98] transition-all duration-200">查看</Button>
+        <Button size="sm" variant="ghost" onClick={() => handleEdit(row)} className="active:scale-[0.98] transition-all duration-200">编辑</Button>
+        <Button size="sm" variant="danger" onClick={() => handleDelete(row)} className="active:scale-[0.98] transition-all duration-200">删除</Button>
+      </div>
+    )},
   ]
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-medium">义工管理</h1>
-        <Button onClick={() => { resetForm(); setModalOpen(true); }}>+ 新建义工</Button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-medium text-ink">义工管理</h2>
+          <p className="text-sm text-tea/60 mt-1">管理义工档案、服务记录和等级</p>
+        </div>
+        <Button onClick={() => { resetForm(); setModalOpen(true); }} className="active:scale-[0.98] transition-all duration-200">
+          新建义工
+        </Button>
       </div>
 
       <Card>
         <div className="mb-4">
-          <input
-            type="text"
-            placeholder="搜索姓名或电话..."
-            className="w-full max-w-xs px-4 py-2 border border-gray-200 rounded"
+          <SearchBar
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={setSearch}
+            placeholder="搜索姓名或电话..."
           />
         </div>
 
-        {loading ? (
-          <div className="text-center py-8 text-gray-500">加载中...</div>
-        ) : filteredVolunteers.length === 0 ? (
-          <Empty title="暂无义工记录" />
-        ) : (
-          <div className="overflow-x-auto rounded-xl border"><table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100">
-                {columns.map(col => (
-                  <th key={col.key} className="text-left py-3 px-4 text-sm text-gray-600">{col.label}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filteredVolunteers.map(volunteer => (
-                <tr key={volunteer.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="py-3 px-4">{volunteer.name}</td>
-                  <td className="py-3 px-4">{volunteer.phone}</td>
-                  <td className="py-3 px-4">{volunteer.gender || '-'}</td>
-                  <td className="py-3 px-4">
-                    <Badge variant={volunteer.rank === '五星' ? 'success' : 'gray'}>{volunteer.rank}</Badge>
-                  </td>
-                  <td className="py-3 px-4">
-                    <Badge variant={volunteer.status === 'ACTIVE' ? 'success' : 'gray'}>
-                      {volunteer.status === 'ACTIVE' ? '在职' : '离职'}
-                    </Badge>
-                  </td>
-                  <td className="py-3 px-4">{volunteer.totalHours}小时</td>
-                  <td className="py-3 px-4">
-                    <button onClick={() => handleView(volunteer)} className="text-blue-600 hover:underline mr-3">查看</button>
-                    <button onClick={() => handleEdit(volunteer)} className="text-vermilion hover:underline mr-3">编辑</button>
-                    <button onClick={() => handleDelete(volunteer)} className="text-red-600 hover:underline">删除</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table></div>
-        )}
+        <div className="overflow-x-auto rounded-xl border min-w-0"><Table
+          columns={columns}
+          data={filteredVolunteers}
+          loading={loading}
+          emptyText="暂无义工记录"
+        /></div>
       </Card>
 
       {/* 新建/编辑弹窗 */}
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto py-8">
-          <div className="bg-white rounded-lg w-full max-w-4xl mx-4">
-            <div className="flex justify-between items-center p-4 border-b">
-              <h2 className="text-lg font-medium">{editing ? '编辑义工' : '新建义工'}</h2>
-              <button onClick={() => { setModalOpen(false); setEditing(null); }} className="text-gray-500 hover:text-gray-700">✕</button>
-            </div>
-            
-            <div className="p-6 max-h-[70vh] overflow-y-auto">
+      <Modal
+        open={modalOpen}
+        onClose={() => { setModalOpen(false); setEditing(null); }}
+        title={editing ? '编辑义工' : '新建义工'}
+        size="lg"
+      >
+        <div className="max-h-[70vh] overflow-y-auto">
               <div className="space-y-6">
                 {/* 基本信息 */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-600 mb-3 border-b pb-1">基本信息</h3>
+                  <h3 className="text-sm font-medium text-tea mb-3 border-b pb-1">基本信息</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm mb-1">姓名 <span className="text-red-500">*</span></label>
@@ -411,7 +392,7 @@ export default function VolunteersPage() {
 
                 {/* 紧急联系 */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-600 mb-3 border-b pb-1">紧急联系</h3>
+                  <h3 className="text-sm font-medium text-tea mb-3 border-b pb-1">紧急联系</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm mb-1">紧急联系人</label>
@@ -426,7 +407,7 @@ export default function VolunteersPage() {
 
                 {/* 职业信息 */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-600 mb-3 border-b pb-1">职业信息</h3>
+                  <h3 className="text-sm font-medium text-tea mb-3 border-b pb-1">职业信息</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm mb-1">从事职业</label>
@@ -441,7 +422,7 @@ export default function VolunteersPage() {
 
                 {/* 健康状况 */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-600 mb-3 border-b pb-1">健康状况</h3>
+                  <h3 className="text-sm font-medium text-tea mb-3 border-b pb-1">健康状况</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm mb-1">健康状况</label>
@@ -476,7 +457,7 @@ export default function VolunteersPage() {
 
                 {/* 学佛经历 */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-600 mb-3 border-b pb-1">学佛经历</h3>
+                  <h3 className="text-sm font-medium text-tea mb-3 border-b pb-1">学佛经历</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm mb-1">最初接触佛教时间</label>
@@ -519,7 +500,7 @@ export default function VolunteersPage() {
 
                 {/* 义工经历 */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-600 mb-3 border-b pb-1">义工经历</h3>
+                  <h3 className="text-sm font-medium text-tea mb-3 border-b pb-1">义工经历</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm mb-1">是否参加过义工活动</label>
@@ -546,7 +527,7 @@ export default function VolunteersPage() {
 
                 {/* 专长 */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-600 mb-3 border-b pb-1">专长</h3>
+                  <h3 className="text-sm font-medium text-tea mb-3 border-b pb-1">专长</h3>
                   <div className="flex flex-wrap gap-2">
                     {skillOptions.map(skill => (
                       <label key={skill} className="px-3 py-1 border rounded cursor-pointer text-sm">
@@ -564,7 +545,7 @@ export default function VolunteersPage() {
 
                 {/* 义工项目 */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-600 mb-3 border-b pb-1">拟参与义工项目</h3>
+                  <h3 className="text-sm font-medium text-tea mb-3 border-b pb-1">拟参与义工项目</h3>
                   <div className="flex flex-wrap gap-2">
                     {volunteerProjectOptions.map(proj => (
                       <label key={proj} className="px-3 py-1 border rounded cursor-pointer text-sm">
@@ -582,7 +563,7 @@ export default function VolunteersPage() {
 
                 {/* 服务时间 */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-600 mb-3 border-b pb-1">服务时间</h3>
+                  <h3 className="text-sm font-medium text-tea mb-3 border-b pb-1">服务时间</h3>
                   <div className="grid grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm mb-1">开始日期</label>
@@ -601,13 +582,13 @@ export default function VolunteersPage() {
 
                 {/* 本人承诺 */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-600 mb-3 border-b pb-1">本人承诺</h3>
+                  <h3 className="text-sm font-medium text-tea mb-3 border-b pb-1">本人承诺</h3>
                   <Textarea value={formData.commitment} onChange={e => setFormData({...formData, commitment: e.target.value})} rows={4} />
                 </div>
 
                 {/* 管理信息 */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-600 mb-3 border-b pb-1">管理信息</h3>
+                  <h3 className="text-sm font-medium text-tea mb-3 border-b pb-1">管理信息</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm mb-1">等级</label>
@@ -626,63 +607,59 @@ export default function VolunteersPage() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 p-4 border-t">
-              <Button variant="secondary" onClick={() => { setModalOpen(false); setEditing(null); }}>取消</Button>
-              <Button onClick={handleSubmit}>{editing ? '保存' : '创建'}</Button>
-            </div>
-          </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <Button variant="secondary" onClick={() => { setModalOpen(false); setEditing(null); }} className="active:scale-[0.98] transition-all duration-200">取消</Button>
+          <Button onClick={handleSubmit} className="active:scale-[0.98] transition-all duration-200">{editing ? '保存' : '创建'}</Button>
         </div>
-      )}
+      </Modal>
 
       {/* 查看详情弹窗 */}
-      {detailModalOpen && viewing && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto py-8">
-          <div className="bg-white rounded-lg w-full max-w-3xl mx-4">
-            <div className="flex justify-between items-center p-4 border-b">
-              <h2 className="text-lg font-medium">义工详情 - {viewing.name}</h2>
-              <button onClick={() => setDetailModalOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button>
-            </div>
-            
-            <div className="p-6 max-h-[70vh] overflow-y-auto">
+      {viewing && (
+      <Modal
+        open={detailModalOpen}
+        onClose={() => setDetailModalOpen(false)}
+        title={`义工详情 - ${viewing.name}`}
+        size="lg"
+      >
+        <div className="max-h-[70vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div><span className="text-gray-500">姓名：</span>{viewing.name}</div>
-                <div><span className="text-gray-500">法名：</span>{viewing.dharmaName || '-'}</div>
-                <div><span className="text-gray-500">性别：</span>{viewing.gender || '-'}</div>
-                <div><span className="text-gray-500">出生日期：</span>{viewing.birthDate ? new Date(viewing.birthDate).toLocaleDateString() : '-'}</div>
-                <div><span className="text-gray-500">电话：</span>{viewing.phone}</div>
-                <div><span className="text-gray-500">民族：</span>{viewing.ethnicity || '-'}</div>
-                <div><span className="text-gray-500">学历：</span>{viewing.education || '-'}</div>
-                <div><span className="text-gray-500">地址：</span>{viewing.address || '-'}</div>
-                <div><span className="text-gray-500">紧急联系人：</span>{viewing.emergencyContact || '-'}</div>
-                <div><span className="text-gray-500">紧急联系电话：</span>{viewing.emergencyPhone || '-'}</div>
-                <div><span className="text-gray-500">当前职业：</span>{viewing.currentOccupation || '-'}</div>
-                <div><span className="text-gray-500">曾经职业：</span>{viewing.previousOccupation || '-'}</div>
-                <div><span className="text-gray-500">健康状况：</span>{viewing.healthStatus || '-'}</div>
-                <div><span className="text-gray-500">传染病史：</span>{viewing.hasInfectiousDisease || '-'}</div>
-                <div><span className="text-gray-500">过敏史：</span>{viewing.hasAllergy || '-'}</div>
-                <div><span className="text-gray-500">特殊需求：</span>{viewing.hasSpecialNeeds || '-'}</div>
-                <div><span className="text-gray-500">接触佛教：</span>{viewing.firstContactBuddhism || '-'}</div>
-                <div><span className="text-gray-500">皈依：</span>{viewing.hasTakenRefuge || '-'}</div>
-                <div><span className="text-gray-500">戒法：</span>{viewing.preceptsHeld?.join(', ') || '-'}</div>
-                <div><span className="text-gray-500">学习意愿：</span>{viewing.willingToLearn || '-'}</div>
-                <div><span className="text-gray-500">义工经历：</span>{viewing.hasVolunteerExperience || '-'}</div>
-                <div><span className="text-gray-500">参与次数：</span>{viewing.volunteerTimes || 0}</div>
-                <div><span className="text-gray-500">专长：</span>{viewing.skills?.join(', ') || '-'}</div>
-                <div><span className="text-gray-500">义工项目：</span>{viewing.volunteerProjects?.join(', ') || '-'}</div>
-                <div><span className="text-gray-500">服务开始：</span>{viewing.serviceStartDate ? new Date(viewing.serviceStartDate).toLocaleDateString() : '-'}</div>
-                <div><span className="text-gray-500">服务结束：</span>{viewing.serviceEndDate ? new Date(viewing.serviceEndDate).toLocaleDateString() : '-'}</div>
-                <div><span className="text-gray-500">等级：</span>{viewing.rank}</div>
-                <div><span className="text-gray-500">状态：</span>{viewing.status === 'ACTIVE' ? '在职' : '离职'}</div>
-                <div><span className="text-gray-500">服务时长：</span>{viewing.totalHours}小时</div>
-                <div><span className="text-gray-500">备注：</span>{viewing.remarks || '-'}</div>
+                <div><span className="text-tea/60">姓名：</span>{viewing.name}</div>
+                <div><span className="text-tea/60">法名：</span>{viewing.dharmaName || '-'}</div>
+                <div><span className="text-tea/60">性别：</span>{viewing.gender || '-'}</div>
+                <div><span className="text-tea/60">出生日期：</span>{viewing.birthDate ? new Date(viewing.birthDate).toLocaleDateString() : '-'}</div>
+                <div><span className="text-tea/60">电话：</span>{viewing.phone}</div>
+                <div><span className="text-tea/60">民族：</span>{viewing.ethnicity || '-'}</div>
+                <div><span className="text-tea/60">学历：</span>{viewing.education || '-'}</div>
+                <div><span className="text-tea/60">地址：</span>{viewing.address || '-'}</div>
+                <div><span className="text-tea/60">紧急联系人：</span>{viewing.emergencyContact || '-'}</div>
+                <div><span className="text-tea/60">紧急联系电话：</span>{viewing.emergencyPhone || '-'}</div>
+                <div><span className="text-tea/60">当前职业：</span>{viewing.currentOccupation || '-'}</div>
+                <div><span className="text-tea/60">曾经职业：</span>{viewing.previousOccupation || '-'}</div>
+                <div><span className="text-tea/60">健康状况：</span>{viewing.healthStatus || '-'}</div>
+                <div><span className="text-tea/60">传染病史：</span>{viewing.hasInfectiousDisease || '-'}</div>
+                <div><span className="text-tea/60">过敏史：</span>{viewing.hasAllergy || '-'}</div>
+                <div><span className="text-tea/60">特殊需求：</span>{viewing.hasSpecialNeeds || '-'}</div>
+                <div><span className="text-tea/60">接触佛教：</span>{viewing.firstContactBuddhism || '-'}</div>
+                <div><span className="text-tea/60">皈依：</span>{viewing.hasTakenRefuge || '-'}</div>
+                <div><span className="text-tea/60">戒法：</span>{viewing.preceptsHeld?.join(', ') || '-'}</div>
+                <div><span className="text-tea/60">学习意愿：</span>{viewing.willingToLearn || '-'}</div>
+                <div><span className="text-tea/60">义工经历：</span>{viewing.hasVolunteerExperience || '-'}</div>
+                <div><span className="text-tea/60">参与次数：</span>{viewing.volunteerTimes || 0}</div>
+                <div><span className="text-tea/60">专长：</span>{viewing.skills?.join(', ') || '-'}</div>
+                <div><span className="text-tea/60">义工项目：</span>{viewing.volunteerProjects?.join(', ') || '-'}</div>
+                <div><span className="text-tea/60">服务开始：</span>{viewing.serviceStartDate ? new Date(viewing.serviceStartDate).toLocaleDateString() : '-'}</div>
+                <div><span className="text-tea/60">服务结束：</span>{viewing.serviceEndDate ? new Date(viewing.serviceEndDate).toLocaleDateString() : '-'}</div>
+                <div><span className="text-tea/60">等级：</span>{viewing.rank}</div>
+                <div><span className="text-tea/60">状态：</span>{viewing.status === 'ACTIVE' ? '在职' : '离职'}</div>
+                <div><span className="text-tea/60">服务时长：</span>{viewing.totalHours}小时</div>
+                <div><span className="text-tea/60">备注：</span>{viewing.remarks || '-'}</div>
               </div>
             </div>
 
-            <div className="flex justify-end p-4 border-t">
-              <Button onClick={() => setDetailModalOpen(false)}>关闭</Button>
-            </div>
-          </div>
+        <div className="flex justify-end mt-6">
+          <Button onClick={() => setDetailModalOpen(false)} className="active:scale-[0.98] transition-all duration-200">关闭</Button>
         </div>
+      </Modal>
       )}
     </div>
   )

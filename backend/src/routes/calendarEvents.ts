@@ -1,4 +1,5 @@
 import { Router, Response } from 'express'
+import { asyncHandler } from '../middleware/errorHandler'
 import { prisma } from '../lib/prisma'
 import { authMiddleware, AuthRequest, requireRole } from '../middleware/auth'
 import { createSyncToken } from '../services/wechatIntegration'
@@ -60,7 +61,7 @@ async function getOrCreateWechatIntegration() {
   })
 }
 
-router.get('/calendar-events', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/calendar-events', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const includeDisabled = req.query.includeDisabled === 'true'
     const where: any = includeDisabled ? {} : { enabled: true }

@@ -144,7 +144,15 @@ function enqueueOfflineOperation(app, Database, operation) {
   return id
 }
 
+function closeLocalDb() {
+  if (localDb) {
+    try { localDb.close() } catch (_) {}
+    localDb = null
+  }
+}
+
 module.exports = {
+  closeLocalDb,
   enqueueOfflineOperation,
   getLocalDb,
   getStore,

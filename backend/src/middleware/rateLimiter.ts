@@ -9,6 +9,7 @@ const store = new Map<string, RateLimitEntry>()
 
 const WINDOW_MS = 60 * 1000 // 1 minute
 const MAX_REQUESTS = 300
+const MAX_STORE_ENTRIES = 50000
 
 export const rateLimiter = (req: Request, res: Response, next: NextFunction) => {
   const key = req.ip || 'unknown'
@@ -18,6 +19,10 @@ export const rateLimiter = (req: Request, res: Response, next: NextFunction) => 
 
   if (!entry || now > entry.resetTime) {
     entry = { count: 0, resetTime: now + WINDOW_MS }
+    if (store.size >= MAX_STORE_ENTRIES) {
+      const oldest = store.keys().next().value
+      if (oldest) store.delete(oldest)
+    }
     store.set(key, entry)
   }
 

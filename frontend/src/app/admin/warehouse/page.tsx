@@ -166,7 +166,7 @@ export default function WarehousePage() {
           <h2 className="text-xl font-medium text-ink">库房管理</h2>
           <p className="text-sm text-tea/60 mt-1">管理库存、台账和出入库</p>
         </div>
-        <Button onClick={() => setModalOpen(true)}>
+        <Button onClick={() => setModalOpen(true)} className="active:scale-[0.98] transition-all duration-200">
           新增物品
         </Button>
       </div>
@@ -235,8 +235,8 @@ export default function WarehousePage() {
           />
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={() => setModalOpen(false)}>取消</Button>
-          <Button onClick={handleSubmit}>保存</Button>
+          <Button variant="secondary" onClick={() => setModalOpen(false)} className="active:scale-[0.98] transition-all duration-200">取消</Button>
+          <Button onClick={handleSubmit} className="active:scale-[0.98] transition-all duration-200">保存</Button>
         </div>
       </Modal>
     </div>

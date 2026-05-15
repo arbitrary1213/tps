@@ -1,4 +1,5 @@
 import { Router, Response } from 'express'
+import { asyncHandler } from '../middleware/errorHandler'
 import { authMiddleware, AuthRequest } from '../middleware/auth'
 import {
   searchVolunteers,
@@ -24,7 +25,7 @@ const parseSearchParams = (req: AuthRequest): SearchParams => {
   }
 }
 
-router.get('/volunteers', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/volunteers', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const params = parseSearchParams(req)
     const result = await searchVolunteers(params)
@@ -35,7 +36,7 @@ router.get('/volunteers', authMiddleware, async (req: AuthRequest, res: Response
   }
 })
 
-router.get('/devotees', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/devotees', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const params = parseSearchParams(req)
     const result = await searchDevotees(params)
@@ -46,7 +47,7 @@ router.get('/devotees', authMiddleware, async (req: AuthRequest, res: Response) 
   }
 })
 
-router.get('/plaques', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/plaques', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const params = parseSearchParams(req)
     const result = await searchPlaques(params)
@@ -57,7 +58,7 @@ router.get('/plaques', authMiddleware, async (req: AuthRequest, res: Response) =
   }
 })
 
-router.get('/requests', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/requests', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const params = parseSearchParams(req)
     const result = await searchRequests(params)

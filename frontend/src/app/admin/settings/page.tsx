@@ -130,7 +130,14 @@ export default function SettingsPage() {
   }
 
   if (loading) {
-    return <div className="text-center py-12 text-tea/60">加载中...</div>
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="inline-block animate-spin h-12 w-12 border-4 border-vermilion border-t-transparent rounded-full" />
+          <p className="mt-4 text-tea/60">加载中...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -140,7 +147,7 @@ export default function SettingsPage() {
           <h2 className="text-xl font-medium text-ink">系统设置</h2>
           <p className="text-sm text-tea/60 mt-1">配置寺院基本信息和联系方式</p>
         </div>
-        <Button onClick={handleSubmit} loading={saving}>
+        <Button onClick={handleSubmit} loading={saving} className="active:scale-[0.98] transition-all duration-200">
           保存设置
         </Button>
       </div>
@@ -261,8 +268,8 @@ export default function SettingsPage() {
             placeholder="请输入超度类型名称"
           />
           <div className="flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setEditModalOpen(false)}>取消</Button>
-            <Button onClick={handleSaveType}>保存</Button>
+            <Button variant="secondary" onClick={() => setEditModalOpen(false)} className="active:scale-[0.98] transition-all duration-200">取消</Button>
+            <Button onClick={handleSaveType} className="active:scale-[0.98] transition-all duration-200">保存</Button>
           </div>
         </div>
       </Modal>

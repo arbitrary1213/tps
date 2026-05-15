@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { asyncHandler } from '../middleware/errorHandler'
 import { prisma } from '../lib/prisma'
 import { authMiddleware, AuthRequest, requireRole } from '../middleware/auth'
 import { callWechatPlatform, createAiReplySuggestion, createSyncToken } from '../services/wechatIntegration'
@@ -44,7 +45,7 @@ router.get('/integrations/wechat/auth-url', authMiddleware, requireRole('ADMIN')
   })
 })
 
-router.post('/integrations/wechat/bind', authMiddleware, requireRole('ADMIN'), async (req: AuthRequest, res) => {
+router.post('/integrations/wechat/bind', authMiddleware, requireRole('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
   const integration = await getOrCreateIntegration()
   const { authorizerAppId, authorizerNickName, templeCode, templeName, serverUrl } = req.body || {}
   const updated = await prisma.wechatIntegration.update({
@@ -62,7 +63,7 @@ router.post('/integrations/wechat/bind', authMiddleware, requireRole('ADMIN'), a
   res.json({ success: true, data: updated })
 })
 
-router.get('/wechat/messages', authMiddleware, async (req: AuthRequest, res) => {
+router.get('/wechat/messages', authMiddleware, asyncHandler(async (req: AuthRequest, res) => {
   const integration = await getOrCreateIntegration()
   const limit = Math.min(Number(req.query.limit || 50), 200)
   const messages = await prisma.wechatMessageRecord.findMany({
@@ -73,7 +74,7 @@ router.get('/wechat/messages', authMiddleware, async (req: AuthRequest, res) => 
   res.json({ success: true, data: messages })
 })
 
-router.post('/wechat/messages/:id/reply', authMiddleware, requireRole('ADMIN', 'OPERATOR'), async (req: AuthRequest, res) => {
+router.post('/wechat/messages/:id/reply', authMiddleware, requireRole('ADMIN', 'OPERATOR'), asyncHandler(async (req: AuthRequest, res) => {
   const message = await prisma.wechatMessageRecord.findUnique({ where: { id: req.params.id }, include: { integration: true } })
   if (!message) return res.status(404).json({ success: false, error: '消息不存在' })
 
@@ -142,7 +143,7 @@ router.get('/wechat/articles', authMiddleware, async (_req: AuthRequest, res) =>
   res.json({ success: true, data: articles })
 })
 
-router.post('/wechat/articles', authMiddleware, requireRole('ADMIN', 'OPERATOR'), async (req: AuthRequest, res) => {
+router.post('/wechat/articles', authMiddleware, requireRole('ADMIN', 'OPERATOR'), asyncHandler(async (req: AuthRequest, res) => {
   const integration = await getOrCreateIntegration()
   const { title, author, digest, content, thumbMediaId } = req.body || {}
   if (!title || !content) return res.status(400).json({ success: false, error: '标题和正文不能为空' })
@@ -162,7 +163,7 @@ router.post('/wechat/articles', authMiddleware, requireRole('ADMIN', 'OPERATOR')
   res.json({ success: true, data: article })
 })
 
-router.post('/wechat/articles/:id/publish', authMiddleware, requireRole('ADMIN'), async (req: AuthRequest, res) => {
+router.post('/wechat/articles/:id/publish', authMiddleware, requireRole('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
   const article = await prisma.wechatArticle.findUnique({ where: { id: req.params.id }, include: { integration: true } })
   if (!article) return res.status(404).json({ success: false, error: '文章不存在' })
 
@@ -182,7 +183,7 @@ router.post('/wechat/articles/:id/publish', authMiddleware, requireRole('ADMIN')
   res.json({ success: true, data: updated, platform: platformResult })
 })
 
-router.post('/wechat/template-messages/send', authMiddleware, requireRole('ADMIN', 'OPERATOR'), async (req: AuthRequest, res) => {
+router.post('/wechat/template-messages/send', authMiddleware, requireRole('ADMIN', 'OPERATOR'), asyncHandler(async (req: AuthRequest, res) => {
   const integration = await getOrCreateIntegration()
   const { openId, businessType, templateId, title, payload } = req.body || {}
   if (!openId || !businessType) return res.status(400).json({ success: false, error: 'openId 和 businessType 必填' })

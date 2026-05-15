@@ -30,7 +30,7 @@ export default function PrintCenterPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-medium text-ink">打印中心</h2>
+        <h2 className="text-xl font-medium text-ink">模板中心</h2>
         <p className="text-sm text-tea/60 mt-1">
           先确定数据来源，再选模板，再预览，再选择打印机。不要在多个入口之间来回切换。
         </p>

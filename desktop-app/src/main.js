@@ -6,6 +6,7 @@ const { registerIpcHandlers } = require('./main/ipc')
 const { createWindowManager } = require('./main/windows')
 const { listAllPrinters, listWindowsPrinterPaperSizes } = require('./main/printers')
 const {
+  closeLocalDb,
   enqueueOfflineOperation,
   getLocalDb,
   getStore,
@@ -70,6 +71,7 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', () => {
+  closeLocalDb()
   frontendRuntime.stopFrontend()
 })
 

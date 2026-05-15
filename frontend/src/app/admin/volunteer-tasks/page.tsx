@@ -186,7 +186,7 @@ export default function VolunteerTasksPage() {
           <h2 className="text-xl font-medium text-ink">义工任务</h2>
           <p className="text-sm text-tea/60 mt-1">创建和管理义工服务任务</p>
         </div>
-        <Button onClick={() => { resetForm(); setEditing(null); setModalOpen(true); }}>
+        <Button onClick={() => { resetForm(); setEditing(null); setModalOpen(true); }} className="active:scale-[0.98] transition-all duration-200">
           新建任务
         </Button>
       </div>
@@ -260,8 +260,8 @@ export default function VolunteerTasksPage() {
           />
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={() => { setModalOpen(false); setEditing(null); }}>取消</Button>
-          <Button onClick={handleSubmit}>保存</Button>
+          <Button variant="secondary" onClick={() => { setModalOpen(false); setEditing(null); }} className="active:scale-[0.98] transition-all duration-200">取消</Button>
+          <Button onClick={handleSubmit} className="active:scale-[0.98] transition-all duration-200">保存</Button>
         </div>
       </Modal>
     </div>

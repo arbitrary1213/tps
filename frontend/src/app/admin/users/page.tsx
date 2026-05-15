@@ -145,18 +145,19 @@ export default function UsersPage() {
           <h2 className="text-xl font-medium text-ink">用户管理</h2>
           <p className="text-sm text-tea/60 mt-1">管理系统用户和权限</p>
         </div>
-        <Button onClick={() => { resetForm(); setModalOpen(true); }}>
+        <Button onClick={() => { resetForm(); setModalOpen(true); }} className="active:scale-[0.98] transition-all duration-200">
           新建用户
         </Button>
       </div>
 
       <Card>
-        <Table
+        <div className="overflow-x-auto rounded-xl border min-w-0"><Table
           columns={columns}
           data={users}
           loading={loading}
           emptyText="暂无用户"
         />
+        </div>
       </Card>
 
       <Modal
@@ -195,8 +196,8 @@ export default function UsersPage() {
           />
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={() => setModalOpen(false)}>取消</Button>
-          <Button onClick={handleSubmit}>创建</Button>
+          <Button variant="secondary" onClick={() => setModalOpen(false)} className="active:scale-[0.98] transition-all duration-200">取消</Button>
+          <Button onClick={handleSubmit} className="active:scale-[0.98] transition-all duration-200">创建</Button>
         </div>
       </Modal>
 
@@ -216,8 +217,8 @@ export default function UsersPage() {
           />
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={() => setPasswordModalOpen(false)}>取消</Button>
-          <Button onClick={handlePasswordSubmit}>确认修改</Button>
+          <Button variant="secondary" onClick={() => setPasswordModalOpen(false)} className="active:scale-[0.98] transition-all duration-200">取消</Button>
+          <Button onClick={handlePasswordSubmit} className="active:scale-[0.98] transition-all duration-200">确认修改</Button>
         </div>
       </Modal>
     </div>

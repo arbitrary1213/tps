@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express'
+import { asyncHandler } from '../middleware/errorHandler'
 import { authMiddleware, AuthRequest } from '../middleware/auth'
 import { prisma } from '../lib/prisma'
 
@@ -26,7 +27,7 @@ router.get('/settings', async (req: Request, res: Response) => {
 })
 
 // 更新系统设置（需认证）
-router.put('/settings', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/settings', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { templeName, templeAddress, templePhone, templeEmail, templeLogo, landingLogo, landingBg, wechatQrcode, dedicationTypes } = req.body
 

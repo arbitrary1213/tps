@@ -1,6 +1,8 @@
 import { Router, Response } from 'express'
+import { asyncHandler } from '../../middleware/errorHandler'
 import { authMiddleware, AuthRequest } from '../../middleware/auth'
-import { bcrypt, logOperation, prisma } from './shared'
+import bcrypt from 'bcryptjs'
+import { logOperation, prisma } from './shared'
 
 const router = Router()
 
@@ -16,7 +18,7 @@ router.get('/users', authMiddleware, async (_req: AuthRequest, res: Response) =>
   }
 })
 
-router.post('/users', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/users', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { username, password, email, name, role } = req.body
     const hashedPassword = await bcrypt.hash(password, 10)
@@ -30,7 +32,7 @@ router.post('/users', authMiddleware, async (req: AuthRequest, res: Response) =>
   }
 })
 
-router.put('/users/:id/password', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/users/:id/password', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { newPassword } = req.body
     const hashedPassword = await bcrypt.hash(newPassword, 10)
@@ -42,7 +44,7 @@ router.put('/users/:id/password', authMiddleware, async (req: AuthRequest, res: 
   }
 })
 
-router.delete('/users/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.delete('/users/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     if (req.params.id === req.user!.userId) {
       return res.status(400).json({ success: false, error: '不能删除自己' })
@@ -68,7 +70,7 @@ router.delete('/users/:id', authMiddleware, async (req: AuthRequest, res: Respon
   }
 })
 
-router.get('/logs', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/logs', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { action, targetType, startDate, endDate, page = 1, pageSize = 50 } = req.query
     const where: any = {}

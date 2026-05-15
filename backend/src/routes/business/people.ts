@@ -1,10 +1,11 @@
 import { Router, Request, Response } from 'express'
+import { asyncHandler } from '../../middleware/errorHandler'
 import { authMiddleware, AuthRequest } from '../../middleware/auth'
-import { logOperation, prisma } from './shared'
+import { logOperation, normalizeDateFields, prisma } from './shared'
 
 const router = Router()
 
-router.get('/monks', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/monks', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { status, position } = req.query
     const where: any = {}
@@ -18,25 +19,10 @@ router.get('/monks', authMiddleware, async (req: AuthRequest, res: Response) => 
   }
 })
 
-router.post('/monks', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/monks', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const data = { ...req.body }
-    for (const field of ['birthDate', 'ordinationDate']) {
-      const value = data[field]
-      if (typeof value === 'string') {
-        if (['', 'undefined', 'null'].includes(value)) delete data[field]
-        else {
-          const parsed = new Date(value)
-          data[field] = Number.isNaN(parsed.getTime()) ? undefined : parsed
-        }
-      }
-    }
-    if (data.birthDate && typeof data.birthDate === 'string') {
-      data.birthDate = new Date(data.birthDate)
-    }
-    if (data.ordinationDate && typeof data.ordinationDate === 'string') {
-      data.ordinationDate = new Date(data.ordinationDate)
-    }
+    normalizeDateFields(data, ['birthDate', 'ordinationDate'])
 
     const monk = await prisma.monk.create({ data })
     await logOperation(req.user, 'CREATE', 'monk', monk.id, null, monk)
@@ -46,7 +32,7 @@ router.post('/monks', authMiddleware, async (req: AuthRequest, res: Response) =>
   }
 })
 
-router.put('/monks/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/monks/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const before = await prisma.monk.findUnique({ where: { id: req.params.id } })
     const monk = await prisma.monk.update({ where: { id: req.params.id }, data: req.body })
@@ -57,7 +43,7 @@ router.put('/monks/:id', authMiddleware, async (req: AuthRequest, res: Response)
   }
 })
 
-router.delete('/monks/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.delete('/monks/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     await prisma.monk.delete({ where: { id: req.params.id } })
     await logOperation(req.user, 'DELETE', 'monk', req.params.id)
@@ -67,7 +53,7 @@ router.delete('/monks/:id', authMiddleware, async (req: AuthRequest, res: Respon
   }
 })
 
-router.get('/volunteers', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/volunteers', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { status, rank, keyword } = req.query
     const where: any = {}
@@ -87,7 +73,7 @@ router.get('/volunteers', authMiddleware, async (req: AuthRequest, res: Response
   }
 })
 
-router.post('/volunteers', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/volunteers', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const volunteer = await prisma.volunteer.create({ data: req.body })
     await logOperation(req.user, 'CREATE', 'volunteer', volunteer.id, null, volunteer)
@@ -97,7 +83,7 @@ router.post('/volunteers', authMiddleware, async (req: AuthRequest, res: Respons
   }
 })
 
-router.put('/volunteers/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/volunteers/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const before = await prisma.volunteer.findUnique({ where: { id: req.params.id } })
     const volunteer = await prisma.volunteer.update({ where: { id: req.params.id }, data: req.body })
@@ -108,7 +94,7 @@ router.put('/volunteers/:id', authMiddleware, async (req: AuthRequest, res: Resp
   }
 })
 
-router.delete('/volunteers/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.delete('/volunteers/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     await prisma.volunteer.update({ where: { id: req.params.id }, data: { status: 'INACTIVE' } })
     await logOperation(req.user, 'DELETE', 'volunteer', req.params.id)
@@ -136,22 +122,10 @@ router.get('/volunteer-tasks', async (req: Request, res: Response) => {
   }
 })
 
-router.post('/volunteer-tasks', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/volunteer-tasks', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const data = { ...req.body, createdBy: req.user!.userId }
-    for (const field of ['taskDate']) {
-      const value = data[field]
-      if (typeof value === 'string') {
-        if (['', 'undefined', 'null'].includes(value)) delete data[field]
-        else {
-          const parsed = new Date(value)
-          data[field] = Number.isNaN(parsed.getTime()) ? undefined : parsed
-        }
-      }
-    }
-    if (data.taskDate && typeof data.taskDate === 'string') {
-      data.taskDate = new Date(data.taskDate)
-    }
+    normalizeDateFields(data, ['taskDate'])
     const task = await prisma.volunteerTask.create({ data })
     await logOperation(req.user, 'CREATE', 'volunteer_task', task.id, null, task)
     res.json({ success: true, data: task })
@@ -160,7 +134,7 @@ router.post('/volunteer-tasks', authMiddleware, async (req: AuthRequest, res: Re
   }
 })
 
-router.put('/volunteer-tasks/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/volunteer-tasks/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const task = await prisma.volunteerTask.update({ where: { id: req.params.id }, data: req.body })
     await logOperation(req.user, 'UPDATE', 'volunteer_task', task.id, null, task)
@@ -170,7 +144,7 @@ router.put('/volunteer-tasks/:id', authMiddleware, async (req: AuthRequest, res:
   }
 })
 
-router.delete('/volunteer-tasks/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.delete('/volunteer-tasks/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     await prisma.volunteerTask.delete({ where: { id: req.params.id } })
     await logOperation(req.user, 'DELETE', 'volunteer_task', req.params.id)
@@ -239,7 +213,7 @@ router.post('/volunteer-attendance/sign-out', async (req: Request, res: Response
   }
 })
 
-router.get('/devotees', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/devotees', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { keyword, tag, updatedSince } = req.query
     const where: any = {}
@@ -259,28 +233,10 @@ router.get('/devotees', authMiddleware, async (req: AuthRequest, res: Response) 
   }
 })
 
-router.post('/devotees', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/devotees', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const data = { ...req.body, createdBy: req.user!.username }
-    for (const field of ['birthday', 'firstVisitDate', 'lastVisitDate']) {
-      const value = data[field]
-      if (typeof value === 'string') {
-        if (['', 'undefined', 'null'].includes(value)) delete data[field]
-        else {
-          const parsed = new Date(value)
-          data[field] = Number.isNaN(parsed.getTime()) ? undefined : parsed
-        }
-      }
-    }
-    if (data.birthday && typeof data.birthday === 'string') {
-      data.birthday = new Date(data.birthday)
-    }
-    if (data.firstVisitDate && typeof data.firstVisitDate === 'string') {
-      data.firstVisitDate = new Date(data.firstVisitDate)
-    }
-    if (data.lastVisitDate && typeof data.lastVisitDate === 'string') {
-      data.lastVisitDate = new Date(data.lastVisitDate)
-    }
+    normalizeDateFields(data, ['birthday', 'firstVisitDate', 'lastVisitDate'])
     const devotee = await prisma.devotee.create({ data })
     await logOperation(req.user, 'CREATE', 'devotee', devotee.id, null, devotee)
     res.json({ success: true, data: devotee })
@@ -289,7 +245,7 @@ router.post('/devotees', authMiddleware, async (req: AuthRequest, res: Response)
   }
 })
 
-router.put('/devotees/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/devotees/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const devotee = await prisma.devotee.update({ where: { id: req.params.id }, data: req.body })
     await logOperation(req.user, 'UPDATE', 'devotee', devotee.id, null, devotee)
@@ -299,7 +255,7 @@ router.put('/devotees/:id', authMiddleware, async (req: AuthRequest, res: Respon
   }
 })
 
-router.delete('/devotees/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.delete('/devotees/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     await prisma.devotee.delete({ where: { id: req.params.id } })
     await logOperation(req.user, 'DELETE', 'devotee', req.params.id)

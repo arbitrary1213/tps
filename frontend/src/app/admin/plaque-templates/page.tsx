@@ -122,7 +122,7 @@ export default function PlaqueTemplatesPage() {
             href="/admin/print-center"
             className="inline-flex items-center justify-center rounded border border-vermilion px-6 py-2.5 text-sm font-medium tracking-wider text-vermilion hover:bg-vermilion-light"
           >
-            返回打印中心
+            返回模板中心
           </Link>
         </div>
       </div>

@@ -76,7 +76,7 @@ export default function VolunteerAttendancePage() {
     { key: 'time', title: '时间', render: (row: Task) => `${row.startTime} - ${row.endTime}` },
     { key: 'currentCount', title: '当前人数' },
     { key: 'actions', title: '操作', render: (row: Task) => (
-      <Button size="sm" onClick={() => { setSelectedTask(row); setSignInModal(true); }}>
+      <Button size="sm" onClick={() => { setSelectedTask(row); setSignInModal(true); }} className="active:scale-[0.98] transition-all duration-200">
         签到
       </Button>
     )},
@@ -116,8 +116,8 @@ export default function VolunteerAttendancePage() {
           />
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={() => { setSignInModal(false); setSelectedTask(null); }}>取消</Button>
-          <Button onClick={handleSignIn}>签到</Button>
+          <Button variant="secondary" onClick={() => { setSignInModal(false); setSelectedTask(null); }} className="active:scale-[0.98] transition-all duration-200">取消</Button>
+          <Button onClick={handleSignIn} className="active:scale-[0.98] transition-all duration-200">签到</Button>
         </div>
       </Modal>
     </div>

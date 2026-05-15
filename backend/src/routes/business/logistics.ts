@@ -1,10 +1,11 @@
 import { Router, Response } from 'express'
+import { asyncHandler } from '../../middleware/errorHandler'
 import { authMiddleware, AuthRequest } from '../../middleware/auth'
 import { logOperation, prisma } from './shared'
 
 const router = Router()
 
-router.get('/donations', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/donations', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { type, startDate, endDate } = req.query
     const where: any = {}
@@ -26,7 +27,7 @@ router.get('/donations', authMiddleware, async (req: AuthRequest, res: Response)
   }
 })
 
-router.post('/donations', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/donations', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const data = { ...req.body, operator: req.user!.username }
     if (data.donationDate && typeof data.donationDate === 'string') {
@@ -40,7 +41,7 @@ router.post('/donations', authMiddleware, async (req: AuthRequest, res: Response
   }
 })
 
-router.get('/warehouse/items', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/warehouse/items', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { category } = req.query
     const where: any = {}
@@ -53,7 +54,7 @@ router.get('/warehouse/items', authMiddleware, async (req: AuthRequest, res: Res
   }
 })
 
-router.post('/warehouse/items', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/warehouse/items', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const item = await prisma.warehouseItem.create({ data: req.body })
     res.json({ success: true, data: item })
@@ -62,7 +63,7 @@ router.post('/warehouse/items', authMiddleware, async (req: AuthRequest, res: Re
   }
 })
 
-router.put('/warehouse/items/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/warehouse/items/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const item = await prisma.warehouseItem.update({ where: { id: req.params.id }, data: req.body })
     res.json({ success: true, data: item })
@@ -71,7 +72,7 @@ router.put('/warehouse/items/:id', authMiddleware, async (req: AuthRequest, res:
   }
 })
 
-router.post('/warehouse/in', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/warehouse/in', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { itemId, quantity, price, supplier } = req.body
     const record = await prisma.warehouseIn.create({
@@ -87,7 +88,7 @@ router.post('/warehouse/in', authMiddleware, async (req: AuthRequest, res: Respo
   }
 })
 
-router.post('/warehouse/out', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/warehouse/out', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { itemId, quantity, purpose } = req.body
     const record = await prisma.warehouseOut.create({
@@ -124,7 +125,7 @@ router.get('/rooms', authMiddleware, async (_req: AuthRequest, res: Response) =>
   }
 })
 
-router.post('/rooms', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/rooms', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const room = await prisma.room.create({ data: req.body })
     res.json({ success: true, data: room })
@@ -133,7 +134,7 @@ router.post('/rooms', authMiddleware, async (req: AuthRequest, res: Response) =>
   }
 })
 
-router.put('/rooms/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/rooms/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const room = await prisma.room.update({ where: { id: req.params.id }, data: req.body })
     res.json({ success: true, data: room })
@@ -154,7 +155,7 @@ router.get('/accommodations', authMiddleware, async (_req: AuthRequest, res: Res
   }
 })
 
-router.post('/accommodations', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/accommodations', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const data = { ...req.body, operator: req.user!.username }
     for (const field of ['checkInDate', 'checkOutDate']) {
@@ -183,7 +184,7 @@ router.post('/accommodations', authMiddleware, async (req: AuthRequest, res: Res
   }
 })
 
-router.put('/accommodations/:id/checkout', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/accommodations/:id/checkout', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const existing = await prisma.accommodationRecord.findUnique({ where: { id: req.params.id } })
     if (!existing) {
@@ -215,7 +216,7 @@ router.get('/dining', authMiddleware, async (_req: AuthRequest, res: Response) =
   }
 })
 
-router.post('/dining', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/dining', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const data = { ...req.body, operator: req.user!.username }
     for (const field of ['mealDate']) {
@@ -238,7 +239,7 @@ router.post('/dining', authMiddleware, async (req: AuthRequest, res: Response) =
   }
 })
 
-router.get('/visits', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/visits', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { visitorType, startDate, endDate } = req.query
     const where: any = {}
@@ -256,7 +257,7 @@ router.get('/visits', authMiddleware, async (req: AuthRequest, res: Response) =>
   }
 })
 
-router.post('/visits', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/visits', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const data = { ...req.body }
     for (const field of ['visitDate']) {

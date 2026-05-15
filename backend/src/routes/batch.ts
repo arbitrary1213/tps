@@ -1,10 +1,11 @@
 import { Router, Response } from 'express'
+import { asyncHandler } from '../middleware/errorHandler'
 import { authMiddleware, requireRole, AuthRequest } from '../middleware/auth'
 import { prisma } from '../lib/prisma'
 
 const router = Router()
 
-router.post('/approve-requests', authMiddleware, requireRole('ADMIN', 'OPERATOR'), async (req: AuthRequest, res: Response) => {
+router.post('/approve-requests', authMiddleware, requireRole('ADMIN', 'OPERATOR'), asyncHandler(async (req: AuthRequest, res: Response) => {
   const { requestIds } = req.body as { requestIds: string[] }
 
   if (!Array.isArray(requestIds) || requestIds.length === 0) {
@@ -176,7 +177,7 @@ router.post('/approve-requests', authMiddleware, requireRole('ADMIN', 'OPERATOR'
   }
 })
 
-router.post('/delete-volunteers', authMiddleware, requireRole('ADMIN', 'OPERATOR'), async (req: AuthRequest, res: Response) => {
+router.post('/delete-volunteers', authMiddleware, requireRole('ADMIN', 'OPERATOR'), asyncHandler(async (req: AuthRequest, res: Response) => {
   const { volunteerIds } = req.body as { volunteerIds: string[] }
 
   if (!Array.isArray(volunteerIds) || volunteerIds.length === 0) {
@@ -216,7 +217,7 @@ router.post('/delete-volunteers', authMiddleware, requireRole('ADMIN', 'OPERATOR
   }
 })
 
-router.post('/update-plaques', authMiddleware, requireRole('ADMIN', 'OPERATOR'), async (req: AuthRequest, res: Response) => {
+router.post('/update-plaques', authMiddleware, requireRole('ADMIN', 'OPERATOR'), asyncHandler(async (req: AuthRequest, res: Response) => {
   const { plaqueIds, status } = req.body as { plaqueIds: string[]; status: string }
 
   if (!Array.isArray(plaqueIds) || plaqueIds.length === 0) {
@@ -265,7 +266,7 @@ router.post('/update-plaques', authMiddleware, requireRole('ADMIN', 'OPERATOR'),
   }
 })
 
-router.post('/export-plaques', authMiddleware, requireRole('ADMIN', 'OPERATOR'), async (req: AuthRequest, res: Response) => {
+router.post('/export-plaques', authMiddleware, requireRole('ADMIN', 'OPERATOR'), asyncHandler(async (req: AuthRequest, res: Response) => {
   const { plaqueIds } = req.body as { plaqueIds: string[] }
 
   if (!Array.isArray(plaqueIds) || plaqueIds.length === 0) {

@@ -494,6 +494,10 @@ async function init() {
   $("deleteTemplateBtn")?.addEventListener("click", deleteCurrentTemplate);
   ensureFieldContextMenu();
   document.addEventListener("click", handleGlobalPointerDismiss);
+  document.querySelectorAll(".panel-toggle").forEach((btn) => {
+    btn.addEventListener("click", () => togglePanel(btn.closest(".panel")));
+  });
+  restorePanelStates();
   document.querySelectorAll("[data-side]").forEach((button) => {
     button.addEventListener("click", () => setEditSide(button.dataset.side || "front"));
   });
@@ -1167,8 +1171,9 @@ function handleBackground(event) {
   }
   const reader = new FileReader();
   reader.onload = async () => {
+    const webpDataUrl = await convertToWebP(String(reader.result || ""));
     const layout = currentEditableLayout();
-    layout.background = String(reader.result || "");
+    layout.background = webpDataUrl;
     $("showBg").checked = true;
     await persistTemplateMutation({
       syncTemplate: true,
@@ -1180,7 +1185,34 @@ function handleBackground(event) {
     render();
     event.target.value = "";
   };
+  reader.onerror = () => {
+    event.target.value = "";
+  };
   reader.readAsDataURL(file);
+}
+
+function convertToWebP(dataUrl) {
+  return new Promise((resolve) => {
+    if (!dataUrl || !dataUrl.startsWith("data:image/") || dataUrl.startsWith("data:image/webp")) {
+      return resolve(dataUrl);
+    }
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve(dataUrl);
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL("image/webp", 0.8));
+      } catch (e) {
+        resolve(dataUrl);
+      }
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
 }
 
 function isPdfBackgroundFile(file) {
@@ -3374,12 +3406,8 @@ function setBusy(message) {
 }
 
 function setWorkflowStatus() {
-  if ($("launchSourceValue")) $("launchSourceValue").textContent = workflowStatus.launchSource;
-  if ($("runtimeStatusValue")) $("runtimeStatusValue").textContent = workflowStatus.runtime;
   if ($("dataSourceValue")) $("dataSourceValue").textContent = workflowStatus.dataSource;
   if ($("templateSourceValue")) $("templateSourceValue").textContent = workflowStatus.templateSource;
-  if ($("templateSyncValue")) $("templateSyncValue").textContent = workflowStatus.templateSync;
-  if ($("storageModelValue")) $("storageModelValue").textContent = workflowStatus.storageModel;
 }
 
 function setLaunchSourceStatus(value) {
@@ -4891,6 +4919,58 @@ function escapeHtml(valueToEscape) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function togglePanel(panel) {
+  if (!panel) return;
+  const workspace = panel.closest(".workspace");
+  const isLeft = panel.classList.contains("controls");
+  const collapsed = panel.classList.toggle("collapsed");
+  if (workspace) {
+    workspace.classList.toggle("left-collapsed", isLeft && collapsed);
+    workspace.classList.toggle("right-collapsed", !isLeft && collapsed);
+  }
+  const arrow = panel.querySelector(".panel-toggle");
+  if (arrow) {
+    arrow.innerHTML = isLeft
+      ? (collapsed ? "&#9654;" : "&#9664;")
+      : (collapsed ? "&#9664;" : "&#9654;");
+  }
+  savePanelStates();
+}
+
+function savePanelStates() {
+  const leftPanel = document.querySelector(".panel.controls");
+  const rightPanel = document.querySelector(".panel.data-panel");
+  safeStorageSet("panelStates", JSON.stringify({
+    leftCollapsed: leftPanel?.classList.contains("collapsed") || false,
+    rightCollapsed: rightPanel?.classList.contains("collapsed") || false,
+  }));
+}
+
+function restorePanelStates() {
+  try {
+    const stored = safeStorageGet("panelStates");
+    if (!stored) return;
+    const states = JSON.parse(stored);
+    const leftPanel = document.querySelector(".panel.controls");
+    const rightPanel = document.querySelector(".panel.data-panel");
+    const workspace = document.querySelector(".workspace");
+    if (states.leftCollapsed && leftPanel && workspace) {
+      leftPanel.classList.add("collapsed");
+      workspace.classList.add("left-collapsed");
+      const arrow = leftPanel.querySelector(".panel-toggle");
+      if (arrow) arrow.innerHTML = "&#9654;";
+    }
+    if (states.rightCollapsed && rightPanel && workspace) {
+      rightPanel.classList.add("collapsed");
+      workspace.classList.add("right-collapsed");
+      const arrow = rightPanel.querySelector(".panel-toggle");
+      if (arrow) arrow.innerHTML = "&#9664;";
+    }
+  } catch (e) {
+    // ignore
+  }
 }
 
 init();

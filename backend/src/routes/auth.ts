@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
+import { asyncHandler } from '../middleware/errorHandler'
 import { signToken, authMiddleware, AuthRequest, requireRole } from '../middleware/auth'
 import { prisma } from '../lib/prisma'
 
@@ -187,7 +188,7 @@ router.post('/register', authMiddleware, requireRole('ADMIN'), async (req: Reque
 })
 
 // 获取当前用户
-router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/me', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.userId },
@@ -206,7 +207,7 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
 })
 
 // 修改密码
-router.put('/change-password', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/change-password', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { currentPassword, newPassword, confirmPassword } = req.body
 

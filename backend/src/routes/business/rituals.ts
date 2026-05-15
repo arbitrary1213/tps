@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express'
+import { asyncHandler } from '../../middleware/errorHandler'
 import { authMiddleware, AuthRequest } from '../../middleware/auth'
 import { logOperation, normalizeDateFields, prisma } from './shared'
 
@@ -18,7 +19,7 @@ router.get('/rituals', async (req: Request, res: Response) => {
   }
 })
 
-router.post('/rituals', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/rituals', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const data = { ...req.body }
     for (const field of ['ritualDate', 'registrationDeadline']) {
@@ -42,7 +43,7 @@ router.post('/rituals', authMiddleware, async (req: AuthRequest, res: Response) 
   }
 })
 
-router.put('/rituals/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/rituals/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const data = { ...req.body }
     normalizeDateFields(data, ['ritualDate', 'registrationDeadline'])
@@ -54,7 +55,7 @@ router.put('/rituals/:id', authMiddleware, async (req: AuthRequest, res: Respons
   }
 })
 
-router.delete('/rituals/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.delete('/rituals/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     await prisma.ritual.delete({ where: { id: req.params.id } })
     await logOperation(req.user, 'DELETE', 'ritual', req.params.id)
@@ -64,7 +65,7 @@ router.delete('/rituals/:id', authMiddleware, async (req: AuthRequest, res: Resp
   }
 })
 
-router.get('/rituals/:id/participants', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/rituals/:id/participants', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const participants = await prisma.ritualParticipant.findMany({
       where: { ritualId: req.params.id },
@@ -75,7 +76,7 @@ router.get('/rituals/:id/participants', authMiddleware, async (req: AuthRequest,
   }
 })
 
-router.post('/rituals/:id/participants', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/rituals/:id/participants', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const participant = await prisma.ritualParticipant.create({
       data: { ...req.body, ritualId: req.params.id },
@@ -90,7 +91,7 @@ router.post('/rituals/:id/participants', authMiddleware, async (req: AuthRequest
   }
 })
 
-router.put('/participants/:id/check-in', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/participants/:id/check-in', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const participant = await prisma.ritualParticipant.update({
       where: { id: req.params.id },
@@ -111,7 +112,7 @@ router.get('/halls', async (req: Request, res: Response) => {
   }
 })
 
-router.post('/halls', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/halls', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const hall = await prisma.hall.create({ data: req.body })
     await logOperation(req.user, 'CREATE', 'hall', hall.id, null, hall)
@@ -121,7 +122,7 @@ router.post('/halls', authMiddleware, async (req: AuthRequest, res: Response) =>
   }
 })
 
-router.put('/halls/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/halls/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const hall = await prisma.hall.update({ where: { id: req.params.id }, data: req.body })
     res.json({ success: true, data: hall })

@@ -1,4 +1,5 @@
 import { Router, Response } from 'express'
+import { asyncHandler } from '../middleware/errorHandler'
 import { authMiddleware, AuthRequest } from '../middleware/auth'
 import {
   exportVolunteers,
@@ -41,7 +42,7 @@ const handleExport = async (
   }
 }
 
-router.get('/volunteers', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/volunteers', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   await handleExport(res, exportVolunteers, {
     format: req.query.format as string,
     startDate: req.query.startDate as string,
@@ -49,7 +50,7 @@ router.get('/volunteers', authMiddleware, async (req: AuthRequest, res: Response
   })
 })
 
-router.get('/donations', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/donations', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   await handleExport(res, exportDonations, {
     format: req.query.format as string,
     startDate: req.query.startDate as string,
@@ -57,7 +58,7 @@ router.get('/donations', authMiddleware, async (req: AuthRequest, res: Response)
   })
 })
 
-router.get('/plaques', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/plaques', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   await handleExport(res, exportPlaques, {
     format: req.query.format as string,
     startDate: req.query.startDate as string,
@@ -65,7 +66,7 @@ router.get('/plaques', authMiddleware, async (req: AuthRequest, res: Response) =
   })
 })
 
-router.get('/lamp-offerings', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/lamp-offerings', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   await handleExport(res, exportLampOfferings, {
     format: req.query.format as string,
     startDate: req.query.startDate as string,
@@ -73,7 +74,7 @@ router.get('/lamp-offerings', authMiddleware, async (req: AuthRequest, res: Resp
   })
 })
 
-router.get('/requests', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/requests', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   await handleExport(res, exportRegistrationRequests, {
     format: req.query.format as string,
     startDate: req.query.startDate as string,

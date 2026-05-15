@@ -271,7 +271,7 @@ export default function AdminDashboard() {
     { title: '处理登记审批', desc: '查看线上登记、通过或拒绝申请', href: '/admin/approvals' },
     { title: '新增牌位', desc: '录入延生、往生、超度牌位', href: '/admin/plaques' },
     { title: '维护信众档案', desc: '管理信众联系方式与历史记录', href: '/admin/devotees' },
-    { title: '进入打印中心', desc: '统一选择打印入口、模板和预览流程', href: '/admin/print-center' },
+    { title: '进入模板中心', desc: '统一选择打印入口、模板和预览流程', href: '/admin/print-center' },
   ]
 
   if (loading) {

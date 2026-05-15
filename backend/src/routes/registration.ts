@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express'
 import { Prisma } from '@prisma/client'
+import { asyncHandler } from '../middleware/errorHandler'
 import { authMiddleware, AuthRequest } from '../middleware/auth'
 import { submitRequestSchema } from './validation'
 import { prisma } from '../lib/prisma'
@@ -148,7 +149,7 @@ router.get('/tasks', async (req: Request, res: Response) => {
 })
 
 // 获取所有登记任务（需认证，含禁用的）
-router.get('/tasks/all', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/tasks/all', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const tasks = await prisma.registrationTask.findMany({
       orderBy: { sort: 'asc' }
@@ -161,7 +162,7 @@ router.get('/tasks/all', authMiddleware, async (req: AuthRequest, res: Response)
 })
 
 // 创建登记任务（需认证）
-router.post('/tasks', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/tasks', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { name, taskType, description, enabled, formConfig, sort } = req.body
 
@@ -195,7 +196,7 @@ router.post('/tasks', authMiddleware, async (req: AuthRequest, res: Response) =>
 })
 
 // 更新登记任务（需认证）
-router.put('/tasks/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/tasks/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params
     const { name, taskType, description, enabled, formConfig, sort } = req.body
@@ -224,7 +225,7 @@ router.put('/tasks/:id', authMiddleware, async (req: AuthRequest, res: Response)
 })
 
 // 删除登记请求（需认证）
-router.delete('/requests/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.delete('/requests/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params
     await prisma.registrationRequest.delete({ where: { id } })
@@ -245,7 +246,7 @@ router.delete('/requests/:id', authMiddleware, async (req: AuthRequest, res: Res
 })
 
 // 删除登记任务（需认证）
-router.delete('/tasks/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.delete('/tasks/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params
 
@@ -275,7 +276,7 @@ router.delete('/tasks/:id', authMiddleware, async (req: AuthRequest, res: Respon
 })
 
 // 获取登记请求列表（需认证）
-router.get('/requests', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/requests', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { taskType, status, startDate, endDate, updatedSince, page = 1, pageSize = 20 } = req.query
 
@@ -345,7 +346,7 @@ router.post('/requests', async (req: Request, res: Response) => {
 })
 
 // 审批通过（需认证）
-router.put('/requests/:id/approve', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/requests/:id/approve', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params
 
@@ -523,7 +524,7 @@ router.put('/requests/:id/approve', authMiddleware, async (req: AuthRequest, res
 })
 
 // 审批拒绝（需认证）
-router.put('/requests/:id/reject', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.put('/requests/:id/reject', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params
     const { reason } = req.body

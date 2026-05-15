@@ -130,14 +130,14 @@ export default function DonationsPage() {
             <div className="text-2xl font-bold text-vermilion">¥{totalAmount.toLocaleString()}</div>
             <div className="text-xs text-tea/60">累计功德总额</div>
           </div>
-          <Button onClick={() => { resetForm(); setModalOpen(true); }}>
+          <Button onClick={() => { resetForm(); setModalOpen(true); }} className="active:scale-[0.98] transition-all duration-200">
             记录功德
           </Button>
         </div>
       </div>
 
       <Card>
-        <div className="overflow-x-auto rounded-xl border"><Table
+        <div className="overflow-x-auto rounded-xl border min-w-0"><Table
           columns={columns}
           data={donations}
           loading={loading}
@@ -202,8 +202,8 @@ export default function DonationsPage() {
           />
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={() => setModalOpen(false)}>取消</Button>
-          <Button onClick={handleSubmit}>保存</Button>
+          <Button variant="secondary" onClick={() => setModalOpen(false)} className="active:scale-[0.98] transition-all duration-200">取消</Button>
+          <Button onClick={handleSubmit} className="active:scale-[0.98] transition-all duration-200">保存</Button>
         </div>
       </Modal>
     </div>

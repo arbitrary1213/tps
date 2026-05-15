@@ -206,6 +206,7 @@ model Volunteer {
   @@index([phone])
   @@index([status])
   @@index([rank])
+  @@index([hallId])
   @@map("volunteers")
 }
 
@@ -250,6 +251,8 @@ model VolunteerSignup {
   task     VolunteerTask @relation(fields: [taskId], references: [id])
   volunteer Volunteer?   @relation(fields: [volunteerId], references: [id])
 
+  @@index([taskId])
+  @@index([volunteerId])
   @@map("volunteer_signups")
 }
 
@@ -398,6 +401,7 @@ model RitualParticipant {
   // 关联
   ritual Ritual @relation(fields: [ritualId], references: [id], onDelete: Cascade)
 
+  @@index([ritualId])
   @@map("ritual_participants")
 }
 
@@ -464,6 +468,8 @@ model HallReservation {
   // 关联
   hall Hall @relation(fields: [hallId], references: [id])
 
+  @@index([hallId])
+  @@index([reservationDate])
   @@map("hall_reservations")
 }
 
@@ -518,6 +524,7 @@ model Donation {
   @@index([type])
   @@index([donationDate])
   @@index([operator])
+  @@index([devoteeId])
   @@map("donations")
 }
 
@@ -558,6 +565,7 @@ model WarehouseIn {
   // 关联
   item WarehouseItem @relation(fields: [itemId], references: [id])
 
+  @@index([itemId])
   @@map("warehouse_in")
 }
 
@@ -575,6 +583,7 @@ model WarehouseOut {
   // 关联
   item WarehouseItem @relation(fields: [itemId], references: [id])
 
+  @@index([itemId])
   @@map("warehouse_out")
 }
 
@@ -624,6 +633,8 @@ model AccommodationRecord {
   // 关联
   room Room @relation(fields: [roomId], references: [id])
 
+  @@index([roomId])
+  @@index([status])
   @@map("accommodation_records")
 }
 

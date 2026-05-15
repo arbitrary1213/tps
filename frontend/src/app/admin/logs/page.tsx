@@ -113,7 +113,7 @@ export default function LogsPage() {
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="px-4 py-2 border border-[#E8E0D0] rounded disabled:opacity-50"
+            className="px-4 py-2 border border-[#E8E0D0] rounded disabled:opacity-50 active:scale-[0.98] transition-all duration-200"
           >
             上一页
           </button>
@@ -123,7 +123,7 @@ export default function LogsPage() {
           <button
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="px-4 py-2 border border-[#E8E0D0] rounded disabled:opacity-50"
+            className="px-4 py-2 border border-[#E8E0D0] rounded disabled:opacity-50 active:scale-[0.98] transition-all duration-200"
           >
             下一页
           </button>
