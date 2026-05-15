@@ -74,7 +74,7 @@ router.get('/calendar-events', authMiddleware, asyncHandler(async (req: AuthRequ
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.post('/calendar-events', authMiddleware, requireRole('ADMIN', 'OPERATOR'), async (req: AuthRequest, res: Response) => {
   try {

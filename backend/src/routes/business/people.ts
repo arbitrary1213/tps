@@ -17,7 +17,7 @@ router.get('/monks', authMiddleware, asyncHandler(async (req: AuthRequest, res: 
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.post('/monks', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -30,7 +30,7 @@ router.post('/monks', authMiddleware, asyncHandler(async (req: AuthRequest, res:
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.put('/monks/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -41,7 +41,7 @@ router.put('/monks/:id', authMiddleware, asyncHandler(async (req: AuthRequest, r
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.delete('/monks/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -51,7 +51,7 @@ router.delete('/monks/:id', authMiddleware, asyncHandler(async (req: AuthRequest
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.get('/volunteers', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -71,7 +71,7 @@ router.get('/volunteers', authMiddleware, asyncHandler(async (req: AuthRequest, 
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.post('/volunteers', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -81,7 +81,7 @@ router.post('/volunteers', authMiddleware, asyncHandler(async (req: AuthRequest,
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.put('/volunteers/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -92,7 +92,7 @@ router.put('/volunteers/:id', authMiddleware, asyncHandler(async (req: AuthReque
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.delete('/volunteers/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -102,7 +102,7 @@ router.delete('/volunteers/:id', authMiddleware, asyncHandler(async (req: AuthRe
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.get('/volunteer-tasks', async (req: Request, res: Response) => {
   try {
@@ -132,7 +132,7 @@ router.post('/volunteer-tasks', authMiddleware, asyncHandler(async (req: AuthReq
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.put('/volunteer-tasks/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -142,7 +142,7 @@ router.put('/volunteer-tasks/:id', authMiddleware, asyncHandler(async (req: Auth
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.delete('/volunteer-tasks/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -152,7 +152,7 @@ router.delete('/volunteer-tasks/:id', authMiddleware, asyncHandler(async (req: A
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.post('/volunteer-attendance/sign-in', async (req: Request, res: Response) => {
   try {
@@ -231,7 +231,7 @@ router.get('/devotees', authMiddleware, asyncHandler(async (req: AuthRequest, re
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.post('/devotees', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -243,7 +243,7 @@ router.post('/devotees', authMiddleware, asyncHandler(async (req: AuthRequest, r
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.put('/devotees/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -253,7 +253,7 @@ router.put('/devotees/:id', authMiddleware, asyncHandler(async (req: AuthRequest
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.delete('/devotees/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -263,6 +263,6 @@ router.delete('/devotees/:id', authMiddleware, asyncHandler(async (req: AuthRequ
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 export default router

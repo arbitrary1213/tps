@@ -75,6 +75,6 @@ router.put('/settings', authMiddleware, asyncHandler(async (req: AuthRequest, re
     console.error('Update settings error:', error)
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 export default router

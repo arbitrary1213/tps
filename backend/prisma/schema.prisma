@@ -206,7 +206,6 @@ model Volunteer {
   @@index([phone])
   @@index([status])
   @@index([rank])
-  @@index([hallId])
   @@map("volunteers")
 }
 

@@ -111,7 +111,7 @@ export async function createPlaqueWithCode(data: Record<string, any>, user: any)
         if (!data.code) {
           data.code = await generatePlaqueCode(tx)
         }
-        const plaque = await tx.memorialPlaque.create({ data })
+        const plaque = await tx.memorialPlaque.create({ data: data as any })
         await tx.operationLog.create({
           data: {
             userId: user.userId,

@@ -175,7 +175,7 @@ router.post('/approve-requests', authMiddleware, requireRole('ADMIN', 'OPERATOR'
     console.error('Batch approve error:', error)
     res.status(500).json({ success: false, error: '批量审批失败' })
   }
-})
+}))
 
 router.post('/delete-volunteers', authMiddleware, requireRole('ADMIN', 'OPERATOR'), asyncHandler(async (req: AuthRequest, res: Response) => {
   const { volunteerIds } = req.body as { volunteerIds: string[] }
@@ -215,7 +215,7 @@ router.post('/delete-volunteers', authMiddleware, requireRole('ADMIN', 'OPERATOR
     console.error('Batch delete volunteers error:', error)
     res.status(500).json({ success: false, error: '批量删除义工失败' })
   }
-})
+}))
 
 router.post('/update-plaques', authMiddleware, requireRole('ADMIN', 'OPERATOR'), asyncHandler(async (req: AuthRequest, res: Response) => {
   const { plaqueIds, status } = req.body as { plaqueIds: string[]; status: string }
@@ -264,7 +264,7 @@ router.post('/update-plaques', authMiddleware, requireRole('ADMIN', 'OPERATOR'),
     console.error('Batch update plaques error:', error)
     res.status(500).json({ success: false, error: '批量更新牌位状态失败' })
   }
-})
+}))
 
 router.post('/export-plaques', authMiddleware, requireRole('ADMIN', 'OPERATOR'), asyncHandler(async (req: AuthRequest, res: Response) => {
   const { plaqueIds } = req.body as { plaqueIds: string[] }
@@ -320,6 +320,6 @@ router.post('/export-plaques', authMiddleware, requireRole('ADMIN', 'OPERATOR'),
     console.error('Batch export plaques error:', error)
     res.status(500).json({ success: false, error: '批量导出牌位失败' })
   }
-})
+}))
 
 export default router

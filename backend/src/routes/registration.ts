@@ -159,7 +159,7 @@ router.get('/tasks/all', authMiddleware, asyncHandler(async (req: AuthRequest, r
     console.error('Get all tasks error:', error)
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 // 创建登记任务（需认证）
 router.post('/tasks', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -193,7 +193,7 @@ router.post('/tasks', authMiddleware, asyncHandler(async (req: AuthRequest, res:
     console.error('Create task error:', error)
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 // 更新登记任务（需认证）
 router.put('/tasks/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -222,7 +222,7 @@ router.put('/tasks/:id', authMiddleware, asyncHandler(async (req: AuthRequest, r
     console.error('Update task error:', error)
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 // 删除登记请求（需认证）
 router.delete('/requests/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -243,7 +243,7 @@ router.delete('/requests/:id', authMiddleware, asyncHandler(async (req: AuthRequ
     console.error('Delete request error:', error)
     res.status(500).json({ success: false, error: '删除失败' })
   }
-})
+}))
 
 // 删除登记任务（需认证）
 router.delete('/tasks/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -273,7 +273,7 @@ router.delete('/tasks/:id', authMiddleware, asyncHandler(async (req: AuthRequest
     console.error('Delete task error:', error)
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 // 获取登记请求列表（需认证）
 router.get('/requests', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -306,7 +306,7 @@ router.get('/requests', authMiddleware, asyncHandler(async (req: AuthRequest, re
     console.error('Get requests error:', error)
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 // 提交登记请求（公开）
 router.post('/requests', async (req: Request, res: Response) => {
@@ -521,7 +521,7 @@ router.put('/requests/:id/approve', authMiddleware, asyncHandler(async (req: Aut
     console.error('Approve request error:', error)
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 // 审批拒绝（需认证）
 router.put('/requests/:id/reject', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -565,6 +565,6 @@ router.put('/requests/:id/reject', authMiddleware, asyncHandler(async (req: Auth
     console.error('Reject request error:', error)
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 export default router

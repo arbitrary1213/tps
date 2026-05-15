@@ -43,7 +43,7 @@ router.get('/plaques', authMiddleware, asyncHandler(async (req: AuthRequest, res
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.post('/plaques', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -61,7 +61,7 @@ router.post('/plaques', authMiddleware, asyncHandler(async (req: AuthRequest, re
     console.error('Plaque error:', error.message, error.code)
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.put('/plaques/batch', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -207,7 +207,7 @@ router.put('/plaques/batch', authMiddleware, asyncHandler(async (req: AuthReques
     console.error('Plaque batch update error:', error.message, error.code)
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.put('/plaques/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -226,7 +226,7 @@ router.put('/plaques/:id', authMiddleware, asyncHandler(async (req: AuthRequest,
     console.error('Plaque update error:', error.message, error.code)
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.delete('/plaques/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -239,7 +239,7 @@ router.delete('/plaques/:id', authMiddleware, asyncHandler(async (req: AuthReque
     }
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.get('/print-jobs', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -261,7 +261,7 @@ router.get('/print-jobs', authMiddleware, asyncHandler(async (req: AuthRequest, 
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.get('/print-jobs/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -279,7 +279,7 @@ router.get('/print-jobs/:id', authMiddleware, asyncHandler(async (req: AuthReque
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.post('/print-jobs', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -376,7 +376,7 @@ router.post('/print-jobs', authMiddleware, asyncHandler(async (req: AuthRequest,
     console.error('Create print job error:', error)
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.get('/print-clients', authMiddleware, async (_req: AuthRequest, res: Response) => {
   try {
@@ -413,7 +413,7 @@ router.post('/local-print/clients/register', asyncHandler(async (req: Request, r
     console.error('Register print client error:', error)
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.post('/local-print/clients/:id/heartbeat', asyncHandler(async (req: Request, res: Response) => {
   try {
@@ -436,7 +436,7 @@ router.post('/local-print/clients/:id/heartbeat', asyncHandler(async (req: Reque
     console.error('Print client heartbeat error:', error)
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.get('/local-print/clients/:id/jobs/next', asyncHandler(async (req: Request, res: Response) => {
   try {
@@ -483,7 +483,7 @@ router.get('/local-print/clients/:id/jobs/next', asyncHandler(async (req: Reques
     console.error('Fetch next print job error:', error)
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.post('/local-print/jobs/:jobId/items/:itemId/report', asyncHandler(async (req: Request, res: Response) => {
   try {
@@ -522,7 +522,7 @@ router.post('/local-print/jobs/:jobId/items/:itemId/report', asyncHandler(async 
     console.error('Report print item error:', error)
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.get('/plaque-templates', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -553,7 +553,7 @@ router.get('/plaque-templates', authMiddleware, asyncHandler(async (req: AuthReq
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.get('/plaque-templates/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -565,7 +565,7 @@ router.get('/plaque-templates/:id', authMiddleware, asyncHandler(async (req: Aut
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.post('/plaque-templates', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -575,7 +575,7 @@ router.post('/plaque-templates', authMiddleware, asyncHandler(async (req: AuthRe
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.put('/plaque-templates/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -586,7 +586,7 @@ router.put('/plaque-templates/:id', authMiddleware, asyncHandler(async (req: Aut
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.delete('/plaque-templates/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -596,7 +596,7 @@ router.delete('/plaque-templates/:id', authMiddleware, asyncHandler(async (req: 
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.post('/plaque-templates/upload-asset', authMiddleware, templateAssetUpload.single('file'), asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -640,7 +640,7 @@ router.post('/plaque-templates/upload-asset', authMiddleware, templateAssetUploa
     console.error('Template asset upload failed:', error)
     res.status(500).json({ success: false, error: 'Template asset upload failed' })
   }
-})
+}))
 
 router.post('/import/plaques', authMiddleware, upload.single('file'), asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -920,6 +920,6 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), asyncHandl
     const msg = error instanceof Error ? error.message : '未知错误'
     res.status(500).json({ success: false, error: '导入失败: ' + msg })
   }
-})
+}))
 
 export default router

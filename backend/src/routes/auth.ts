@@ -204,7 +204,7 @@ router.get('/me', authMiddleware, asyncHandler(async (req: AuthRequest, res: Res
     console.error('Get user error:', error)
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 // 修改密码
 router.put('/change-password', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -247,6 +247,6 @@ router.put('/change-password', authMiddleware, asyncHandler(async (req: AuthRequ
     console.error('Change password error:', error)
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 export default router

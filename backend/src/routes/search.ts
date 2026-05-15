@@ -34,7 +34,7 @@ router.get('/volunteers', authMiddleware, asyncHandler(async (req: AuthRequest, 
     console.error('Search volunteers error:', error)
     res.status(500).json({ success: false, error: '搜索失败' })
   }
-})
+}))
 
 router.get('/devotees', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -45,7 +45,7 @@ router.get('/devotees', authMiddleware, asyncHandler(async (req: AuthRequest, re
     console.error('Search devotees error:', error)
     res.status(500).json({ success: false, error: '搜索失败' })
   }
-})
+}))
 
 router.get('/plaques', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -56,7 +56,7 @@ router.get('/plaques', authMiddleware, asyncHandler(async (req: AuthRequest, res
     console.error('Search plaques error:', error)
     res.status(500).json({ success: false, error: '搜索失败' })
   }
-})
+}))
 
 router.get('/requests', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -67,6 +67,6 @@ router.get('/requests', authMiddleware, asyncHandler(async (req: AuthRequest, re
     console.error('Search requests error:', error)
     res.status(500).json({ success: false, error: '搜索失败' })
   }
-})
+}))
 
 export default router

@@ -25,7 +25,7 @@ router.get('/donations', authMiddleware, asyncHandler(async (req: AuthRequest, r
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.post('/donations', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -39,7 +39,7 @@ router.post('/donations', authMiddleware, asyncHandler(async (req: AuthRequest, 
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.get('/warehouse/items', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -52,7 +52,7 @@ router.get('/warehouse/items', authMiddleware, asyncHandler(async (req: AuthRequ
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.post('/warehouse/items', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -61,7 +61,7 @@ router.post('/warehouse/items', authMiddleware, asyncHandler(async (req: AuthReq
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.put('/warehouse/items/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -70,7 +70,7 @@ router.put('/warehouse/items/:id', authMiddleware, asyncHandler(async (req: Auth
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.post('/warehouse/in', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -86,7 +86,7 @@ router.post('/warehouse/in', authMiddleware, asyncHandler(async (req: AuthReques
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.post('/warehouse/out', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -102,7 +102,7 @@ router.post('/warehouse/out', authMiddleware, asyncHandler(async (req: AuthReque
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.get('/rooms/available', async (_req, res: Response) => {
   try {
@@ -132,7 +132,7 @@ router.post('/rooms', authMiddleware, asyncHandler(async (req: AuthRequest, res:
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.put('/rooms/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -141,7 +141,7 @@ router.put('/rooms/:id', authMiddleware, asyncHandler(async (req: AuthRequest, r
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.get('/accommodations', authMiddleware, async (_req: AuthRequest, res: Response) => {
   try {
@@ -182,7 +182,7 @@ router.post('/accommodations', authMiddleware, asyncHandler(async (req: AuthRequ
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.put('/accommodations/:id/checkout', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -205,7 +205,7 @@ router.put('/accommodations/:id/checkout', authMiddleware, asyncHandler(async (r
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.get('/dining', authMiddleware, async (_req: AuthRequest, res: Response) => {
   try {
@@ -237,7 +237,7 @@ router.post('/dining', authMiddleware, asyncHandler(async (req: AuthRequest, res
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.get('/visits', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -255,7 +255,7 @@ router.get('/visits', authMiddleware, asyncHandler(async (req: AuthRequest, res:
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.post('/visits', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -278,6 +278,6 @@ router.post('/visits', authMiddleware, asyncHandler(async (req: AuthRequest, res
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 export default router

@@ -31,7 +31,7 @@ router.get('/verify', asyncHandler(async (req: Request, res: Response) => {
     console.error('WeChat verify error:', error)
     res.status(500).send('Server error')
   }
-})
+}))
 
 router.post('/verify', asyncHandler(async (req: Request, res: Response) => {
   try {
@@ -69,7 +69,7 @@ router.post('/verify', asyncHandler(async (req: Request, res: Response) => {
     console.error('WeChat message handling error:', error)
     res.status(500).send('Server error')
   }
-})
+}))
 
 async function handleEventMessage(message: WechatMessage, res: Response): Promise<void> {
   const fromUsername = message.FromUserName

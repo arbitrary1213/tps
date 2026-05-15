@@ -61,7 +61,7 @@ router.post('/integrations/wechat/bind', authMiddleware, requireRole('ADMIN'), a
     },
   })
   res.json({ success: true, data: updated })
-})
+}))
 
 router.get('/wechat/messages', authMiddleware, asyncHandler(async (req: AuthRequest, res) => {
   const integration = await getOrCreateIntegration()
@@ -72,7 +72,7 @@ router.get('/wechat/messages', authMiddleware, asyncHandler(async (req: AuthRequ
     take: limit,
   })
   res.json({ success: true, data: messages })
-})
+}))
 
 router.post('/wechat/messages/:id/reply', authMiddleware, requireRole('ADMIN', 'OPERATOR'), asyncHandler(async (req: AuthRequest, res) => {
   const message = await prisma.wechatMessageRecord.findUnique({ where: { id: req.params.id }, include: { integration: true } })
@@ -111,7 +111,7 @@ router.post('/wechat/messages/:id/reply', authMiddleware, requireRole('ADMIN', '
   })
 
   res.json({ success: true, data: updated, platform: platformResult })
-})
+}))
 
 router.post('/wechat/messages/sync', async (req, res) => {
   const { syncToken, authorizerAppId, openId, msgType, eventType, content, rawPayload } = req.body || {}
@@ -161,7 +161,7 @@ router.post('/wechat/articles', authMiddleware, requireRole('ADMIN', 'OPERATOR')
     },
   })
   res.json({ success: true, data: article })
-})
+}))
 
 router.post('/wechat/articles/:id/publish', authMiddleware, requireRole('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
   const article = await prisma.wechatArticle.findUnique({ where: { id: req.params.id }, include: { integration: true } })
@@ -181,7 +181,7 @@ router.post('/wechat/articles/:id/publish', authMiddleware, requireRole('ADMIN')
     },
   })
   res.json({ success: true, data: updated, platform: platformResult })
-})
+}))
 
 router.post('/wechat/template-messages/send', authMiddleware, requireRole('ADMIN', 'OPERATOR'), asyncHandler(async (req: AuthRequest, res) => {
   const integration = await getOrCreateIntegration()
@@ -220,6 +220,6 @@ router.post('/wechat/template-messages/send', authMiddleware, requireRole('ADMIN
     },
   })
   res.json({ success: true, data: updated, platform: platformResult })
-})
+}))
 
 export default router

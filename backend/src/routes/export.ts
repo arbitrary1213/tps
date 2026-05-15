@@ -48,7 +48,7 @@ router.get('/volunteers', authMiddleware, asyncHandler(async (req: AuthRequest, 
     startDate: req.query.startDate as string,
     endDate: req.query.endDate as string
   })
-})
+}))
 
 router.get('/donations', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   await handleExport(res, exportDonations, {
@@ -56,7 +56,7 @@ router.get('/donations', authMiddleware, asyncHandler(async (req: AuthRequest, r
     startDate: req.query.startDate as string,
     endDate: req.query.endDate as string
   })
-})
+}))
 
 router.get('/plaques', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   await handleExport(res, exportPlaques, {
@@ -64,7 +64,7 @@ router.get('/plaques', authMiddleware, asyncHandler(async (req: AuthRequest, res
     startDate: req.query.startDate as string,
     endDate: req.query.endDate as string
   })
-})
+}))
 
 router.get('/lamp-offerings', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   await handleExport(res, exportLampOfferings, {
@@ -72,7 +72,7 @@ router.get('/lamp-offerings', authMiddleware, asyncHandler(async (req: AuthReque
     startDate: req.query.startDate as string,
     endDate: req.query.endDate as string
   })
-})
+}))
 
 router.get('/requests', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   await handleExport(res, exportRegistrationRequests, {
@@ -80,6 +80,6 @@ router.get('/requests', authMiddleware, asyncHandler(async (req: AuthRequest, re
     startDate: req.query.startDate as string,
     endDate: req.query.endDate as string
   })
-})
+}))
 
 export default router

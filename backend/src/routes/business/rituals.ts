@@ -41,7 +41,7 @@ router.post('/rituals', authMiddleware, asyncHandler(async (req: AuthRequest, re
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.put('/rituals/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -53,7 +53,7 @@ router.put('/rituals/:id', authMiddleware, asyncHandler(async (req: AuthRequest,
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.delete('/rituals/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -63,7 +63,7 @@ router.delete('/rituals/:id', authMiddleware, asyncHandler(async (req: AuthReque
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.get('/rituals/:id/participants', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -74,7 +74,7 @@ router.get('/rituals/:id/participants', authMiddleware, asyncHandler(async (req:
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.post('/rituals/:id/participants', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -89,7 +89,7 @@ router.post('/rituals/:id/participants', authMiddleware, asyncHandler(async (req
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.put('/participants/:id/check-in', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -101,7 +101,7 @@ router.put('/participants/:id/check-in', authMiddleware, asyncHandler(async (req
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.get('/halls', async (req: Request, res: Response) => {
   try {
@@ -120,7 +120,7 @@ router.post('/halls', authMiddleware, asyncHandler(async (req: AuthRequest, res:
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.put('/halls/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -129,7 +129,7 @@ router.put('/halls/:id', authMiddleware, asyncHandler(async (req: AuthRequest, r
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.get('/lamp-offerings', async (req: Request, res: Response) => {
   try {

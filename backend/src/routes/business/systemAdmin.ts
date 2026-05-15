@@ -30,7 +30,7 @@ router.post('/users', authMiddleware, asyncHandler(async (req: AuthRequest, res:
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.put('/users/:id/password', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -42,7 +42,7 @@ router.put('/users/:id/password', authMiddleware, asyncHandler(async (req: AuthR
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.delete('/users/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -68,7 +68,7 @@ router.delete('/users/:id', authMiddleware, asyncHandler(async (req: AuthRequest
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.get('/logs', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
@@ -96,7 +96,7 @@ router.get('/logs', authMiddleware, asyncHandler(async (req: AuthRequest, res: R
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
-})
+}))
 
 router.get('/stats/dashboard', authMiddleware, async (_req: AuthRequest, res: Response) => {
   try {
