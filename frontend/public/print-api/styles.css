@@ -1070,7 +1070,8 @@ body.print-preview-mode .resize-handle {
   .preview-toolbar,
   .print-settings-panel,
   .print-more-settings,
-  .print-settings-actions {
+  .print-settings-actions,
+  .workflow-status {
     display: none !important;
   }
 
