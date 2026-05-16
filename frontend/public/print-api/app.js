@@ -450,7 +450,7 @@ const controls = [
   "singleFont", "singleOffsetY", "singleVertical",
   "styleField", "fieldFontSize", "fieldColor", "fieldFontFamily", "fieldTextAlign", "fieldVerticalAlign", "fieldWrapMode", "staticFieldText",
   "showBg", "enableDuplex", "designPrintBackgroundGraphics", "printBackgroundGraphics",
-  "summaryDataGroup", "summaryVariant", "summaryFormat", "columnCount", "rowsPerColumn", "summaryFont",
+  "summaryVariant", "summaryFormat", "columnCount", "rowsPerColumn", "summaryFont",
   "summaryLineGap", "pageMargin", "columnGap", "summaryVertical",
 ].map($).filter(Boolean);
 
@@ -591,10 +591,6 @@ async function init() {
   });
 
   controls.forEach((control) => control.addEventListener("input", () => {
-    if (control.id === "summaryDataGroup") {
-      handleSummaryGroupChange(true);
-      return;
-    }
     if (control.id === "summaryVariant") {
       handleSummaryVariantChange();
       return;
@@ -643,25 +639,6 @@ function handleSingleVariantChange() {
   buildFieldMapping();
   buildStyleEditor();
   buildStaticVisibilityControls();
-  render();
-}
-
-function handleSummaryGroupChange(forceDefault = false) {
-  if (state.mode !== "summary") return;
-  const template = currentTemplate();
-  const lockedGroup = template?.dataGroup || "deliverance";
-  const summaryDataGroup = $("summaryDataGroup");
-  if (summaryDataGroup && summaryDataGroup.value !== lockedGroup) summaryDataGroup.value = lockedGroup;
-  state.pageIndex = 0;
-  state.activeFieldKey = "";
-  refreshSummaryVariantOptions();
-  ensureLayout(currentLayoutKey());
-  buildFieldMapping();
-  buildSummaryFieldMapping();
-  buildStyleEditor();
-  renderTable();
-  updateDataHint();
-  applySummaryDefault(forceDefault);
   render();
 }
 
@@ -907,9 +884,6 @@ function syncControlsFromSelectedTemplate() {
   }
 
   if (isSummaryTemplate(template)) {
-    const dataGroup = template.dataGroup || "deliverance";
-    const summaryDataGroup = $("summaryDataGroup");
-    if (summaryDataGroup) summaryDataGroup.value = dataGroup;
     const paper = layout.paper || summaryTemplatePaper(template.id);
     if (paperWidth) paperWidth.value = paper.width;
     if (paperHeight) paperHeight.value = paper.height;
@@ -1485,11 +1459,6 @@ function loadSystemPlaquesFromFilters() {
 
 async function loadSystemPlaques(group) {
   const previousMode = state.mode;
-  if (isBlessingGroup(group)) {
-    $("summaryDataGroup").value = "blessing";
-  } else {
-    $("summaryDataGroup").value = "deliverance";
-  }
 
   try {
     setDataSourceStatus("系统牌位数据");
@@ -1541,7 +1510,6 @@ async function loadSystemPlaques(group) {
     state.selectedRowIds[group].clear();
     state.pageIndex = 0;
     state.singleVariantManualOverride = false;
-    if (previousMode === "summary") $("summaryDataGroup").value = group;
     buildFieldMapping();
     buildStyleEditor();
     renderTable();
@@ -1578,7 +1546,6 @@ async function applyLaunchParams() {
   const group = dataGroupForPlaqueType(type);
   const targetMode = launchMode === "summary" ? "summary" : "single";
   if (state.mode !== targetMode) setMode(targetMode);
-  $("summaryDataGroup").value = group;
   setDataSourceStatus("牌位管理选中数据");
   applyLaunchTemplate(templateId);
 
@@ -4806,7 +4773,7 @@ function inferTemplateDataGroup(templateData) {
 
 function currentSummarySettings() {
   return {
-    dataGroup: $("summaryDataGroup").value || "deliverance",
+    dataGroup: currentDataGroup(),
     variantKey: currentSummaryVariantKey(),
     format: $("summaryFormat").value,
     columnCount: Number($("columnCount").value) || 3,
@@ -4821,7 +4788,6 @@ function currentSummarySettings() {
 
 function applySavedSummarySettings(settings) {
   if (!settings) return;
-  if (settings.dataGroup) $("summaryDataGroup").value = settings.dataGroup;
   refreshSummaryVariantOptions();
   if (typeof settings.format === "string") $("summaryFormat").value = settings.format;
   if (settings.columnCount) $("columnCount").value = settings.columnCount;
