@@ -1310,6 +1310,8 @@ async function renderPdfFirstPageToDataUrl(file) {
       context.fillStyle = "#ffffff";
       context.fillRect(0, 0, canvas.width, canvas.height);
       await page.render({ canvasContext: context, viewport }).promise;
+      const webpUrl = canvas.toDataURL("image/webp", 0.85);
+      if (webpUrl && webpUrl !== "data:,") return webpUrl;
       return canvas.toDataURL("image/png");
     } catch (error) {
       lastError = error;
