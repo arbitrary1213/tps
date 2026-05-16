@@ -3517,6 +3517,31 @@ function dedupeTemplateRecords(records) {
   return Array.from(latestByTemplateId.values());
 }
 
+function migrateLocalTemplateId(oldId, newId) {
+  if (oldId === newId) return;
+  const idx = templates.findIndex((item) => item.id === oldId);
+  if (idx >= 0) templates[idx] = { ...templates[idx], id: newId };
+  if (state.layouts[oldId]) {
+    state.layouts[newId] = state.layouts[oldId];
+    delete state.layouts[oldId];
+  }
+  if (templateDefaults[oldId]) {
+    templateDefaults[newId] = templateDefaults[oldId];
+    delete templateDefaults[oldId];
+  }
+  if (state.remoteTemplateIds[oldId]) {
+    state.remoteTemplateIds[newId] = state.remoteTemplateIds[oldId];
+    delete state.remoteTemplateIds[oldId];
+  }
+  if (TEMPLATE_CATALOG[oldId]) {
+    TEMPLATE_CATALOG[newId] = TEMPLATE_CATALOG[oldId];
+    delete TEMPLATE_CATALOG[oldId];
+  }
+  if ($("templateSelect")?.value === oldId) $("templateSelect").value = newId;
+  saveLayouts();
+  saveRemoteTemplateIds();
+}
+
 function importServerTemplate(template) {
   const selectedId = $("templateSelect")?.value || "";
   const data = template.elements;
@@ -3529,7 +3554,19 @@ function importServerTemplate(template) {
     name: data.template.name || template.name || templateDisplayName(data.template),
   };
   const normalizedTemplate = normalizeCatalogTemplate(localTemplate);
-  const index = templates.findIndex((item) => item.id === localTemplate.id);
+
+  // Match by direct ID, then fall back to remoteTemplateIds mapping
+  let index = templates.findIndex((item) => item.id === localTemplate.id);
+  if (index < 0) {
+    const mappedLocalId = Object.keys(state.remoteTemplateIds).find(
+      (localId) => state.remoteTemplateIds[localId] === template.id
+    );
+    if (mappedLocalId) {
+      migrateLocalTemplateId(mappedLocalId, localTemplate.id);
+      index = templates.findIndex((item) => item.id === localTemplate.id);
+    }
+  }
+
   if (index >= 0) {
     templates[index] = { ...templates[index], ...normalizedTemplate };
   } else {
@@ -3629,7 +3666,8 @@ async function syncCurrentTemplateToServer() {
         const created = response.data || response;
         if (created?.id) {
           remoteId = created.id;
-          state.remoteTemplateIds[payload.template.id] = created.id;
+          migrateLocalTemplateId(payload.template.id, created.id);
+          state.remoteTemplateIds[created.id] = created.id;
           saveRemoteTemplateIds();
         }
       }
@@ -3644,10 +3682,6 @@ async function syncCurrentTemplateToServer() {
       elements: payload,
       updatedAt: new Date().toISOString(),
     }]);
-    if (remoteId) {
-      state.remoteTemplateIds[payload.template.id] = remoteId;
-      saveRemoteTemplateIds();
-    }
     return;
   }
 
@@ -3665,7 +3699,8 @@ async function syncCurrentTemplateToServer() {
     });
     const created = response.data || response;
     if (created?.id) {
-      state.remoteTemplateIds[payload.template.id] = created.id;
+      migrateLocalTemplateId(payload.template.id, created.id);
+      state.remoteTemplateIds[created.id] = created.id;
       saveRemoteTemplateIds();
     }
   }
