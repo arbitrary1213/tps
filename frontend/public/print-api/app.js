@@ -18,15 +18,23 @@ const BUILTIN_TEMPLATE_IDS = new Set([
 ]);
 const BUILTIN_SINGLE_TEMPLATE_IDS = new Set(["cmp6vaj3l000gbjnjoak9q9wx", "cmozm19an001ahmbwqm8nmi1q"]);
 const TEMPLATE_CATALOG = {
-  cmp6vaj3l000gbjnjoak9q9wx: { name: "延生禄位", groupLabel: "内置单张牌位模板", groupOrder: 1, order: 1, mode: "single", dataGroup: "blessing" },
-  cmozm19an001ahmbwqm8nmi1q: { name: "往生牌位", groupLabel: "内置单张牌位模板", groupOrder: 1, order: 2, mode: "single", dataGroup: "deliverance" },
-  cmoz9dtgc015wcyyxjcwqcumq: { name: "延生｜红牒", groupLabel: "延生牒模板", groupOrder: 2, order: 1, mode: "single", dataGroup: "blessing" },
-  "92171e1d-e697-46df-bfcc-4cb8f9a29661": { name: "延生｜红壳", groupLabel: "延生牒模板", groupOrder: 2, order: 2, mode: "single", dataGroup: "blessing" },
-  cmoy8qpet023lp6guzs8mne81: { name: "往生｜黄牒", groupLabel: "往生牒模板", groupOrder: 3, order: 1, mode: "single", dataGroup: "deliverance" },
-  cmp15pgnz000op0s9vkqcx9wt: { name: "往生｜黄壳", groupLabel: "往生牒模板", groupOrder: 3, order: 2, mode: "single", dataGroup: "deliverance" },
-  cmp6uyyk10003bjnjsqkn2uwn: { name: "延生通名", groupLabel: "汇总多列模板", groupOrder: 4, order: 1, mode: "summary", dataGroup: "blessing" },
-  cmowl79v5000a2rdgs4czs9bo: { name: "往生通名", groupLabel: "汇总多列模板", groupOrder: 4, order: 2, mode: "summary", dataGroup: "deliverance" },
+  cmp6vaj3l000gbjnjoak9q9wx: { name: "延生禄位", groupLabel: "牌位模版", groupOrder: 1, order: 1, mode: "single", dataGroup: "blessing" },
+  cmozm19an001ahmbwqm8nmi1q: { name: "往生牌位", groupLabel: "牌位模版", groupOrder: 1, order: 2, mode: "single", dataGroup: "deliverance" },
+  cmoz9dtgc015wcyyxjcwqcumq: { name: "延生｜红牒", groupLabel: "延生牒模版", groupOrder: 2, order: 1, mode: "single", dataGroup: "blessing" },
+  "92171e1d-e697-46df-bfcc-4cb8f9a29661": { name: "延生｜红壳", groupLabel: "延生牒模版", groupOrder: 2, order: 2, mode: "single", dataGroup: "blessing" },
+  cmoy8qpet023lp6guzs8mne81: { name: "往生｜黄牒", groupLabel: "往生牒模版", groupOrder: 3, order: 1, mode: "single", dataGroup: "deliverance" },
+  cmp15pgnz000op0s9vkqcx9wt: { name: "往生｜黄壳", groupLabel: "往生牒模版", groupOrder: 3, order: 2, mode: "single", dataGroup: "deliverance" },
+  cmp6uyyk10003bjnjsqkn2uwn: { name: "延生通名", groupLabel: "汇总多列模版", groupOrder: 4, order: 1, mode: "summary", dataGroup: "blessing" },
+  cmowl79v5000a2rdgs4czs9bo: { name: "往生通名", groupLabel: "汇总多列模版", groupOrder: 4, order: 2, mode: "summary", dataGroup: "deliverance" },
 };
+const TEMPLATE_CATEGORIES = {
+  plaque: { label: "牌位模版", groupOrder: 1 },
+  blessing_doc: { label: "延生牒模版", groupOrder: 2 },
+  deliverance_doc: { label: "往生牒模版", groupOrder: 3 },
+  summary: { label: "汇总多列模版", groupOrder: 4 },
+  text_doc: { label: "文牒模版", groupOrder: 5 },
+};
+
 const CATALOG_SINGLE_TEMPLATE_IDS = new Set(
   Object.entries(TEMPLATE_CATALOG)
     .filter(([, item]) => item.mode === "single")
@@ -91,33 +99,33 @@ const summaryVariantPresets = {
   blessing: [
     {
       key: "blessing_bodhisattva",
-      label: "延生谢菩萨",
+      label: "版式一",
       match: "bodhisattva",
       fields: ["summary_subject", "summary_believer", "summary_address"],
     },
     {
       key: "blessing_person",
-      label: "延生姓名生日",
+      label: "版式二",
       match: "person",
-      fields: ["summary_subject", "summary_birthday", "summary_address"],
+      fields: ["summary_subject", "summary_age", "summary_zodiac", "summary_birthday", "summary_address"],
     },
   ],
   deliverance: [
     {
       key: "deliverance_default",
-      label: "往生版式一",
+      label: "版式一",
       match: "default",
       fields: ["summary_subject", "summary_yangshang", "summary_address"],
     },
     {
       key: "deliverance_detail",
-      label: "往生版式二",
+      label: "版式二",
       match: "detail",
       fields: ["summary_subject", "summary_deceased", "summary_yinGeng", "summary_birthday", "summary_deathday", "summary_yangshang", "summary_address"],
     },
     {
       key: "deliverance_full",
-      label: "往生版式三",
+      label: "版式三",
       match: "full",
       fields: ["summary_subject", "summary_deceased", "summary_yinGeng", "summary_birthday", "summary_deathday", "summary_deceased2", "summary_yinGeng2", "summary_birthday2", "summary_deathday2", "summary_yangshang", "summary_address"],
     },
@@ -471,7 +479,7 @@ async function init() {
     templateSelect.innerHTML = "";
   }
 
-  loadCustomTemplatesFromStorage({ includeLocalOnly: templateDesignerMode });
+  loadCustomTemplatesFromStorage();
 
   document.querySelectorAll("[data-mode]").forEach((button) => {
     button.addEventListener("click", () => setMode(button.dataset.mode));
@@ -484,6 +492,7 @@ async function init() {
   $("clearSelectedRowsBtn").addEventListener("click", clearSelectedRows);
   $("fileInput").addEventListener("change", handleFile);
   $("bgInput").addEventListener("change", handleBackground);
+  $("clearBgBtn")?.addEventListener("click", clearBackground);
   $("saveTemplateBtn").addEventListener("click", saveCurrentLayout);
   $("resetTemplateBtn").addEventListener("click", resetCurrentLayout);
   $("printBtn").addEventListener("click", printAll);
@@ -529,25 +538,37 @@ async function init() {
   });
 
   document.getElementById("newTemplateBtn")?.addEventListener("click", () => {
-    const newTemplateType = document.getElementById("newTemplateType");
+    const newTemplateCategory = document.getElementById("newTemplateCategory");
+    const newTemplateDataGroup = document.getElementById("newTemplateDataGroup");
     const newTemplateName = document.getElementById("newTemplateName");
     const newTemplateWidth = document.getElementById("newTemplateWidth");
     const newTemplateHeight = document.getElementById("newTemplateHeight");
     const newTemplateMode = document.getElementById("newTemplateMode");
     const newTemplateVertical = document.getElementById("newTemplateVertical");
     const fieldSelection = document.getElementById("fieldSelection");
+    const newTemplateModeLabel = document.getElementById("newTemplateModeLabel");
     const newTemplateDialog = document.getElementById("newTemplateDialog");
-    const initialType = state.mode === "summary" ? "blessing" : currentDataGroup();
-    if (newTemplateType) newTemplateType.value = initialType;
-    renderFieldSelection(initialType);
+    const initialCategory = state.mode === "summary" ? "summary" : "plaque";
+    const initialDataGroup = currentDataGroup();
+    if (newTemplateCategory) newTemplateCategory.value = initialCategory;
+    if (newTemplateDataGroup) newTemplateDataGroup.value = initialDataGroup;
+    applyNewTemplateCategory(initialCategory);
     if (newTemplateName) newTemplateName.value = "";
-    const defaultPaper = defaultPaperForTemplateType(initialType);
-    if (newTemplateWidth) newTemplateWidth.value = state.mode === "summary" ? ($("paperWidth")?.value || "210") : String(defaultPaper.width);
-    if (newTemplateHeight) newTemplateHeight.value = state.mode === "summary" ? ($("paperHeight")?.value || "297") : String(defaultPaper.height);
-    if (newTemplateMode) newTemplateMode.value = state.mode === "summary" ? "preset" : "preset";
-    if (newTemplateVertical) newTemplateVertical.checked = state.mode === "summary" ? false : defaultPaper.vertical;
-    if (fieldSelection?.closest("fieldset")) fieldSelection.closest("fieldset").hidden = true;
+    if (newTemplateWidth) newTemplateWidth.value = state.mode === "summary" ? ($("paperWidth")?.value || "210") : "90";
+    if (newTemplateHeight) newTemplateHeight.value = state.mode === "summary" ? ($("paperHeight")?.value || "297") : "260";
+    if (newTemplateMode) newTemplateMode.value = "preset";
+    if (newTemplateVertical) newTemplateVertical.checked = initialCategory !== "summary";
+    if (fieldSelection?.closest("fieldset")) fieldSelection.closest("fieldset").hidden = initialCategory === "summary";
+    if (newTemplateModeLabel) newTemplateModeLabel.hidden = initialCategory === "summary";
     newTemplateDialog?.showModal?.();
+  });
+
+  document.getElementById("newTemplateCategory")?.addEventListener("change", (event) => {
+    applyNewTemplateCategory(event.target?.value || "plaque");
+  });
+
+  document.getElementById("newTemplateDataGroup")?.addEventListener("change", (event) => {
+    renderFieldSelection(event.target?.value || "blessing");
   });
 
   document.getElementById("newTemplateMode")?.addEventListener("change", (event) => {
@@ -555,17 +576,6 @@ async function init() {
     const fieldSelection = document.getElementById("fieldSelection");
     if (fieldSelection?.closest("fieldset")) {
       fieldSelection.closest("fieldset").hidden = state.mode === "summary" || mode !== "manual";
-    }
-  });
-
-  document.getElementById("newTemplateType")?.addEventListener("change", (event) => {
-    const templateType = event.target?.value || "blessing";
-    renderFieldSelection(templateType);
-    if (state.mode !== "summary") {
-      const defaultPaper = defaultPaperForTemplateType(templateType);
-      if (document.getElementById("newTemplateWidth")) document.getElementById("newTemplateWidth").value = String(defaultPaper.width);
-      if (document.getElementById("newTemplateHeight")) document.getElementById("newTemplateHeight").value = String(defaultPaper.height);
-      if (document.getElementById("newTemplateVertical")) document.getElementById("newTemplateVertical").checked = defaultPaper.vertical;
     }
   });
 
@@ -778,10 +788,14 @@ function templateDisplayName(template) {
     a3summary: "往生通名",
   };
   if (builtinNames[template.id]) return builtinNames[template.id];
-  if (template?.id?.startsWith("custom_") && !isSummaryTemplate(template)) {
-    const prefix = template.dataGroup === "deliverance" ? "往生｜" : "延生｜";
-    const baseName = template.name || template.id;
-    return baseName.startsWith(prefix) ? baseName : `${prefix}${baseName}`;
+  if (template?.id?.startsWith("custom_")) {
+    const cat = TEMPLATE_CATEGORIES[template.category];
+    if (cat && cat.label !== "牌位模版" && cat.label !== "汇总多列模版" && cat.label !== "文牒模版") {
+      const dataLabel = template.dataGroup === "deliverance" ? "往生" : "延生";
+      const baseName = template.name || template.id;
+      return baseName.includes("｜") ? baseName : `${dataLabel}｜${baseName}`;
+    }
+    return template.name || template.id;
   }
   return template.name || template.id;
 }
@@ -789,16 +803,24 @@ function templateDisplayName(template) {
 function templateGroupLabel(template) {
   const catalog = TEMPLATE_CATALOG[template?.id || ""];
   if (catalog) return catalog.groupLabel;
-  if (isSummaryTemplate(template)) return "汇总多列模板";
-  if (template?.id?.startsWith("custom_")) {
-    return template.dataGroup === "deliverance" ? "往生牒模板" : "延生牒模板";
+  if (template?.category) {
+    const cat = TEMPLATE_CATEGORIES[template.category];
+    if (cat) return cat.label;
   }
-  return "内置单张牌位模板";
+  if (isSummaryTemplate(template)) return "汇总多列模版";
+  if (template?.id?.startsWith("custom_")) {
+    return template.dataGroup === "deliverance" ? "往生牒模版" : "延生牒模版";
+  }
+  return "牌位模版";
 }
 
 function templateGroupOrder(template) {
   const catalog = TEMPLATE_CATALOG[template?.id || ""];
   if (catalog) return catalog.groupOrder;
+  if (template?.category) {
+    const cat = TEMPLATE_CATEGORIES[template.category];
+    if (cat) return cat.groupOrder;
+  }
   if (isSummaryTemplate(template)) return 4;
   if (template?.id?.startsWith("custom_")) {
     return template.dataGroup === "deliverance" ? 3 : 2;
@@ -872,7 +894,12 @@ function syncControlsFromSelectedTemplate() {
   const templateTypeLabel = $("templateTypeLabel");
 
   if (templateTypeLabel) {
-    templateTypeLabel.textContent = template?.dataGroup === "deliverance" ? "往生牌位模板" : "延生禄位模板";
+    const cat = template?.category ? TEMPLATE_CATEGORIES[template.category] : null;
+    if (cat && cat.label === "牌位模版") {
+      templateTypeLabel.textContent = template?.dataGroup === "deliverance" ? "超度牌位模版" : "延生禄位模版";
+    } else {
+      templateTypeLabel.textContent = template?.dataGroup === "deliverance" ? "往生牌位模板" : "延生禄位模板";
+    }
   }
 
   if (isSummaryTemplate(template)) {
@@ -1209,6 +1236,22 @@ function handleBackground(event) {
     event.target.value = "";
   };
   reader.readAsDataURL(file);
+}
+
+function clearBackground() {
+  const layout = currentEditableLayout();
+  if (!layout.background) return;
+  layout.background = "";
+  $("bgInput").value = "";
+  saveLayouts();
+  persistTemplateMutation({
+    syncTemplate: true,
+    localMessage: "底图已清除",
+    syncingMessage: "正在清除底图...",
+    successMessage: isDesktopRuntime() ? "底图已从本地数据库清除" : "底图已从服务器清除",
+    failureMessage: isDesktopRuntime() ? "底图已清除，但本地数据库同步失败" : "底图已清除，但服务器同步失败",
+  });
+  render();
 }
 
 function convertToWebP(dataUrl) {
@@ -1868,6 +1911,8 @@ function summaryFieldDefinitionsForGroup(group) {
     return [
       { key: "summary_subject", label: "牌位主体", sourceKey: "subject" },
       { key: "summary_believer", label: "信人", sourceKey: "believer" },
+      { key: "summary_age", label: "年龄", sourceKey: "age" },
+      { key: "summary_zodiac", label: "属相", sourceKey: "zodiac" },
       { key: "summary_birthday", label: "生日", sourceKey: "birthday" },
       { key: "summary_address", label: "地址", sourceKey: "address" },
     ];
@@ -1892,6 +1937,8 @@ function summaryFieldDefinitions(group = currentDataGroup()) {
     return [
       { key: "summary_subject", label: "牌位主体", sourceKey: "subject" },
       { key: "summary_believer", label: "信人", sourceKey: "believer" },
+      { key: "summary_age", label: "年龄", sourceKey: "age" },
+      { key: "summary_zodiac", label: "属相", sourceKey: "zodiac" },
       { key: "summary_birthday", label: "生日", sourceKey: "birthday" },
       { key: "summary_address", label: "地址", sourceKey: "address" },
     ];
@@ -1939,6 +1986,8 @@ function summaryDefaultPosition(key, variantKey = currentSummaryVariantKey()) {
     summary_deceased: 20,
     summary_yinGeng: 28,
     summary_believer: 32,
+    summary_age: 22,
+    summary_zodiac: 26,
     summary_birthday: 32,
     summary_deathday: 36,
     summary_yangshang: 44,
@@ -3695,6 +3744,7 @@ function exportCurrentTemplatePayload() {
     template: {
       id: layoutKey,
       name: template.name,
+      category: template.category || "",
       mode: template.mode || state.mode,
       dataGroup: template.dataGroup || currentDataGroup(),
       width: Number($("paperWidth").value) || template.width,
@@ -5152,6 +5202,36 @@ function renderFieldSelection(templateType = "blessing") {
   });
 }
 
+function applyNewTemplateCategory(category) {
+  const dataGroupSelect = document.getElementById("newTemplateDataGroup");
+  const fieldSelection = document.getElementById("fieldSelection");
+  const fieldset = fieldSelection?.closest("fieldset");
+  const modeSelect = document.getElementById("newTemplateMode");
+  const modeLabel = document.getElementById("newTemplateModeLabel");
+  const verticalCheckbox = document.getElementById("newTemplateVertical");
+
+  const isSummary = category === "summary";
+  const fixedDataGroup = category === "blessing_doc" ? "blessing" : category === "deliverance_doc" ? "deliverance" : null;
+
+  if (dataGroupSelect) {
+    dataGroupSelect.disabled = Boolean(fixedDataGroup);
+    if (fixedDataGroup) dataGroupSelect.value = fixedDataGroup;
+    dataGroupSelect.hidden = isSummary;
+  }
+  if (fieldset) fieldset.hidden = isSummary;
+  if (modeSelect && modeLabel) {
+    modeSelect.value = "preset";
+    modeLabel.hidden = isSummary;
+  }
+  if (verticalCheckbox) {
+    verticalCheckbox.parentElement.hidden = isSummary;
+  }
+
+  if (!isSummary) {
+    renderFieldSelection(fixedDataGroup || dataGroupSelect?.value || "blessing");
+  }
+}
+
 function createCustomTemplate() {
   const name = document.getElementById("newTemplateName").value.trim();
   if (!name) {
@@ -5164,18 +5244,22 @@ function createCustomTemplate() {
     return;
   }
 
+  const category = document.getElementById("newTemplateCategory")?.value || "plaque";
+  const dataGroupSelect = document.getElementById("newTemplateDataGroup");
+  const dataGroup = category === "blessing_doc" ? "blessing"
+    : category === "deliverance_doc" ? "deliverance"
+    : dataGroupSelect?.value || "blessing";
   const width = parseInt(document.getElementById("newTemplateWidth").value) || 90;
   const height = parseInt(document.getElementById("newTemplateHeight").value) || 260;
   const vertical = document.getElementById("newTemplateVertical").checked;
   const createMode = document.getElementById("newTemplateMode")?.value || "preset";
-  const templateType = document.getElementById("newTemplateType")?.value || "blessing";
   const id = "custom_" + Date.now();
 
-  if (state.mode === "summary") {
-    const dataGroup = $("summaryDataGroup").value || "blessing";
+  if (category === "summary") {
     const newTemplate = {
       id,
       name,
+      category,
       width,
       height,
       font: Number($("summaryFont").value) || 22,
@@ -5214,15 +5298,16 @@ function createCustomTemplate() {
   const newTemplate = {
     id,
     name,
+    category,
     width,
     height,
     font: 22,
     vertical,
-    dataGroup: templateType,
+    dataGroup,
     tabletType: "custom",
     fieldKeys: createMode === "manual"
       ? Array.from(new Set(selectedFields.map((field) => field.key)))
-      : defaultSingleFieldKeysForGroup(templateType),
+      : defaultSingleFieldKeysForGroup(dataGroup),
   };
 
   templates.push(newTemplate);
@@ -5275,6 +5360,14 @@ function createCustomTemplate() {
   }
 
   saveCustomTemplatesToStorage();
+  saveLayouts();
+  persistTemplateMutation({
+    syncTemplate: true,
+    localMessage: "模板已保存到本机",
+    syncingMessage: "正在同步模板...",
+    successMessage: isDesktopRuntime() ? "模板已保存到本地数据库" : "模板已保存到服务器",
+    failureMessage: isDesktopRuntime() ? "模板已保存到本机，但本地数据库同步失败" : "模板已保存到本机，但服务器同步失败",
+  });
   rebuildTemplateOptions(id);
   document.getElementById("newTemplateDialog").close();
   applyTemplate();
@@ -5288,6 +5381,7 @@ function saveCustomTemplatesToStorage() {
       return {
         id: t.id,
         name: t.name,
+        category: t.category || "",
         mode: t.mode || "single",
         dataGroup: t.dataGroup,
         width: layout?.paper?.width || t.width,
@@ -5313,7 +5407,6 @@ function saveCustomTemplatesToStorage() {
 }
 
 function loadCustomTemplatesFromStorage(options = {}) {
-  const includeLocalOnly = options.includeLocalOnly !== false;
   try {
     const stored = safeStorageGet("customTemplates");
     if (!stored) return;
@@ -5325,13 +5418,13 @@ function loadCustomTemplatesFromStorage(options = {}) {
         changed = true;
         return;
       }
-      if (!includeLocalOnly && !state.remoteTemplateIds[ct.id]) return;
       const mode = ct.mode || (ct.summary || !(ct.fields || []).length ? "summary" : "single");
       if (ct.mode !== mode) changed = true;
       if (!templates.some(t => t.id === ct.id)) {
         templates.push({
           id: ct.id,
           name: ct.name,
+          category: ct.category || "",
           width: ct.width,
           height: ct.height,
           font: 22,
