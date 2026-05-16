@@ -3646,8 +3646,7 @@ function exportCurrentTemplatePayload() {
 async function syncCurrentTemplateToServer() {
   const payload = exportCurrentTemplatePayload();
   const mappedRemoteId = state.remoteTemplateIds[payload.template.id];
-  const hasRealRemoteId = Boolean(mappedRemoteId) && mappedRemoteId !== payload.template.id;
-  let remoteId = hasRealRemoteId ? mappedRemoteId : "";
+  let remoteId = mappedRemoteId || "";
   const body = {
     name: payload.template.name,
     type: payload.template.dataGroup === "blessing" ? "LONGEVITY" : "DELIVERANCE",
