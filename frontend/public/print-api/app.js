@@ -4940,20 +4940,32 @@ function fitField(field) {
     flow.style.transformOrigin = "center center";
   }
   const baseFont = Number(field.dataset.baseFont) || Number.parseFloat(field.style.fontSize) || 18;
-  let fontSize = baseFont;
-  field.style.fontSize = `${fontSize}px`;
-  const minFont = 1;
-  while (fontSize > minFont && isOverflowing(content)) {
-    fontSize -= 1;
-    field.style.fontSize = `${fontSize}px`;
+  field.style.fontSize = `${baseFont}px`;
+  if (!isOverflowing(content)) {
+    field.classList.toggle("auto-shrunk", false);
+    return;
   }
+  let lo = 1;
+  let hi = baseFont;
+  let best = baseFont;
+  while (lo <= hi) {
+    const mid = Math.floor((lo + hi) / 2);
+    field.style.fontSize = `${mid}px`;
+    if (isOverflowing(content)) {
+      hi = mid - 1;
+    } else {
+      best = mid;
+      lo = mid + 1;
+    }
+  }
+  field.style.fontSize = `${best}px`;
   if (flow && isOverflowing(content)) {
     const scaleX = content.clientWidth > 0 && content.scrollWidth > 0 ? content.clientWidth / content.scrollWidth : 1;
     const scaleY = content.clientHeight > 0 && content.scrollHeight > 0 ? content.clientHeight / content.scrollHeight : 1;
     const scale = Math.max(0.05, Math.min(scaleX, scaleY, 1));
     flow.style.transform = `scale(${scale})`;
   }
-  field.classList.toggle("auto-shrunk", fontSize < baseFont);
+  field.classList.toggle("auto-shrunk", best < baseFont);
 }
 
 function isOverflowing(element) {
