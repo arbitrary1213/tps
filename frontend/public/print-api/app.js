@@ -474,7 +474,7 @@ async function init() {
   $("bgInput").addEventListener("change", handleBackground);
   $("saveTemplateBtn").addEventListener("click", saveCurrentLayout);
   $("resetTemplateBtn").addEventListener("click", resetCurrentLayout);
-  $("printBtn").addEventListener("click", enterPrintPreviewMode);
+  $("printBtn").addEventListener("click", printAll);
   $("printSettingsPrintBtn")?.addEventListener("click", printAll);
   $("printSettingsSystemDialogBtn")?.addEventListener("click", printWithSystemDialog);
   $("printSettingsCancelBtn")?.addEventListener("click", () => window.close());
