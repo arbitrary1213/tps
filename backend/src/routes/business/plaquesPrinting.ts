@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express'
 import * as XLSX from 'xlsx'
+import sharp from 'sharp'
 import { asyncHandler } from '../../middleware/errorHandler'
 import { authMiddleware, AuthRequest } from '../../middleware/auth'
 import {
@@ -524,6 +525,22 @@ router.post('/local-print/jobs/:jobId/items/:itemId/report', asyncHandler(async 
   }
 }))
 
+async function compressBackgroundImage(dataUrl: string | null): Promise<string | null> {
+  if (!dataUrl || !dataUrl.startsWith('data:')) return dataUrl || null
+  const match = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/)
+  if (!match) return dataUrl
+  try {
+    const buffer = Buffer.from(match[2], 'base64')
+    const compressed = await sharp(buffer)
+      .resize(200, 200, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 60 })
+      .toBuffer()
+    return `data:image/webp;base64,${compressed.toString('base64')}`
+  } catch {
+    return dataUrl
+  }
+}
+
 router.get('/plaque-templates', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { updatedSince, page = '1', pageSize = '20' } = req.query
@@ -535,7 +552,7 @@ router.get('/plaque-templates', authMiddleware, asyncHandler(async (req: AuthReq
       prisma.plaqueTemplate.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take }),
       prisma.plaqueTemplate.count({ where }),
     ])
-    const stripped = templates.map((t) => {
+    const stripped = await Promise.all(templates.map(async (t) => {
       const elements = typeof t.elements === 'object' && t.elements !== null
         ? { ...(t.elements as Record<string, unknown>) }
         : t.elements
@@ -552,9 +569,9 @@ router.get('/plaque-templates', authMiddleware, asyncHandler(async (req: AuthReq
         }
       }
       const result: any = { ...t, elements }
-      delete result.backgroundImage
+      result.backgroundImage = await compressBackgroundImage(t.backgroundImage)
       return result
-    })
+    }))
     res.set('Cache-Control', 'public, max-age=30')
     res.json({ success: true, data: stripped, total, page: Math.max(parseInt(page as string) || 1, 1), pageSize: take })
   } catch (error) {

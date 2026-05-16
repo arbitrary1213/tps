@@ -105,9 +105,21 @@ const summaryVariantPresets = {
   deliverance: [
     {
       key: "deliverance_default",
-      label: "往生/超度默认",
+      label: "往生版式一",
       match: "default",
       fields: ["summary_subject", "summary_yangshang", "summary_address"],
+    },
+    {
+      key: "deliverance_detail",
+      label: "往生版式二",
+      match: "detail",
+      fields: ["summary_subject", "summary_deceased", "summary_yinGeng", "summary_birthday", "summary_deathday", "summary_yangshang", "summary_address"],
+    },
+    {
+      key: "deliverance_full",
+      label: "往生版式三",
+      match: "full",
+      fields: ["summary_subject", "summary_deceased", "summary_yinGeng", "summary_birthday", "summary_deathday", "summary_deceased2", "summary_yinGeng2", "summary_birthday2", "summary_deathday2", "summary_yangshang", "summary_address"],
     },
   ],
 };
@@ -1838,6 +1850,10 @@ function detectSummaryVariantForGroup(row, group = currentDataGroup()) {
     const believer = firstRowValue(row, ["信人", "阳上", "阳上人", "believer", "yangshang", "yangShang"]);
     return believer ? "bodhisattva" : "person";
   }
+  const deceased2 = firstRowValue(row, ["亡者二", "第二亡者", "deceasedSecondary", "deceasedName2"]);
+  if (deceased2) return "full";
+  const deceased = firstRowValue(row, ["亡者", "第一亡者", "deceasedPrimary", "deceasedName", "yinGeng", "阴庚", "亡者阴庚"]);
+  if (deceased) return "detail";
   return "default";
 }
 
@@ -1858,6 +1874,14 @@ function summaryFieldDefinitionsForGroup(group) {
   }
   return [
     { key: "summary_subject", label: "牌位主体", sourceKey: "subject" },
+    { key: "summary_deceased", label: "亡者", sourceKey: "deceasedPrimary" },
+    { key: "summary_yinGeng", label: "阴庚", sourceKey: "yinGeng" },
+    { key: "summary_birthday", label: "生日", sourceKey: "birthday" },
+    { key: "summary_deathday", label: "忌日", sourceKey: "deathday" },
+    { key: "summary_deceased2", label: "亡者二", sourceKey: "deceasedSecondary" },
+    { key: "summary_yinGeng2", label: "亡者二阴庚", sourceKey: "yinGeng2" },
+    { key: "summary_birthday2", label: "亡者二生日", sourceKey: "birthday2" },
+    { key: "summary_deathday2", label: "亡者二忌日", sourceKey: "deathday2" },
     { key: "summary_yangshang", label: "阳上", sourceKey: "yangshang" },
     { key: "summary_address", label: "地址", sourceKey: "address" },
   ];
@@ -1874,6 +1898,14 @@ function summaryFieldDefinitions(group = currentDataGroup()) {
   }
   return [
     { key: "summary_subject", label: "牌位主体", sourceKey: "subject" },
+    { key: "summary_deceased", label: "亡者", sourceKey: "deceasedPrimary" },
+    { key: "summary_yinGeng", label: "阴庚", sourceKey: "yinGeng" },
+    { key: "summary_birthday", label: "生日", sourceKey: "birthday" },
+    { key: "summary_deathday", label: "忌日", sourceKey: "deathday" },
+    { key: "summary_deceased2", label: "亡者二", sourceKey: "deceasedSecondary" },
+    { key: "summary_yinGeng2", label: "亡者二阴庚", sourceKey: "yinGeng2" },
+    { key: "summary_birthday2", label: "亡者二生日", sourceKey: "birthday2" },
+    { key: "summary_deathday2", label: "亡者二忌日", sourceKey: "deathday2" },
     { key: "summary_yangshang", label: "阳上", sourceKey: "yangshang" },
     { key: "summary_address", label: "地址", sourceKey: "address" },
   ];
@@ -1904,10 +1936,17 @@ function summaryDefaultPosition(key, variantKey = currentSummaryVariantKey()) {
   const index = Math.max(fields.findIndex((field) => field.key === key), 0);
   const topMap = {
     summary_subject: 10,
+    summary_deceased: 20,
+    summary_yinGeng: 28,
     summary_believer: 32,
     summary_birthday: 32,
-    summary_yangshang: 32,
-    summary_address: 50,
+    summary_deathday: 36,
+    summary_yangshang: 44,
+    summary_deceased2: 52,
+    summary_yinGeng2: 58,
+    summary_birthday2: 64,
+    summary_deathday2: 70,
+    summary_address: 58,
   };
   return { x: 10, y: topMap[key] ?? (10 + index * 20) };
 }
@@ -1915,6 +1954,10 @@ function summaryDefaultPosition(key, variantKey = currentSummaryVariantKey()) {
 function summaryDefaultSize(key) {
   if (key === "summary_subject") return { w: 80, h: 18 };
   if (key === "summary_address") return { w: 80, h: 28 };
+  if (key.startsWith("summary_deceased") || key === "summary_deceased") return { w: 80, h: 14 };
+  if (key === "summary_yinGeng" || key === "summary_yinGeng2") return { w: 80, h: 14 };
+  if (key === "summary_birthday" || key === "summary_birthday2") return { w: 80, h: 14 };
+  if (key === "summary_deathday" || key === "summary_deathday2") return { w: 80, h: 14 };
   return { w: 80, h: 14 };
 }
 
