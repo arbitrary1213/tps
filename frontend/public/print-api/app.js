@@ -3521,7 +3521,7 @@ async function loadServerTemplates() {
         console.log("[DEBUG] loadServerTemplates desktop: auth token present, fetching from server");
         try {
           const serverTemplates = dedupeTemplateRecords(
-            await fetchJson("/api/plaque-templates", authFetchOptions({ headers: authHeaders(), allowDesktopApi: true }))
+            await fetchJson("/api/plaque-templates?pageSize=200", authFetchOptions({ headers: authHeaders(), allowDesktopApi: true }))
           );
           const localMap = new Map(localTemplates.map((lt) => [templateRecordLogicalId(lt), lt]));
           for (const st of serverTemplates) {
@@ -3560,7 +3560,7 @@ async function loadServerTemplates() {
   }
 
   try {
-    const serverTemplates = dedupeTemplateRecords(await fetchJson("/api/plaque-templates", authFetchOptions({ headers: authHeaders() })));
+    const serverTemplates = dedupeTemplateRecords(await fetchJson("/api/plaque-templates?pageSize=200", authFetchOptions({ headers: authHeaders() })));
     console.log("[DEBUG] loadServerTemplates web: serverTemplates count:", serverTemplates.length, "tablet-print count:", serverTemplates.filter(t => t?.elements?.source === "tablet-print").length);
     serverTemplates
       .filter((template) => template?.elements?.source === "tablet-print")

@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { businessAPI } from '@/lib/api'
 import { Button, Card, Table, Badge, Modal, Input, Select, Textarea, SearchBar, Checkbox } from '@/components/ui'
@@ -56,6 +56,9 @@ export default function PlaquesPage() {
   const { token } = useAuthStore()
   const [plaques, setPlaques] = useState<Plaque[]>([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
+  const pageSize = 20
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('')
   const [filterSubtype, setFilterSubtype] = useState('')
@@ -149,6 +152,23 @@ export default function PlaquesPage() {
     loadTemplates()
   }, [])
 
+  // Reload when filters change, reset to page 1
+  useEffect(() => {
+    if (loading) return
+    setPage(1)
+    loadPlaques(1)
+  }, [filterType, filterSubtype, filterStatus, filterSize, filterDevotee, filterRitual])
+
+  // Debounced search reload
+  useEffect(() => {
+    if (loading) return
+    const timer = setTimeout(() => {
+      setPage(1)
+      loadPlaques(1)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [search])
+
   const loadDedicationTypes = async () => {
     try {
       const data = await systemAPI.getSettings()
@@ -160,21 +180,29 @@ export default function PlaquesPage() {
     }
   }
 
-  const loadPlaques = async () => {
+  const loadPlaques = async (targetPage?: number) => {
     try {
-      const params: any = {}
-      if (filterType) params.plaqueType = filterType
+      const p = targetPage ?? page
+      const query = new URLSearchParams({ page: String(p), pageSize: String(pageSize) } as any)
+      if (filterType) query.set('plaqueType', filterType)
       if (filterSubtype) {
-        if (filterType === 'LONGEVITY') params.longevitySubtype = filterSubtype
-        else if (filterType === 'DELIVERANCE') params.dedicationType = filterSubtype
-        else params.subtype = filterSubtype
+        if (filterType === 'LONGEVITY') query.set('longevitySubtype', filterSubtype)
+        else if (filterType === 'DELIVERANCE') query.set('dedicationType', filterSubtype)
+        else query.set('subtype', filterSubtype)
       }
-      if (filterStatus) params.status = filterStatus
-      if (filterSize) params.size = filterSize
-      if (filterDevotee) params.devoteeId = filterDevotee
-      if (filterRitual) params.ritualId = filterRitual
-      const data = await businessAPI.getPlaques(token!, params)
-      setPlaques(data)
+      if (filterStatus) query.set('status', filterStatus)
+      if (filterSize) query.set('size', filterSize)
+      if (filterDevotee) query.set('devoteeId', filterDevotee)
+      if (filterRitual) query.set('ritualId', filterRitual)
+      if (search) query.set('keyword', search)
+      const res = await fetch(`/api/plaques?${query.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) throw new Error(json.error || '加载失败')
+      setPlaques(json.data || [])
+      setTotal(json.total || 0)
+      setPage(json.page || 1)
       setSelectedIds(new Set())
     } catch (error) {
       console.error('加载失败:', error)
@@ -898,6 +926,15 @@ export default function PlaquesPage() {
           emptyText="暂无牌位"
         />
         </div>
+        {total > pageSize && (
+          <div className="flex items-center justify-between mt-4 text-sm text-tea/70">
+            <span>共 {total} 条，第 {page} / {Math.ceil(total / pageSize)} 页</span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => { const np = page - 1; setPage(np); loadPlaques(np); }}>上一页</Button>
+              <Button size="sm" variant="secondary" disabled={page >= Math.ceil(total / pageSize)} onClick={() => { const np = page + 1; setPage(np); loadPlaques(np); }}>下一页</Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       <Modal
