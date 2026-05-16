@@ -752,6 +752,7 @@ textarea {
   position: relative;
   min-width: 0;
   height: 100%;
+  overflow: hidden;
   border-left: 1px dashed rgb(156 31 34 / 35%);
   border-right: 1px dashed rgb(156 31 34 / 35%);
   background: rgb(255 248 232 / 32%);

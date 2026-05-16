@@ -5129,6 +5129,7 @@ function createCustomTemplate() {
   const id = "custom_" + Date.now();
 
   if (state.mode === "summary") {
+    const dataGroup = $("summaryDataGroup").value || "blessing";
     const newTemplate = {
       id,
       name,
@@ -5137,6 +5138,7 @@ function createCustomTemplate() {
       font: Number($("summaryFont").value) || 22,
       vertical: false,
       mode: "summary",
+      dataGroup,
     };
     templates.push(newTemplate);
     state.layouts[id] = {
@@ -5145,11 +5147,10 @@ function createCustomTemplate() {
       summary: currentSummarySettings(),
     };
 
-    appendTemplateOption(newTemplate);
-    document.getElementById("newTemplateDialog").close();
-    document.getElementById("templateSelect").value = id;
     saveLayouts();
     saveCustomTemplatesToStorage();
+    rebuildTemplateOptions(id);
+    document.getElementById("newTemplateDialog").close();
     applyTemplate();
     return;
   }
@@ -5230,14 +5231,10 @@ function createCustomTemplate() {
     });
   }
 
-  appendTemplateOption(newTemplate);
-
-  document.getElementById("newTemplateDialog").close();
-
-  document.getElementById("templateSelect").value = id;
-  applyTemplate();
-
   saveCustomTemplatesToStorage();
+  rebuildTemplateOptions(id);
+  document.getElementById("newTemplateDialog").close();
+  applyTemplate();
 }
 
 function saveCustomTemplatesToStorage() {
