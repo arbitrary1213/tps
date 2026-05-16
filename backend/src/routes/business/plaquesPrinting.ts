@@ -612,8 +612,18 @@ router.put('/plaque-templates/:id', authMiddleware, asyncHandler(async (req: Aut
   }
 }))
 
+const BUILTIN_TEMPLATE_IDS = new Set([
+  'cmp6vaj3l000gbjnjoak9q9wx', 'cmozm19an001ahmbwqm8nmi1q',
+  'cmoz9dtgc015wcyyxjcwqcumq', '92171e1d-e697-46df-bfcc-4cb8f9a29661',
+  'cmoy8qpet023lp6guzs8mne81', 'cmp15pgnz000op0s9vkqcx9wt',
+  'cmp6uyyk10003bjnjsqkn2uwn', 'cmowl79v5000a2rdgs4czs9bo',
+])
+
 router.delete('/plaque-templates/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
+    if (BUILTIN_TEMPLATE_IDS.has(req.params.id)) {
+      return res.status(403).json({ success: false, error: '内置模板不允许删除' })
+    }
     await prisma.plaqueTemplate.delete({ where: { id: req.params.id } })
     await logOperation(req.user, 'DELETE', 'plaque_template', req.params.id)
     res.json({ success: true })

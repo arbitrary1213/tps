@@ -10,6 +10,12 @@ const templates = [
 ];
 
 const HIDDEN_LEGACY_TEMPLATE_IDS = new Set(["deliveranceDetail", "deliveranceSimple", "rebirth", "a4summary", "a3summary", "blessing", "deliverance"]);
+const BUILTIN_TEMPLATE_IDS = new Set([
+  "cmp6vaj3l000gbjnjoak9q9wx", "cmozm19an001ahmbwqm8nmi1q",
+  "cmoz9dtgc015wcyyxjcwqcumq", "92171e1d-e697-46df-bfcc-4cb8f9a29661",
+  "cmoy8qpet023lp6guzs8mne81", "cmp15pgnz000op0s9vkqcx9wt",
+  "cmp6uyyk10003bjnjsqkn2uwn", "cmowl79v5000a2rdgs4czs9bo",
+]);
 const BUILTIN_SINGLE_TEMPLATE_IDS = new Set(["cmp6vaj3l000gbjnjoak9q9wx", "cmozm19an001ahmbwqm8nmi1q"]);
 const TEMPLATE_CATALOG = {
   cmp6vaj3l000gbjnjoak9q9wx: { name: "延生禄位", groupLabel: "内置单张牌位模板", groupOrder: 1, order: 1, mode: "single", dataGroup: "blessing" },
@@ -740,6 +746,8 @@ function applyTemplate() {
     setMode("single");
     $("paperSelect").value = "custom";
   }
+  const deleteBtn = $("deleteTemplateBtn");
+  if (deleteBtn) deleteBtn.style.display = BUILTIN_TEMPLATE_IDS.has(template.id) ? "none" : "";
   render();
 }
 
@@ -1109,7 +1117,7 @@ function paperPresetForSize(width, height) {
 
 async function deleteCurrentTemplate() {
   const template = currentTemplate();
-  if (!template.id.startsWith("custom_")) {
+  if (BUILTIN_TEMPLATE_IDS.has(template.id)) {
     alert("内置模板不能删除。");
     return;
   }
