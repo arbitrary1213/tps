@@ -648,6 +648,10 @@ function handleSingleVariantChange() {
 
 function handleSummaryGroupChange(forceDefault = false) {
   if (state.mode !== "summary") return;
+  const template = currentTemplate();
+  const lockedGroup = template?.dataGroup || "deliverance";
+  const summaryDataGroup = $("summaryDataGroup");
+  if (summaryDataGroup && summaryDataGroup.value !== lockedGroup) summaryDataGroup.value = lockedGroup;
   state.pageIndex = 0;
   state.activeFieldKey = "";
   refreshSummaryVariantOptions();
@@ -903,6 +907,9 @@ function syncControlsFromSelectedTemplate() {
   }
 
   if (isSummaryTemplate(template)) {
+    const dataGroup = template.dataGroup || "deliverance";
+    const summaryDataGroup = $("summaryDataGroup");
+    if (summaryDataGroup) summaryDataGroup.value = dataGroup;
     const paper = layout.paper || summaryTemplatePaper(template.id);
     if (paperWidth) paperWidth.value = paper.width;
     if (paperHeight) paperHeight.value = paper.height;
@@ -1731,7 +1738,7 @@ function normalizeRow(row, group, index) {
 }
 
 function summaryVariantPresetsFor(group) {
-  if (!group) return summaryVariantPresets.deliverance;
+  if (!group) group = currentDataGroup();
   return summaryVariantPresets[group] || summaryVariantPresets.deliverance;
 }
 
@@ -1906,56 +1913,33 @@ function summaryVariantPresetForRow(row) {
   return presets.find((variant) => variant.match === detected) || presets[0];
 }
 
+const SUMMARY_FIELD_KEY_MAP = {
+  subject: "summary_subject",
+  believer: "summary_believer",
+  age: "summary_age",
+  zodiac: "summary_zodiac",
+  birthday: "summary_birthday",
+  address: "summary_address",
+  wish: "summary_wish",
+  deceasedPrimary: "summary_deceased",
+  deceasedSecondary: "summary_deceased2",
+  yinGeng: "summary_yinGeng",
+  yinGeng2: "summary_yinGeng2",
+  deathday: "summary_deathday",
+  deathday2: "summary_deathday2",
+  birthday2: "summary_birthday2",
+  yangshang: "summary_yangshang",
+};
+
 function summaryFieldDefinitionsForGroup(group) {
-  if (isBlessingGroup(group)) {
-    return [
-      { key: "summary_subject", label: "牌位主体", sourceKey: "subject" },
-      { key: "summary_believer", label: "信人", sourceKey: "believer" },
-      { key: "summary_age", label: "年龄", sourceKey: "age" },
-      { key: "summary_zodiac", label: "属相", sourceKey: "zodiac" },
-      { key: "summary_birthday", label: "生日", sourceKey: "birthday" },
-      { key: "summary_address", label: "地址", sourceKey: "address" },
-    ];
-  }
-  return [
-    { key: "summary_subject", label: "牌位主体", sourceKey: "subject" },
-    { key: "summary_deceased", label: "亡者", sourceKey: "deceasedPrimary" },
-    { key: "summary_yinGeng", label: "阴庚", sourceKey: "yinGeng" },
-    { key: "summary_birthday", label: "生日", sourceKey: "birthday" },
-    { key: "summary_deathday", label: "忌日", sourceKey: "deathday" },
-    { key: "summary_deceased2", label: "亡者二", sourceKey: "deceasedSecondary" },
-    { key: "summary_yinGeng2", label: "亡者二阴庚", sourceKey: "yinGeng2" },
-    { key: "summary_birthday2", label: "亡者二生日", sourceKey: "birthday2" },
-    { key: "summary_deathday2", label: "亡者二忌日", sourceKey: "deathday2" },
-    { key: "summary_yangshang", label: "阳上", sourceKey: "yangshang" },
-    { key: "summary_address", label: "地址", sourceKey: "address" },
-  ];
+  const type = tabletTypes[group] || tabletTypes.deliverance;
+  return type.fields
+    .filter((f) => SUMMARY_FIELD_KEY_MAP[f.key])
+    .map((f) => ({ key: SUMMARY_FIELD_KEY_MAP[f.key], label: f.label, sourceKey: f.key }));
 }
 
-function summaryFieldDefinitions(group = currentDataGroup()) {
-  if (isBlessingGroup(group)) {
-    return [
-      { key: "summary_subject", label: "牌位主体", sourceKey: "subject" },
-      { key: "summary_believer", label: "信人", sourceKey: "believer" },
-      { key: "summary_age", label: "年龄", sourceKey: "age" },
-      { key: "summary_zodiac", label: "属相", sourceKey: "zodiac" },
-      { key: "summary_birthday", label: "生日", sourceKey: "birthday" },
-      { key: "summary_address", label: "地址", sourceKey: "address" },
-    ];
-  }
-  return [
-    { key: "summary_subject", label: "牌位主体", sourceKey: "subject" },
-    { key: "summary_deceased", label: "亡者", sourceKey: "deceasedPrimary" },
-    { key: "summary_yinGeng", label: "阴庚", sourceKey: "yinGeng" },
-    { key: "summary_birthday", label: "生日", sourceKey: "birthday" },
-    { key: "summary_deathday", label: "忌日", sourceKey: "deathday" },
-    { key: "summary_deceased2", label: "亡者二", sourceKey: "deceasedSecondary" },
-    { key: "summary_yinGeng2", label: "亡者二阴庚", sourceKey: "yinGeng2" },
-    { key: "summary_birthday2", label: "亡者二生日", sourceKey: "birthday2" },
-    { key: "summary_deathday2", label: "亡者二忌日", sourceKey: "deathday2" },
-    { key: "summary_yangshang", label: "阳上", sourceKey: "yangshang" },
-    { key: "summary_address", label: "地址", sourceKey: "address" },
-  ];
+function summaryFieldDefinitions(group) {
+  return summaryFieldDefinitionsForGroup(group || currentDataGroup());
 }
 
 function summaryFieldsForVariant(variantKey, row = null) {
@@ -2460,12 +2444,11 @@ function fieldOptions(key, aliases, savedMappings = {}, variantKey = currentSing
 }
 
 function currentTabletType() {
-  if (state.mode === "summary") {
-    return $("summaryDataGroup").value === "blessing"
-      ? tabletTypes.blessing
-      : tabletTypes.deliverance;
-  }
   const template = currentTemplate();
+  const group = template?.dataGroup || "blessing";
+  if (state.mode === "summary") {
+    return group === "blessing" ? tabletTypes.blessing : tabletTypes.deliverance;
+  }
   const type = normalizeTabletType(template?.tabletType || template?.dataGroup || "blessing");
   if (type === "custom") {
     const group = template?.dataGroup === "deliverance" ? "deliverance" : "blessing";
@@ -3210,7 +3193,6 @@ function updateSelectedRowsText() {
 }
 
 function currentDataGroup() {
-  if (state.mode === "summary") return $("summaryDataGroup").value || "deliverance";
   const template = currentTemplate();
   if (template?.dataGroup) return template.dataGroup === "blessing" ? "blessing" : "deliverance";
   return normalizeTabletType(template?.tabletType || "blessing") === "blessing" ? "blessing" : "deliverance";
