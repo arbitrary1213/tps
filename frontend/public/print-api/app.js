@@ -3465,6 +3465,34 @@ async function loadServerTemplates() {
       localTemplates
         .filter((template) => template?.elements?.source === "tablet-print")
         .forEach(importServerTemplate);
+
+      if (authToken()) {
+        try {
+          const serverTemplates = dedupeTemplateRecords(
+            await fetchJson("/api/plaque-templates", authFetchOptions({ headers: authHeaders(), allowDesktopApi: true }))
+          );
+          const localMap = new Map(localTemplates.map((lt) => [templateRecordLogicalId(lt), lt]));
+          for (const st of serverTemplates) {
+            if (st?.elements?.source !== "tablet-print") continue;
+            const logicalId = templateRecordLogicalId(st);
+            const existingLocal = localMap.get(logicalId);
+            if (!existingLocal || (st.updatedAt && (!existingLocal.updatedAt || st.updatedAt > existingLocal.updatedAt))) {
+              await upsertDesktopRows("plaque_template", [{
+                id: st.id,
+                name: st.name,
+                type: st.type,
+                backgroundImage: st.backgroundImage || "",
+                elements: st.elements,
+                updatedAt: st.updatedAt || new Date().toISOString(),
+              }]);
+            }
+            importServerTemplate(st);
+          }
+        } catch (serverError) {
+          console.warn("拉取服务器模板失败，使用本地模板:", serverError);
+        }
+      }
+
       if (pruneObsoleteSingleTemplates()) {
         saveRemoteTemplateIds();
       }
