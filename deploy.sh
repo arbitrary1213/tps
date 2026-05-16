@@ -185,4 +185,18 @@ if has_target frontend; then verify_frontend; fi
 if has_target print; then verify_frontend; fi
 if has_target print; then verify_print; fi
 
+echo "[7/7] Cleaning up..."
+# Docker cleanup: remove dangling images, stopped containers, build cache
+docker image prune -af --filter "until=24h" >/dev/null 2>&1 || true
+docker container prune -f --filter "until=1h" >/dev/null 2>&1 || true
+docker builder prune -af --filter "until=24h" >/dev/null 2>&1 || true
+# Keep only the last 7 database backups
+find "$BACKUP_DIR" -name "db_backup_*.sql" -type f -printf '%T@ %p\n' \
+  | sort -rn | tail -n +8 | awk '{print $2}' | xargs -r rm -f
+# Clean system logs older than 7 days
+journalctl --vacuum-time=7d >/dev/null 2>&1 || true
+# Clean apt cache
+apt-get clean >/dev/null 2>&1 || true
+echo "✓ cleanup done"
+
 echo "===== Deploy Complete ====="
