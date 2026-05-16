@@ -924,7 +924,7 @@ function syncSingleVariantControls() {
   const row = currentRows()[state.pageIndex];
   const detectedKey = normalizeSingleVariantKey(row?.__variant || "");
   const selectedKey = normalizeSingleVariantKey(layout.singleVariantKey || state.singleVariantKey || presets[0].key);
-  const shouldFollowDetected = detectedKey && (!templateDesignerMode || !state.singleVariantManualOverride);
+  const shouldFollowDetected = detectedKey && !state.singleVariantManualOverride;
   state.singleVariantKey = shouldFollowDetected ? detectedKey : selectedKey;
   refreshSingleVariantOptions();
   if ($("singleVariant")) $("singleVariant").value = state.singleVariantKey || presets[0].key;
@@ -1753,7 +1753,7 @@ function detectSingleVariantForGroup(row, group = currentDataGroup()) {
     ? 2
     : deceasedPrimary
       ? 1
-      : (normalizedLines.length >= 2 ? 2 : 1);
+      : (normalizedLines.length >= 2 ? 2 : normalizedLines.length >= 1 ? 1 : 0);
   if (deceasedCount >= 2) return "layout_three";
   if (deceasedCount >= 1) return "layout_two";
   return "layout_one";
