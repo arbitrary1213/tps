@@ -3671,7 +3671,7 @@ function exportCurrentTemplatePayload() {
   };
 }
 
-async function syncCurrentTemplateToServer() {
+async function syncCurrentTemplateToServer(skipRemoteSync = false) {
   const payload = exportCurrentTemplatePayload();
   const mappedRemoteId = state.remoteTemplateIds[payload.template.id];
   let remoteId = mappedRemoteId || "";
@@ -3683,7 +3683,7 @@ async function syncCurrentTemplateToServer() {
   };
 
   if (isDesktopRuntime()) {
-    if (authToken()) {
+    if (authToken() && !skipRemoteSync) {
       if (remoteId) {
         await fetchJson(`/api/plaque-templates/${remoteId}`, {
           method: "PUT",
@@ -3908,14 +3908,33 @@ async function saveCurrentLayout() {
   state.layouts[layoutKey] = layout;
   saveLayouts();
   if (layoutKey.startsWith("custom_")) saveCustomTemplatesToStorage();
-  const shouldSync = canSyncServerTemplates();
-  if (shouldSync) {
+  const canSync = canSyncServerTemplates();
+  if (canSync && isDesktopRuntime()) {
+    if (!confirm("是否同步到服务器上？")) {
+      markTemplateSavedLocally();
+      $("statusText").textContent = "模板已保存到本机";
+      try {
+        await syncCurrentTemplateToServer(true);
+        markTemplateSynced();
+        state.layouts[layoutKey] = layout;
+        saveLayouts();
+        if (layoutKey.startsWith("custom_")) saveCustomTemplatesToStorage();
+        $("statusText").textContent = "模板已保存到本地数据库";
+      } catch (error) {
+        markTemplateSyncFailed();
+        console.error("保存本地模板失败", error);
+        $("statusText").textContent = "保存失败";
+      }
+      return;
+    }
+  }
+  if (canSync) {
     markTemplateSyncing();
   } else {
     markTemplateSavedLocally();
   }
-  $("statusText").textContent = shouldSync ? "模板已保存，正在同步..." : "模板已保存到本机";
-  if (!shouldSync) return;
+  $("statusText").textContent = canSync ? "模板已保存，正在同步..." : "模板已保存到本机";
+  if (!canSync) return;
   try {
     await syncCurrentTemplateToServer();
     markTemplateSynced();
