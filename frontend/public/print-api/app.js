@@ -276,7 +276,7 @@ const PDFJS_WORKER_CANDIDATES = [
   `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.js`,
   `https://unpkg.com/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.js`,
 ];
-const PDF_PRINT_DPI = 300;
+const PDF_PRINT_DPI = 200;
 
 const SUMMARY_LAYOUT_REPAIR_VERSION = 3;
 const APP_BUILD = "2026-05-11-2240";
