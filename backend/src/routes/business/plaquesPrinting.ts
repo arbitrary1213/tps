@@ -526,10 +526,15 @@ router.post('/local-print/jobs/:jobId/items/:itemId/report', asyncHandler(async 
 
 router.get('/plaque-templates', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
-    const { updatedSince } = req.query
+    const { updatedSince, page = '1', pageSize = '20' } = req.query
     const where: any = {}
     if (updatedSince) where.updatedAt = { gte: new Date(updatedSince as string) }
-    const templates = await prisma.plaqueTemplate.findMany({ where, orderBy: { createdAt: 'desc' } })
+    const take = Math.min(parseInt(pageSize as string) || 20, 200)
+    const skip = (Math.max(parseInt(page as string) || 1, 1) - 1) * take
+    const [templates, total] = await Promise.all([
+      prisma.plaqueTemplate.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take }),
+      prisma.plaqueTemplate.count({ where }),
+    ])
     const stripped = templates.map((t) => {
       const elements = typeof t.elements === 'object' && t.elements !== null
         ? { ...(t.elements as Record<string, unknown>) }
@@ -549,7 +554,7 @@ router.get('/plaque-templates', authMiddleware, asyncHandler(async (req: AuthReq
       return { ...t, elements }
     })
     res.set('Cache-Control', 'public, max-age=30')
-    res.json({ success: true, data: stripped })
+    res.json({ success: true, data: stripped, total, page: Math.max(parseInt(page as string) || 1, 1), pageSize: take })
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }
@@ -570,6 +575,20 @@ router.get('/plaque-templates/:id', authMiddleware, asyncHandler(async (req: Aut
 router.post('/plaque-templates', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const template = await prisma.plaqueTemplate.create({ data: req.body })
+    const elements = template.elements as Record<string, any> | null
+    if (elements?.template?.id && elements.template.id !== template.id) {
+      const fixed = await prisma.plaqueTemplate.update({
+        where: { id: template.id },
+        data: {
+          elements: {
+            ...elements,
+            template: { ...elements.template, id: template.id },
+          },
+        },
+      })
+      await logOperation(req.user, 'CREATE', 'plaque_template', fixed.id, null, fixed)
+      return res.json({ success: true, data: fixed })
+    }
     await logOperation(req.user, 'CREATE', 'plaque_template', template.id, null, template)
     res.json({ success: true, data: template })
   } catch (error) {
@@ -580,7 +599,12 @@ router.post('/plaque-templates', authMiddleware, asyncHandler(async (req: AuthRe
 router.put('/plaque-templates/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const before = await prisma.plaqueTemplate.findUnique({ where: { id: req.params.id } })
-    const template = await prisma.plaqueTemplate.update({ where: { id: req.params.id }, data: req.body })
+    const body = { ...req.body }
+    const elements = body.elements as Record<string, any> | null
+    if (elements?.template?.id && elements.template.id !== req.params.id) {
+      body.elements = { ...elements, template: { ...elements.template, id: req.params.id } }
+    }
+    const template = await prisma.plaqueTemplate.update({ where: { id: req.params.id }, data: body })
     await logOperation(req.user, 'UPDATE', 'plaque_template', template.id, before, template)
     res.json({ success: true, data: template })
   } catch (error) {

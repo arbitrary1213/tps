@@ -1,24 +1,24 @@
 const templates = [
-  { id: "cmozim1oi0002hmbwceevwp7z", name: "延生通名", width: 297, height: 420, vertical: true, mode: "summary", dataGroup: "blessing" },
+  { id: "cmp6uyyk10003bjnjsqkn2uwn", name: "延生通名", width: 297, height: 420, vertical: true, mode: "summary", dataGroup: "blessing" },
   { id: "cmowl79v5000a2rdgs4czs9bo", name: "往生通名", width: 297, height: 420, vertical: true, mode: "summary", dataGroup: "blessing" },
   { id: "cmoz9dtgc015wcyyxjcwqcumq", name: "红牒", width: 420, height: 297, vertical: true, mode: "summary", dataGroup: "blessing" },
-  { id: "cmowkqe9o00002rdg542nvmls", name: "延生禄位", width: 125, height: 360, vertical: true, mode: "summary", dataGroup: "blessing" },
-  { id: "cmp0u7lde04xmhmbwtueb8v4d", name: "红壳", width: 125, height: 360, vertical: true, mode: "summary", dataGroup: "blessing" },
+  { id: "cmp6vaj3l000gbjnjoak9q9wx", name: "延生禄位", width: 125, height: 360, vertical: true, mode: "summary", dataGroup: "blessing" },
+  { id: "92171e1d-e697-46df-bfcc-4cb8f9a29661", name: "红壳", width: 125, height: 360, vertical: true, mode: "summary", dataGroup: "blessing" },
   { id: "cmp15pgnz000op0s9vkqcx9wt", name: "黄壳", width: 125, height: 360, vertical: true, mode: "single", dataGroup: "deliverance" },
   { id: "cmozm19an001ahmbwqm8nmi1q", name: "超度牌位", width: 125, height: 360, vertical: true, mode: "single", dataGroup: "deliverance" },
   { id: "cmoy8qpet023lp6guzs8mne81", name: "黄牒", width: 420, height: 297, vertical: true, mode: "single", dataGroup: "deliverance" },
 ];
 
 const HIDDEN_LEGACY_TEMPLATE_IDS = new Set(["deliveranceDetail", "deliveranceSimple", "rebirth", "a4summary", "a3summary", "blessing", "deliverance"]);
-const BUILTIN_SINGLE_TEMPLATE_IDS = new Set(["cmowkqe9o00002rdg542nvmls", "cmozm19an001ahmbwqm8nmi1q"]);
+const BUILTIN_SINGLE_TEMPLATE_IDS = new Set(["cmp6vaj3l000gbjnjoak9q9wx", "cmozm19an001ahmbwqm8nmi1q"]);
 const TEMPLATE_CATALOG = {
-  cmowkqe9o00002rdg542nvmls: { name: "延生禄位", groupLabel: "内置单张牌位模板", groupOrder: 1, order: 1, mode: "single", dataGroup: "blessing" },
+  cmp6vaj3l000gbjnjoak9q9wx: { name: "延生禄位", groupLabel: "内置单张牌位模板", groupOrder: 1, order: 1, mode: "single", dataGroup: "blessing" },
   cmozm19an001ahmbwqm8nmi1q: { name: "往生牌位", groupLabel: "内置单张牌位模板", groupOrder: 1, order: 2, mode: "single", dataGroup: "deliverance" },
   cmoz9dtgc015wcyyxjcwqcumq: { name: "延生｜红牒", groupLabel: "延生牒模板", groupOrder: 2, order: 1, mode: "single", dataGroup: "blessing" },
-  cmp0u7lde04xmhmbwtueb8v4d: { name: "延生｜红壳", groupLabel: "延生牒模板", groupOrder: 2, order: 2, mode: "single", dataGroup: "blessing" },
+  "92171e1d-e697-46df-bfcc-4cb8f9a29661": { name: "延生｜红壳", groupLabel: "延生牒模板", groupOrder: 2, order: 2, mode: "single", dataGroup: "blessing" },
   cmoy8qpet023lp6guzs8mne81: { name: "往生｜黄牒", groupLabel: "往生牒模板", groupOrder: 3, order: 1, mode: "single", dataGroup: "deliverance" },
   cmp15pgnz000op0s9vkqcx9wt: { name: "往生｜黄壳", groupLabel: "往生牒模板", groupOrder: 3, order: 2, mode: "single", dataGroup: "deliverance" },
-  cmozim1oi0002hmbwceevwp7z: { name: "延生通名", groupLabel: "汇总多列模板", groupOrder: 4, order: 1, mode: "summary", dataGroup: "blessing" },
+  cmp6uyyk10003bjnjsqkn2uwn: { name: "延生通名", groupLabel: "汇总多列模板", groupOrder: 4, order: 1, mode: "summary", dataGroup: "blessing" },
   cmowl79v5000a2rdgs4czs9bo: { name: "往生通名", groupLabel: "汇总多列模板", groupOrder: 4, order: 2, mode: "summary", dataGroup: "deliverance" },
 };
 const CATALOG_SINGLE_TEMPLATE_IDS = new Set(
@@ -247,7 +247,7 @@ const singleVariantLayoutDefaults = {
 
 const BUILTIN_SINGLE_TEMPLATES = [];
 
-const SUMMARY_TEMPLATE_IDS = new Set(["cmozim1oi0002hmbwceevwp7z", "cmowl79v5000a2rdgs4czs9bo"]);
+const SUMMARY_TEMPLATE_IDS = new Set(["cmp6uyyk10003bjnjsqkn2uwn", "cmowl79v5000a2rdgs4czs9bo"]);
 
 const legacySingleVariantKeyMap = {
   blessing_bodhisattva: "layout_one",
@@ -4578,11 +4578,11 @@ function summaryTemplateIds() {
 }
 
 function defaultSummaryTemplateId() {
-  return summaryTemplateIds()[0] || "cmozim1oi0002hmbwceevwp7z";
+  return summaryTemplateIds()[0] || "cmp6uyyk10003bjnjsqkn2uwn";
 }
 
 function defaultSingleTemplateIdForGroup(group) {
-  return group === "blessing" ? "cmowkqe9o00002rdg542nvmls" : "cmozm19an001ahmbwqm8nmi1q";
+  return group === "blessing" ? "cmp6vaj3l000gbjnjoak9q9wx" : "cmozm19an001ahmbwqm8nmi1q";
 }
 
 function isBlessingGroup(group) {
