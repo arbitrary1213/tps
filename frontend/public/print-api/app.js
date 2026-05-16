@@ -467,11 +467,13 @@ async function init() {
   }
   setWorkflowStatus();
 
+  console.log("[DEBUG] init start, templateDesignerMode:", templateDesignerMode, "isDesktopRuntime:", isDesktopRuntime(), "templates.length:", templates.length);
   templates.forEach((template, index) => {
     templates[index] = normalizeCatalogTemplate(template);
   });
   ensureBuiltinSingleTemplates();
   migrateStoredLayouts();
+  console.log("[DEBUG] after migrateStoredLayouts, templates.length:", templates.length);
   const templateSelect = $("templateSelect");
   if (templateDesignerMode) {
     rebuildTemplateOptions();
@@ -480,6 +482,7 @@ async function init() {
   }
 
   loadCustomTemplatesFromStorage();
+  console.log("[DEBUG] after loadCustomTemplatesFromStorage, templates.length:", templates.length, "select.options.length:", $("templateSelect")?.options?.length);
 
   document.querySelectorAll("[data-mode]").forEach((button) => {
     button.addEventListener("click", () => setMode(button.dataset.mode));
@@ -613,9 +616,11 @@ async function init() {
   relocateSharedStyleEditor();
   loadAllSamples();
   await loadServerTemplates();
+  console.log("[DEBUG] after loadServerTemplates, templates.length:", templates.length, "select.options.length:", $("templateSelect")?.options?.length, "templateDesignerMode:", templateDesignerMode);
   if (templateDesignerMode || $("templateSelect")?.options?.length) {
     applyTemplate();
   } else {
+    console.warn("[DEBUG] no templates to apply, rendering empty");
     render();
   }
   loadRitualOptions();
@@ -835,7 +840,8 @@ function ensureTemplateOptionGroup(select, label) {
 
 function rebuildTemplateOptions(selectedId = $("templateSelect")?.value || "") {
   const select = $("templateSelect");
-  if (!select) return;
+  console.log("[DEBUG] rebuildTemplateOptions called, select:", select, "templates.length:", templates.length);
+  if (!select) { console.warn("[DEBUG] rebuildTemplateOptions: templateSelect element not found in DOM"); return; }
   select.innerHTML = "";
   const sortedTemplates = [...templates].sort((left, right) => {
     const groupDelta = templateGroupOrder(left) - templateGroupOrder(right);
@@ -847,6 +853,7 @@ function rebuildTemplateOptions(selectedId = $("templateSelect")?.value || "") {
   sortedTemplates.forEach((template) => {
     appendTemplateOption(template);
   });
+  console.log("[DEBUG] rebuildTemplateOptions done, options count:", select.options.length, "selectedId:", selectedId, "templates[0]:", templates[0]?.id);
   if (selectedId && Array.from(select.options).some((option) => option.value === selectedId)) {
     select.value = selectedId;
   } else if (templates[0]) {
@@ -3505,11 +3512,13 @@ async function loadServerTemplates() {
   if (isDesktopRuntime()) {
     try {
       const localTemplates = dedupeTemplateRecords(await listDesktopRows("plaque_template"));
+      console.log("[DEBUG] loadServerTemplates desktop: localTemplates count:", localTemplates.length, "tablet-print count:", localTemplates.filter(t => t?.elements?.source === "tablet-print").length);
       localTemplates
         .filter((template) => template?.elements?.source === "tablet-print")
         .forEach(importServerTemplate);
 
       if (authToken()) {
+        console.log("[DEBUG] loadServerTemplates desktop: auth token present, fetching from server");
         try {
           const serverTemplates = dedupeTemplateRecords(
             await fetchJson("/api/plaque-templates", authFetchOptions({ headers: authHeaders(), allowDesktopApi: true }))
@@ -3552,6 +3561,7 @@ async function loadServerTemplates() {
 
   try {
     const serverTemplates = dedupeTemplateRecords(await fetchJson("/api/plaque-templates", authFetchOptions({ headers: authHeaders() })));
+    console.log("[DEBUG] loadServerTemplates web: serverTemplates count:", serverTemplates.length, "tablet-print count:", serverTemplates.filter(t => t?.elements?.source === "tablet-print").length);
     serverTemplates
       .filter((template) => template?.elements?.source === "tablet-print")
       .forEach(importServerTemplate);
@@ -3624,8 +3634,9 @@ function migrateLocalTemplateId(oldId, newId) {
 function importServerTemplate(template) {
   const selectedId = $("templateSelect")?.value || "";
   const data = template.elements;
-  if (!data?.template?.id) return;
-  if (HIDDEN_LEGACY_TEMPLATE_IDS.has(data.template.id)) return;
+  console.log("[DEBUG] importServerTemplate called, template.id:", template.id, "data.template.id:", data?.template?.id);
+  if (!data?.template?.id) { console.warn("[DEBUG] importServerTemplate: no data.template.id, skipping"); return; }
+  if (HIDDEN_LEGACY_TEMPLATE_IDS.has(data.template.id)) { console.log("[DEBUG] importServerTemplate: hidden legacy template, skipping"); return; }
   const localTemplate = {
     ...data.template,
     id: data.template.id,
