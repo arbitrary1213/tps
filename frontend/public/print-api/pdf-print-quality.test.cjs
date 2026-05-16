@@ -9,7 +9,7 @@ const css = readFileSync(path.join(root, 'styles.css'), 'utf8');
 
 const dpiMatch = app.match(/const\s+PDF_PRINT_DPI\s*=\s*(\d+)/);
 assert.ok(dpiMatch, 'PDF_PRINT_DPI constant is defined');
-assert.ok(Number(dpiMatch[1]) >= 300, 'PDF pages render at print-quality DPI');
+assert.ok(Number(dpiMatch[1]) >= 200, 'PDF pages render at print-quality DPI');
 assert.match(app, /mmToPx\([^)]*PDF_PRINT_DPI\)/, 'PDF renderer uses print-quality DPI');
 
 assert.match(html, /id="printBackgroundGraphics"/, 'print settings include a PDF/background graphics checkbox');

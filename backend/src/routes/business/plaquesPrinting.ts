@@ -551,7 +551,9 @@ router.get('/plaque-templates', authMiddleware, asyncHandler(async (req: AuthReq
           elements.template = tmpl
         }
       }
-      return { ...t, elements }
+      const result: any = { ...t, elements }
+      delete result.backgroundImage
+      return result
     })
     res.set('Cache-Control', 'public, max-age=30')
     res.json({ success: true, data: stripped, total, page: Math.max(parseInt(page as string) || 1, 1), pageSize: take })
