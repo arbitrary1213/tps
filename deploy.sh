@@ -82,6 +82,27 @@ fi
 echo "[3/5] Building and restarting services..."
 cd "$DOCKER_DIR"
 
+# Ensure DOMAIN is set (migration from older .env files)
+if [ -z "${DOMAIN:-}" ] && [ -n "${ALLOWED_ORIGIN:-}" ]; then
+  DOMAIN=$(echo "$ALLOWED_ORIGIN" | sed 's|^https\?://||' | sed 's|/.*||')
+  echo "  DOMAIN=$DOMAIN (extracted from ALLOWED_ORIGIN)"
+  if ! grep -q "^DOMAIN=" "$DOCKER_DIR/.env" 2>/dev/null; then
+    echo "DOMAIN=$DOMAIN" >> "$DOCKER_DIR/.env"
+  fi
+fi
+
+# Migration: stop host nginx & systemd frontend if they exist (now managed by Docker)
+if systemctl is-active --quiet nginx 2>/dev/null; then
+  echo "  Stopping host nginx (migrating to Docker)..."
+  systemctl stop nginx 2>/dev/null || true
+  systemctl disable nginx 2>/dev/null || true
+fi
+if systemctl is-active --quiet temple-frontend 2>/dev/null; then
+  echo "  Stopping temple-frontend systemd service (migrating to Docker)..."
+  systemctl stop temple-frontend 2>/dev/null || true
+  systemctl disable temple-frontend 2>/dev/null || true
+fi
+
 if has_target all; then
   $COMPOSE build --pull
   $COMPOSE up -d
