@@ -15,6 +15,11 @@ const actions = [
     href: '/print-api/',
   },
   {
+    title: '手动输入打印',
+    desc: '选择模板后手动填写字段值，预览并打印单张牌位。无需导入数据。',
+    href: '/print-api/manual.html',
+  },
+  {
     title: '模板库',
     desc: '查看服务器已保存的模板、底图状态、单张/通名类型和最近修改时间。',
     href: '/admin/plaque-templates',

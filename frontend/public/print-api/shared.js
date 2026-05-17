@@ -2096,16 +2096,17 @@ function plaqueToRow(plaque) {
 }
 
 function buildFieldMapping() {
+  const mapping = $("fieldMapping");
+  if (!mapping) return;
   if (isEditingBackSide()) {
-    $("fieldMapping").innerHTML = '<p class="hint">背面固定页不使用动态字段。</p>';
+    mapping.innerHTML = '<p class="hint">背面固定页不使用动态字段。</p>';
     return;
   }
   if (state.mode === "summary") {
-    $("fieldMapping").innerHTML = "";
+    mapping.innerHTML = "";
     buildSummaryFieldMapping();
     return;
   }
-  const mapping = $("fieldMapping");
   const type = currentTabletType();
   const layout = ensureLayout(currentLayoutKey());
   const fields = state.mode === "single" ? singleFieldsForVariant() : type.fields;
@@ -4861,8 +4862,6 @@ function restorePanelStates() {
     // ignore
   }
 }
-
-init();
 
 function renderFieldSelection(templateType = "blessing") {
   const container = document.getElementById("fieldSelection");
