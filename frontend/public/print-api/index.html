@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>牌位套打软件</title>
-  <link rel="stylesheet" href="styles.css?v=20260517-1000">
+  <link rel="stylesheet" href="styles.css?v=20260517-1100">
 </head>
 <body>
   <header class="app-header">
@@ -377,66 +377,6 @@
       </section>
     </aside>
 
-    <aside class="print-settings-panel" aria-label="打印设置">
-      <div class="print-settings-header">
-        <h2>打印</h2>
-        <span id="printSheetCount">1 张纸</span>
-      </div>
-
-      <label>
-        目标打印机
-        <select id="printPrinterSelect">
-          <option value="">系统默认打印机</option>
-        </select>
-      </label>
-
-      <label>
-        页面
-        <select id="printPageRange">
-          <option value="all">全部</option>
-          <option value="current">当前页</option>
-        </select>
-      </label>
-
-      <label>
-        份数
-        <input id="printCopies" type="number" min="1" value="1">
-      </label>
-
-      <details class="print-more-settings">
-        <summary>更多设置</summary>
-        <label>
-          纸张尺寸
-          <select id="printPaperSize">
-            <option value="">按模板尺寸</option>
-            <option value="A4">A4</option>
-            <option value="A3">A3</option>
-            <option value="A5">A5</option>
-          </select>
-        </label>
-        <label>
-          边距
-          <select id="printMargin">
-            <option value="default">默认</option>
-            <option value="none">无边距</option>
-          </select>
-        </label>
-        <label>
-          缩放
-          <input id="printScale" type="number" min="10" max="200" value="100">
-        </label>
-        <label class="checkbox print-settings-checkbox">
-          <input id="printBackgroundGraphics" type="checkbox" checked>
-          打印 PDF / 参考底图
-        </label>
-      </details>
-
-      <div class="print-settings-actions">
-        <button id="printSettingsSystemDialogBtn" type="button">&#25171;&#21360;&#26426;&#35774;&#32622;</button>
-        <button id="printSettingsPrintBtn" class="primary" type="button">打印</button>
-        <button id="printSettingsCancelBtn" type="button">取消</button>
-      </div>
-    </aside>
   </main>
 
   <dialog id="newTemplateDialog">
@@ -499,6 +439,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=20260517-1000"></script>
+  <script src="app.js?v=20260517-1100"></script>
 </body>
 </html>

@@ -449,7 +449,7 @@ const controls = [
   "templateSelect", "paperSelect", "paperWidth", "paperHeight", "singleVariant",
   "singleFont", "singleOffsetY", "singleVertical",
   "styleField", "fieldFontSize", "fieldColor", "fieldFontFamily", "fieldTextAlign", "fieldVerticalAlign", "fieldWrapMode", "staticFieldText",
-  "showBg", "enableDuplex", "designPrintBackgroundGraphics", "printBackgroundGraphics",
+  "showBg", "enableDuplex", "designPrintBackgroundGraphics",
   "summaryVariant", "summaryFormat", "columnCount", "rowsPerColumn", "summaryFont",
   "summaryLineGap", "pageMargin", "columnGap", "summaryVertical",
 ].map($).filter(Boolean);
@@ -498,14 +498,7 @@ async function init() {
   $("saveTemplateBtn").addEventListener("click", saveCurrentLayout);
   $("resetTemplateBtn").addEventListener("click", resetCurrentLayout);
   $("printBtn").addEventListener("click", printAll);
-  $("printSettingsPrintBtn")?.addEventListener("click", printAll);
-  $("printSettingsSystemDialogBtn")?.addEventListener("click", printWithSystemDialog);
-  $("printSettingsCancelBtn")?.addEventListener("click", () => window.close());
   $("designPrintBackgroundGraphics")?.addEventListener("change", syncPrintBackgroundGraphicsControls);
-  $("printBackgroundGraphics")?.addEventListener("change", syncPrintBackgroundGraphicsControls);
-  $("printPrinterSelect")?.addEventListener("change", loadPaperSizesForSelectedPrinter);
-  $("printPaperSize")?.addEventListener("change", applySelectedPrintPaperSize);
-  loadDesktopPrinters();
   $("prevBtn").addEventListener("click", () => changePage(-1));
   $("nextBtn").addEventListener("click", () => changePage(1));
   $("jumpPageBtn").addEventListener("click", jumpToPage);
@@ -1378,16 +1371,11 @@ async function importPdfBackground(file) {
 function shouldPrintTemplateBackground(forPrint = false) {
   if (!$("showBg")?.checked) return false;
   if (!forPrint) return true;
-  return $("printBackgroundGraphics")?.checked ?? true;
+  return $("designPrintBackgroundGraphics")?.checked ?? true;
 }
 
 function syncPrintBackgroundGraphicsControls(event = null) {
-  const source = event?.target || $("designPrintBackgroundGraphics") || $("printBackgroundGraphics");
-  const checked = source?.checked ?? true;
-  ["designPrintBackgroundGraphics", "printBackgroundGraphics"].forEach((id) => {
-    const control = $(id);
-    if (control && control.checked !== checked) control.checked = checked;
-  });
+  // Only designPrintBackgroundGraphics remains (print settings panel removed)
 }
 
 function parseDelimited(text) {
@@ -3037,28 +3025,16 @@ function summarySheet(pageRows, forPrint = false) {
 }
 
 async function printAll() {
-  await printRangeFrom(0, { systemDialog: false });
-}
-
-function enterPrintPreviewMode() {
-  document.documentElement.classList.add("print-preview-mode");
-  document.body.classList.add("print-preview-mode");
-  syncPrintBackgroundGraphicsControls();
-  syncPrintSize();
-  render();
+  await printRangeFrom(0);
 }
 
 async function printFromPage() {
   const target = Number($("jumpPageInput")?.value) || state.pageIndex + 1;
   const startIndex = Math.max(target - 1, 0);
-  await printRangeFrom(startIndex, { systemDialog: false });
+  await printRangeFrom(startIndex);
 }
 
-async function printWithSystemDialog() {
-  await printRangeFrom(0, { systemDialog: true });
-}
-
-async function printRangeFrom(startIndex = 0, options = {}) {
+async function printRangeFrom(startIndex = 0) {
   syncPrintSize();
   state.restorePageIndex = state.pageIndex;
   if (state.mode === "single") {
@@ -3084,133 +3060,8 @@ async function printRangeFrom(startIndex = 0, options = {}) {
   bindDragHandles();
   await fitAllFields();
   await waitForPrintPreviewReady();
-  if (window.templeDesktop?.printHtml) {
-    const result = await window.templeDesktop.printHtml({
-      html: buildDesktopPrintHtml($("preview").innerHTML),
-      deviceName: $("printPrinterSelect")?.value || "",
-      silent: !options.systemDialog,
-      copies: Number($("printCopies")?.value) || 1,
-      printBackground: $("printBackgroundGraphics")?.checked ?? true,
-    }).catch((error) => ({ success: false, failureReason: error?.message || "打印失败" }));
-    if (!result?.success && result?.failureReason) {
-      alert(`打印失败：${result.failureReason}`);
-    }
-    restoreAfterPrint();
-    return;
-  }
   window.addEventListener("afterprint", restoreAfterPrint, { once: true });
   window.print();
-}
-
-async function loadDesktopPrinters() {
-  const select = $("printPrinterSelect");
-  if (!select || !window.templeDesktop?.listPrinters) return;
-  const printers = await window.templeDesktop.listPrinters().catch(() => []);
-  const current = select.value;
-  select.innerHTML = '<option value="">系统默认打印机</option>';
-  printers.forEach((printer) => {
-    const option = document.createElement("option");
-    option.value = printer.name;
-    option.textContent = printer.displayName || printer.name;
-    if (printer.description) {
-      option.title = printer.description;
-    }
-    select.appendChild(option);
-  });
-  if (current && Array.from(select.options).some((option) => option.value === current)) {
-    select.value = current;
-  }
-  await loadPaperSizesForSelectedPrinter();
-}
-
-async function loadPaperSizesForSelectedPrinter() {
-  const select = $("printPaperSize");
-  const printerName = $("printPrinterSelect")?.value || "";
-  if (!select) return;
-
-  const currentWidth = Number($("paperWidth").value) || 0;
-  const currentHeight = Number($("paperHeight").value) || 0;
-  select.innerHTML = '<option value="">按模板尺寸</option>';
-
-  if (!printerName || !window.templeDesktop?.listPrinterPaperSizes) {
-    appendFallbackPaperSizes(select);
-    return;
-  }
-
-  const paperSizes = await window.templeDesktop.listPrinterPaperSizes(printerName).catch(() => []);
-  const seen = new Set();
-  paperSizes
-    .filter((paper) => paper?.name && paper.widthMm > 0 && paper.heightMm > 0)
-    .forEach((paper) => {
-      const key = `${paper.name}:${paper.widthMm}:${paper.heightMm}`;
-      if (seen.has(key)) return;
-      seen.add(key);
-      const option = document.createElement("option");
-      option.value = `${paper.widthMm}x${paper.heightMm}`;
-      option.textContent = `${paper.name} (${paper.widthMm} × ${paper.heightMm} mm)`;
-      option.dataset.widthMm = String(paper.widthMm);
-      option.dataset.heightMm = String(paper.heightMm);
-      select.appendChild(option);
-      if (Math.abs(paper.widthMm - currentWidth) < 1 && Math.abs(paper.heightMm - currentHeight) < 1) {
-        select.value = option.value;
-      }
-    });
-
-  if (select.options.length === 1) {
-    appendFallbackPaperSizes(select);
-  }
-}
-
-function appendFallbackPaperSizes(select) {
-  [
-    ["A4", 210, 297],
-    ["A3", 297, 420],
-    ["A5", 148, 210],
-  ].forEach(([name, width, height]) => {
-    const option = document.createElement("option");
-    option.value = `${width}x${height}`;
-    option.textContent = `${name} (${width} × ${height} mm)`;
-    option.dataset.widthMm = String(width);
-    option.dataset.heightMm = String(height);
-    select.appendChild(option);
-  });
-}
-
-function applySelectedPrintPaperSize() {
-  const option = $("printPaperSize")?.selectedOptions?.[0];
-  if (!option?.dataset?.widthMm || !option?.dataset?.heightMm) return;
-  $("paperWidth").value = String(Number(option.dataset.widthMm));
-  $("paperHeight").value = String(Number(option.dataset.heightMm));
-  $("paperSelect").value = paperPresetForSize(Number($("paperWidth").value), Number($("paperHeight").value));
-  syncPrintSize();
-  render();
-}
-
-function buildDesktopPrintHtml(previewHtml) {
-  const width = Number($("paperWidth").value) || 210;
-  const height = Math.max(Number($("paperHeight").value) || 297, 1);
-  const cssLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
-    .map((link) => `<link rel="stylesheet" href="${link.href}">`)
-    .join("");
-  const inlineStyles = Array.from(document.querySelectorAll("style"))
-    .map((style) => `<style>${style.textContent || ""}</style>`)
-    .join("");
-  return `<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  ${cssLinks}
-  ${inlineStyles}
-  <style>
-    html, body { margin: 0; background: #fff; }
-    body { display: block; }
-    @page { size: ${width}mm ${height}mm; margin: 0; }
-    .sheet { page-break-after: always; break-after: page; }
-    .sheet:last-child { page-break-after: auto; break-after: auto; }
-  </style>
-</head>
-<body>${previewHtml}</body>
-</html>`;
 }
 
 function restoreAfterPrint() {
