@@ -1549,12 +1549,6 @@ async function loadPlaquesByBeliever(devoteeId, label) {
   }
 }
 
-function escapeHtml(text) {
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
-}
-
 function loadSystemPlaquesFromFilters() {
   const selectedType = $("systemPlaqueType").value;
   if (selectedType === "LONGEVITY") {
@@ -3905,34 +3899,41 @@ function ensureLayout(type) {
   return state.layouts[type];
 }
 
-function positionFor(key, variantKey = currentSummaryVariantKey()) {
+function layoutSetValue(layout, bucket, key, value) {
+  if (isEditingBackSide()) { layout[bucket][key] = value; return; }
+  if (isSingleVariantFieldKey(key)) { setLayoutBucketValue(layout, bucket, key, value, currentSingleVariantKey()); return; }
+  if (state.mode === "summary" && isSummaryFieldKey(key)) { setLayoutBucketValue(layout, bucket, key, value); return; }
+  layout[bucket][key] = value;
+}
+
+function layoutValue(bucket, key, variantKey, backDefault, singleDefault, summaryFn) {
   if (isBackSideActive()) {
     const layout = backLayoutFor(currentLayoutKey());
-    if (layout.positions[key]) return layout.positions[key];
-    layout.positions[key] = { x: 50, y: 50 };
-    return layout.positions[key];
+    return layout[bucket][key] || (layout[bucket][key] = clone(backDefault));
   }
   const type = currentLayoutKey();
   const layout = ensureLayout(type);
   if (isSingleVariantFieldKey(key)) {
-    const singleVariant = state.renderSingleVariant || currentSingleVariantKey();
-    const saved = getLayoutBucketValue(layout, "positions", key, singleVariant);
-    if (saved) return saved;
-    const fallback = singleVariantDefaultValue(type, singleVariant, "positions", key, { x: 50, y: 50 });
-    return setLayoutBucketValue(layout, "positions", key, fallback, singleVariant);
+    const sv = state.renderSingleVariant || currentSingleVariantKey();
+    const saved = getLayoutBucketValue(layout, bucket, key, sv);
+    return saved || setLayoutBucketValue(layout, bucket, key, singleVariantDefaultValue(type, sv, bucket, key, singleDefault), sv);
   }
-  const saved = getLayoutBucketValue(layout, "positions", key, variantKey);
+  const saved = getLayoutBucketValue(layout, bucket, key, variantKey);
   if (saved) return saved;
   const fallback = clone(
     state.mode === "summary" && isSummaryFieldKey(key)
-      ? summaryDefaultPosition(key, variantKey)
-      : (templateDefaults[type]?.positions?.[key] || { x: 50, y: 50 })
+      ? summaryFn(key, variantKey)
+      : (templateDefaults[type]?.[bucket]?.[key] || singleDefault)
   );
-  if (state.mode === "summary" && isSummaryFieldKey(key)) {
-    return setLayoutBucketValue(layout, "positions", key, fallback, variantKey);
-  }
-  layout.positions[key] = fallback;
-  return layout.positions[key];
+  return (state.mode === "summary" && isSummaryFieldKey(key))
+    ? setLayoutBucketValue(layout, bucket, key, fallback, variantKey)
+    : (layout[bucket][key] = fallback);
+}
+
+const STYLE_DEFAULT = { fontSize: 18, color: "#16110d", fontFamily: "SimSun, serif", textAlign: "center", verticalAlign: "center", wrapMode: "anywhere" };
+
+function positionFor(key, variantKey = currentSummaryVariantKey()) {
+  return layoutValue("positions", key, variantKey, { x: 50, y: 50 }, { x: 50, y: 50 }, (k, vk) => summaryDefaultPosition(k, vk));
 }
 
 async function saveCurrentLayout() {
@@ -4030,69 +4031,12 @@ function resetCurrentLayout() {
 }
 
 function styleFor(key, variantKey = currentSummaryVariantKey()) {
-  if (isBackSideActive()) {
-    const layout = backLayoutFor(currentLayoutKey());
-    if (layout.styles[key]) return layout.styles[key];
-    layout.styles[key] = { fontSize: 18, color: "#16110d", fontFamily: "SimSun, serif", textAlign: "center", verticalAlign: "center", wrapMode: "anywhere" };
-    return layout.styles[key];
-  }
-  const type = currentLayoutKey();
-  const layout = ensureLayout(type);
-  if (isSingleVariantFieldKey(key)) {
-    const singleVariant = state.renderSingleVariant || currentSingleVariantKey();
-    const saved = getLayoutBucketValue(layout, "styles", key, singleVariant);
-    if (saved) return saved;
-    const fallback = singleVariantDefaultValue(
-      type,
-      singleVariant,
-      "styles",
-      key,
-      templateDefaults[type]?.styles?.[key] || { fontSize: 18, color: "#16110d", fontFamily: "SimSun, serif", textAlign: "center", verticalAlign: "center", wrapMode: "anywhere" }
-    );
-    return setLayoutBucketValue(layout, "styles", key, fallback, singleVariant);
-  }
-  const saved = getLayoutBucketValue(layout, "styles", key, variantKey);
-  if (saved) return saved;
-  const fallback = clone(
-    state.mode === "summary" && isSummaryFieldKey(key)
-      ? { fontSize: Number($("summaryFont").value) || 22, color: "#16110d", fontFamily: "SimSun, serif", textAlign: "left", verticalAlign: "center", wrapMode: "anywhere" }
-      : (templateDefaults[type]?.styles?.[key] || { fontSize: 18, color: "#16110d", fontFamily: "SimSun, serif", textAlign: "center", verticalAlign: "center", wrapMode: "anywhere" })
-  );
-  if (state.mode === "summary" && isSummaryFieldKey(key)) {
-    return setLayoutBucketValue(layout, "styles", key, fallback, variantKey);
-  }
-  layout.styles[key] = fallback;
-  return layout.styles[key];
+  return layoutValue("styles", key, variantKey, STYLE_DEFAULT, STYLE_DEFAULT,
+    () => ({ fontSize: Number($("summaryFont").value) || 22, color: "#16110d", fontFamily: "SimSun, serif", textAlign: "left", verticalAlign: "center", wrapMode: "anywhere" }));
 }
 
 function sizeFor(key, variantKey = currentSummaryVariantKey()) {
-  if (isBackSideActive()) {
-    const layout = backLayoutFor(currentLayoutKey());
-    if (layout.sizes[key]) return layout.sizes[key];
-    layout.sizes[key] = { w: 24, h: 12 };
-    return layout.sizes[key];
-  }
-  const type = currentLayoutKey();
-  const layout = ensureLayout(type);
-  if (isSingleVariantFieldKey(key)) {
-    const singleVariant = state.renderSingleVariant || currentSingleVariantKey();
-    const saved = getLayoutBucketValue(layout, "sizes", key, singleVariant);
-    if (saved) return saved;
-    const fallback = singleVariantDefaultValue(type, singleVariant, "sizes", key, { w: 20, h: 20 });
-    return setLayoutBucketValue(layout, "sizes", key, fallback, singleVariant);
-  }
-  const saved = getLayoutBucketValue(layout, "sizes", key, variantKey);
-  if (saved) return saved;
-  const fallback = clone(
-    state.mode === "summary" && isSummaryFieldKey(key)
-      ? summaryDefaultSize(key)
-      : (templateDefaults[type]?.sizes?.[key] || { w: 20, h: 20 })
-  );
-  if (state.mode === "summary" && isSummaryFieldKey(key)) {
-    return setLayoutBucketValue(layout, "sizes", key, fallback, variantKey);
-  }
-  layout.sizes[key] = fallback;
-  return layout.sizes[key];
+  return layoutValue("sizes", key, variantKey, { w: 24, h: 12 }, { w: 20, h: 20 }, (k) => summaryDefaultSize(k));
 }
 
 function bindDragHandles() {
@@ -4348,32 +4292,13 @@ function pointerPositionInSurface(surface, clientX, clientY, size = { w: 24, h: 
   };
 }
 
-function applyFieldPlacement(layout, key, nextPlacement, options = {}) {
-  const { isStatic = false } = options;
+function applyFieldPlacement(layout, key, nextPlacement) {
   const nextPosition = clone(nextPlacement.position || { x: 50, y: 50 });
   const nextSize = clone(nextPlacement.size || { w: 24, h: 12 });
   const nextStyle = clone(nextPlacement.style || normalizeFieldStyle());
-  if (isEditingBackSide()) {
-    layout.positions[key] = nextPosition;
-    layout.sizes[key] = nextSize;
-    layout.styles[key] = nextStyle;
-    return;
-  }
-  if (state.mode === "single") {
-    setLayoutBucketValue(layout, "positions", key, nextPosition, currentSingleVariantKey());
-    setLayoutBucketValue(layout, "sizes", key, nextSize, currentSingleVariantKey());
-    setLayoutBucketValue(layout, "styles", key, nextStyle, currentSingleVariantKey());
-    return;
-  }
-  if (state.mode === "summary" && !isStatic) {
-    setLayoutBucketValue(layout, "positions", key, nextPosition, currentSummaryVariantKey());
-    setLayoutBucketValue(layout, "sizes", key, nextSize, currentSummaryVariantKey());
-    setLayoutBucketValue(layout, "styles", key, nextStyle, currentSummaryVariantKey());
-    return;
-  }
-  layout.positions[key] = nextPosition;
-  layout.sizes[key] = nextSize;
-  layout.styles[key] = nextStyle;
+  layoutSetValue(layout, "positions", key, nextPosition);
+  layoutSetValue(layout, "sizes", key, nextSize);
+  layoutSetValue(layout, "styles", key, nextStyle);
 }
 
 function pasteClipboardToField(targetKey = "", pastePosition = null) {
@@ -4406,7 +4331,7 @@ function pasteClipboardToField(targetKey = "", pastePosition = null) {
       position: pastePosition || offsetFieldPosition(clipboard.position, clipboard.size, 1.5),
       size: clipboard.size,
       style: clipboard.style,
-    }, { isStatic: true });
+    });
     state.activeFieldKey = key;
     saveLayouts();
     buildStyleEditor();
@@ -4671,15 +4596,7 @@ function moveField(event) {
   state.interaction.element.style.top = `${y}%`;
   const layout = currentEditableLayout();
   const nextPos = { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
-  if (isEditingBackSide()) {
-    layout.positions[state.interaction.key] = nextPos;
-  } else if (isSingleVariantFieldKey(state.interaction.key)) {
-    setLayoutBucketValue(layout, "positions", state.interaction.key, nextPos, currentSingleVariantKey());
-  } else if (state.mode === "summary" && isSummaryFieldKey(state.interaction.key)) {
-    setLayoutBucketValue(layout, "positions", state.interaction.key, nextPos);
-  } else {
-    layout.positions[state.interaction.key] = nextPos;
-  }
+  layoutSetValue(layout, "positions", state.interaction.key, nextPos);
 }
 
 function resizeField(event) {
@@ -4693,15 +4610,7 @@ function resizeField(event) {
   state.interaction.element.style.height = `${height}%`;
   const layout = currentEditableLayout();
   const nextSize = { w: Math.round(width * 10) / 10, h: Math.round(height * 10) / 10 };
-  if (isEditingBackSide()) {
-    layout.sizes[state.interaction.key] = nextSize;
-  } else if (isSingleVariantFieldKey(state.interaction.key)) {
-    setLayoutBucketValue(layout, "sizes", state.interaction.key, nextSize, currentSingleVariantKey());
-  } else if (state.mode === "summary" && isSummaryFieldKey(state.interaction.key)) {
-    setLayoutBucketValue(layout, "sizes", state.interaction.key, nextSize);
-  } else {
-    layout.sizes[state.interaction.key] = nextSize;
-  }
+  layoutSetValue(layout, "sizes", state.interaction.key, nextSize);
   fitField(state.interaction.element);
 }
 
@@ -4859,22 +4768,17 @@ function nudgeSelectedField(direction, step = 0.2) {
 }
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") {
-    closeFieldContextMenu();
+  const tag = document.activeElement?.tagName || "";
+  if (event.key === "Escape") { closeFieldContextMenu(); return; }
+  if (event.key === "Delete" || event.key === "Backspace") {
+    if (["INPUT", "TEXTAREA", "SELECT"].includes(tag)) return;
+    const key = currentSelectedFieldKey();
+    if (!key) return;
+    event.preventDefault();
+    state.activeFieldKey = key;
+    deleteSelectedField(key);
     return;
   }
-  if (event.key !== "Delete" && event.key !== "Backspace") return;
-  const tag = document.activeElement?.tagName || "";
-  if (["INPUT", "TEXTAREA", "SELECT"].includes(tag)) return;
-  const key = currentSelectedFieldKey();
-  if (!key) return;
-  event.preventDefault();
-  state.activeFieldKey = key;
-  deleteSelectedField(key);
-});
-
-document.addEventListener("keydown", (event) => {
-  const tag = document.activeElement?.tagName || "";
   if (["INPUT", "TEXTAREA", "SELECT"].includes(tag)) return;
   if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "c") {
     const key = currentSelectedFieldKey();
@@ -4889,10 +4793,11 @@ document.addEventListener("keydown", (event) => {
     pasteClipboardToField(currentSelectedFieldKey());
     return;
   }
-  if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) return;
-  if (!currentSelectedFieldKey()) return;
-  event.preventDefault();
-  nudgeSelectedField(event.key, event.shiftKey ? 1 : 0.2);
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+    if (!currentSelectedFieldKey()) return;
+    event.preventDefault();
+    nudgeSelectedField(event.key, event.shiftKey ? 1 : 0.2);
+  }
 });
 
 function deleteFieldByKey(key) {
