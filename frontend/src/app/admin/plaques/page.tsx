@@ -542,11 +542,10 @@ export default function PlaquesPage() {
     const name = (formData.yangShang || formData.holderName || formData.deceasedName || '').trim()
     if (!name) { alert('请先填写信人姓名或牌位主体'); return }
     const phone = (formData.phone || '').trim()
-    if (!phone) { alert('请先填写联系电话'); return }
     try {
       const devoteeData: any = {
         name,
-        phone,
+        phone: phone || `未提供-${Date.now()}`,
         address: formData.address,
         zodiac: formData.zodiac || undefined,
       }
@@ -1498,7 +1497,7 @@ export default function PlaquesPage() {
         </div>
         <div className="flex justify-between gap-3 mt-6">
           <div>
-            {editing && (
+            {editing && formData.plaqueType === 'LONGEVITY' && (
               <Button variant="secondary" onClick={handleImportDevotee} className="active:scale-[0.98] transition-all duration-200">
                 导入信众
               </Button>
