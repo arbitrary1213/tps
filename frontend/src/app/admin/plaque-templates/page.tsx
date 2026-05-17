@@ -112,12 +112,13 @@ export default function PlaqueTemplatesPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link
-            href="/print-api/designer.html"
+          <button
+            type="button"
+            onClick={() => window.open('/print-api/designer.html', '_blank')}
             className="inline-flex items-center justify-center rounded bg-vermilion px-6 py-2.5 text-sm font-medium tracking-wider text-white shadow-classic hover:bg-vermilion-dark"
           >
             新建/设计模板
-          </Link>
+          </button>
           <Link
             href="/admin/print-center"
             className="inline-flex items-center justify-center rounded border border-vermilion px-6 py-2.5 text-sm font-medium tracking-wider text-vermilion hover:bg-vermilion-light"
@@ -190,7 +191,7 @@ export default function PlaqueTemplatesPage() {
                         variant="secondary"
                         onClick={() => window.open(designerUrl, '_blank')}
                       >
-                        打开设计
+                        编辑
                       </Button>
                     </div>
 

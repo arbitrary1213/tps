@@ -20,6 +20,19 @@ function createWindowManager({ BrowserWindow, Menu, screen, frontendPort, getSto
     }
   }
 
+  function isLocalDesignerUrl(rawUrl) {
+    try {
+      const url = new URL(rawUrl)
+      return (
+        url.hostname === '127.0.0.1' &&
+        Number(url.port) === frontendPort &&
+        url.pathname === '/print-api/designer.html'
+      )
+    } catch {
+      return false
+    }
+  }
+
   function halfScreenWindowBounds(defaultWidth = 900, defaultHeight = 560) {
     const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint())
     const area = display.workAreaSize
@@ -81,14 +94,17 @@ function createWindowManager({ BrowserWindow, Menu, screen, frontendPort, getSto
     return true
   }
 
-  async function openTemplateDesigner() {
+  async function openTemplateDesigner(loadUrl) {
     const s = await getStore()
     const serverUrl = String(s.get('serverUrl') || '').replace(/\/+$/, '')
     if (!serverUrl) throw new Error('请先配置服务器地址')
     await frontendRuntime.installApiRedirect(serverUrl)
     await frontendRuntime.startFrontend(serverUrl)
 
+    const target = loadUrl || `http://127.0.0.1:${frontendPort}/print-api/designer.html`
+
     if (templateWindow && !templateWindow.isDestroyed()) {
+      await templateWindow.loadURL(target)
       templateWindow.focus()
       return true
     }
@@ -106,7 +122,7 @@ function createWindowManager({ BrowserWindow, Menu, screen, frontendPort, getSto
     templateWindow.on('closed', () => {
       templateWindow = null
     })
-    await templateWindow.loadURL(`http://127.0.0.1:${frontendPort}/print-api/designer.html`)
+    await templateWindow.loadURL(target)
     return true
   }
 
@@ -195,6 +211,11 @@ function createWindowManager({ BrowserWindow, Menu, screen, frontendPort, getSto
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
       if (isLocalPrintPreviewUrl(url)) {
         openPrintPreviewWindow(url).catch((error) => showStartupError(error))
+        return { action: 'deny' }
+      }
+
+      if (isLocalDesignerUrl(url)) {
+        openTemplateDesigner(url).catch((error) => showStartupError(error))
         return { action: 'deny' }
       }
 

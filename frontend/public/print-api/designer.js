@@ -138,6 +138,7 @@ async function init() {
 
   relocateSharedStyleEditor();
   await loadServerTemplates();
+  applyLaunchTemplate(launchParams.get("templateId"));
   applyTemplate();
 }
 

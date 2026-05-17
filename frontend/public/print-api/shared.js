@@ -578,7 +578,8 @@ function applyTemplate() {
     updateDataHint();
   } else {
     setMode("single");
-    $("paperSelect").value = "custom";
+    const ps = $("paperSelect");
+    if (ps) ps.value = "custom";
   }
   const deleteBtn = $("deleteTemplateBtn");
   if (deleteBtn) deleteBtn.style.display = BUILTIN_TEMPLATE_IDS.has(template.id) ? "none" : "";

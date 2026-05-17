@@ -14,10 +14,7 @@ async function init() {
   });
   ensureBuiltinSingleTemplates();
   migrateStoredLayouts();
-  const templateSelect = $("templateSelect");
-  if (templateSelect) {
-    templateSelect.innerHTML = "";
-  }
+  rebuildTemplateOptions();
   loadCustomTemplatesFromStorage();
 
   document.querySelectorAll("[data-mode]").forEach((button) => {
