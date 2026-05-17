@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { readFileSync } = require('node:fs');
 const path = require('node:path');
 
-const app = readFileSync(path.join(__dirname, 'app.js'), 'utf8');
+const app = readFileSync(path.join(__dirname, 'shared.js'), 'utf8');
 
 assert.match(app, /function canSyncServerTemplates\(\)/, 'template sync has a shared server-sync gate');
 assert.match(app, /return !isDesktopRuntime\(\) \|\| Boolean\(authToken\(\)\);/, 'web template sync relies on cookie-backed requests');

@@ -113,7 +113,7 @@ export default function PlaqueTemplatesPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
-            href="/print-api/?designer=1"
+            href="/print-api/designer.html"
             className="inline-flex items-center justify-center rounded bg-vermilion px-6 py-2.5 text-sm font-medium tracking-wider text-white shadow-classic hover:bg-vermilion-dark"
           >
             新建/设计模板
@@ -156,7 +156,7 @@ export default function PlaqueTemplatesPage() {
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           {templates.map((template) => {
             const elements = templateElements(template)
-            const designerUrl = `/print-api/?designer=1&templateId=${encodeURIComponent(template.id)}`
+            const designerUrl = `/print-api/designer.html?templateId=${encodeURIComponent(template.id)}`
             return (
               <Card key={template.id} className="p-5">
                 <div className="flex flex-col gap-4 sm:flex-row">

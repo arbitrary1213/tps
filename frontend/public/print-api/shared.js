@@ -302,7 +302,6 @@ const SUMMARY_LAYOUT_REPAIR_VERSION = 3;
 const APP_BUILD = "2026-05-11-2240";
 const launchParams = new URLSearchParams(window.location.search);
 const launchPrintPreviewMode = launchParams.get("preview") === "1" || launchParams.get("printPreview") === "1";
-const templateDesignerMode = launchParams.get("desktopWindow") === "template-designer" || launchParams.get("designer") === "1";
 
 const workflowStatus = {
   launchSource: "模板设计页",
@@ -331,6 +330,7 @@ const sampleData = {
 };
 
 const state = {
+  isDesignerPage: false,
   mode: "single",
   datasets: {
     blessing: [],
@@ -453,172 +453,6 @@ const controls = [
   "summaryVariant", "summaryFormat", "columnCount", "rowsPerColumn", "summaryFont",
   "summaryLineGap", "pageMargin", "columnGap", "summaryVertical",
 ].map($).filter(Boolean);
-
-async function init() {
-  workflowStatus.runtime = isDesktopRuntime() ? "桌面端" : "网页端";
-  if (launchParams.get("plaqueId") || launchParams.get("plaqueIds")) {
-    workflowStatus.launchSource = "牌位管理入口";
-  } else if (launchPrintPreviewMode) {
-    workflowStatus.launchSource = "打印预览入口";
-  } else if (templateDesignerMode) {
-    workflowStatus.launchSource = "模板设计页";
-  } else {
-    workflowStatus.launchSource = "打印中心";
-  }
-  setWorkflowStatus();
-
-  templates.forEach((template, index) => {
-    templates[index] = normalizeCatalogTemplate(template);
-  });
-  ensureBuiltinSingleTemplates();
-  migrateStoredLayouts();
-  const templateSelect = $("templateSelect");
-  if (templateDesignerMode) {
-    rebuildTemplateOptions();
-  } else if (templateSelect) {
-    templateSelect.innerHTML = "";
-  }
-
-  loadCustomTemplatesFromStorage();
-
-  document.querySelectorAll("[data-mode]").forEach((button) => {
-    button.addEventListener("click", () => setMode(button.dataset.mode));
-  });
-
-  $("sampleBtn").addEventListener("click", () => loadRows(sampleData[currentDataGroup()]));
-  $("pasteBtn").addEventListener("click", () => loadRows(parseDelimited($("pasteInput").value)));
-  $("loadSystemDataBtn").addEventListener("click", loadSystemPlaquesFromFilters);
-  $("openBelieverSearchBtn")?.addEventListener("click", toggleBelieverSearch);
-  $("believerSearchInput")?.addEventListener("input", debounce(handleBelieverSearchInput, 300));
-  $("selectAllRowsBtn").addEventListener("click", selectAllCurrentRows);
-  $("clearSelectedRowsBtn").addEventListener("click", clearSelectedRows);
-  $("fileInput").addEventListener("change", handleFile);
-  $("bgInput").addEventListener("change", handleBackground);
-  $("clearBgBtn")?.addEventListener("click", clearBackground);
-  $("saveTemplateBtn").addEventListener("click", saveCurrentLayout);
-  $("resetTemplateBtn").addEventListener("click", resetCurrentLayout);
-  $("printBtn").addEventListener("click", printAll);
-  $("designPrintBackgroundGraphics")?.addEventListener("change", syncPrintBackgroundGraphicsControls);
-  $("prevBtn").addEventListener("click", () => changePage(-1));
-  $("nextBtn").addEventListener("click", () => changePage(1));
-  $("jumpPageBtn").addEventListener("click", jumpToPage);
-  $("printFromPageBtn").addEventListener("click", printFromPage);
-  $("paperSelect")?.addEventListener("change", applyPaperPreset);
-  $("templateSelect")?.addEventListener("change", applyTemplate);
-  $("singleVariant")?.addEventListener("change", handleSingleVariantChange);
-  $("singleVariantTabs")?.addEventListener("click", handleSingleVariantTabClick);
-  $("addStaticFieldBtn")?.addEventListener("click", addStaticField);
-  $("addSummaryStaticFieldBtn")?.addEventListener("click", addSummaryStaticField);
-  $("copyFieldBtn")?.addEventListener("click", copySelectedField);
-  $("pasteFieldBtn")?.addEventListener("click", pasteToSelectedField);
-  $("editStaticFieldBtn")?.addEventListener("click", editSelectedStaticField);
-  $("deleteStaticFieldBtn")?.addEventListener("click", deleteSelectedStaticField);
-  $("deleteTemplateBtn")?.addEventListener("click", deleteCurrentTemplate);
-  ensureFieldContextMenu();
-  document.addEventListener("click", handleGlobalPointerDismiss);
-  document.querySelectorAll(".panel-toggle").forEach((btn) => {
-    btn.addEventListener("click", () => togglePanel(btn.closest(".panel")));
-  });
-  restorePanelStates();
-  document.querySelectorAll("[data-side]").forEach((button) => {
-    button.addEventListener("click", () => setEditSide(button.dataset.side || "front"));
-  });
-
-  document.getElementById("selectAllFields")?.addEventListener("click", () => {
-    document.querySelectorAll(".field-checkbox").forEach(cb => cb.checked = true);
-  });
-
-  document.getElementById("deselectAllFields")?.addEventListener("click", () => {
-    document.querySelectorAll(".field-checkbox").forEach(cb => cb.checked = false);
-  });
-
-  $("applyManualInputBtn")?.addEventListener("click", applyManualInput);
-
-  document.getElementById("newTemplateBtn")?.addEventListener("click", () => {
-    const newTemplateCategory = document.getElementById("newTemplateCategory");
-    const newTemplateDataGroup = document.getElementById("newTemplateDataGroup");
-    const newTemplateName = document.getElementById("newTemplateName");
-    const newTemplateWidth = document.getElementById("newTemplateWidth");
-    const newTemplateHeight = document.getElementById("newTemplateHeight");
-    const newTemplateMode = document.getElementById("newTemplateMode");
-    const newTemplateVertical = document.getElementById("newTemplateVertical");
-    const fieldSelection = document.getElementById("fieldSelection");
-    const newTemplateModeLabel = document.getElementById("newTemplateModeLabel");
-    const newTemplateDialog = document.getElementById("newTemplateDialog");
-    const initialCategory = state.mode === "summary" ? "summary" : "plaque";
-    const initialDataGroup = currentDataGroup();
-    if (newTemplateCategory) newTemplateCategory.value = initialCategory;
-    if (newTemplateDataGroup) newTemplateDataGroup.value = initialDataGroup;
-    applyNewTemplateCategory(initialCategory);
-    if (newTemplateName) newTemplateName.value = "";
-    if (newTemplateWidth) newTemplateWidth.value = state.mode === "summary" ? ($("paperWidth")?.value || "210") : "90";
-    if (newTemplateHeight) newTemplateHeight.value = state.mode === "summary" ? ($("paperHeight")?.value || "297") : "260";
-    if (newTemplateMode) newTemplateMode.value = "preset";
-    if (newTemplateVertical) newTemplateVertical.checked = initialCategory !== "summary";
-    if (fieldSelection?.closest("fieldset")) fieldSelection.closest("fieldset").hidden = initialCategory === "summary";
-    if (newTemplateModeLabel) newTemplateModeLabel.hidden = initialCategory === "summary";
-    newTemplateDialog?.showModal?.();
-  });
-
-  document.getElementById("newTemplateCategory")?.addEventListener("change", (event) => {
-    applyNewTemplateCategory(event.target?.value || "plaque");
-  });
-
-  document.getElementById("newTemplateDataGroup")?.addEventListener("change", (event) => {
-    renderFieldSelection(event.target?.value || "blessing");
-  });
-
-  document.getElementById("newTemplateMode")?.addEventListener("change", (event) => {
-    const mode = event.target?.value || "preset";
-    const fieldSelection = document.getElementById("fieldSelection");
-    if (fieldSelection?.closest("fieldset")) {
-      fieldSelection.closest("fieldset").hidden = state.mode === "summary" || mode !== "manual";
-    }
-  });
-
-  document.getElementById("cancelNewTemplate")?.addEventListener("click", () => {
-    document.getElementById("newTemplateDialog")?.close?.();
-  });
-
-  document.getElementById("newTemplateDialog")?.addEventListener("click", (e) => {
-    const dialog = document.getElementById("newTemplateDialog");
-    if (e.target === dialog) {
-      dialog?.close?.();
-    }
-  });
-
-  controls.forEach((control) => control.addEventListener("input", () => {
-    if (control.id === "summaryVariant") {
-      handleSummaryVariantChange();
-      return;
-    }
-    if (control.id === "singleVariant") {
-      handleSingleVariantChange();
-      return;
-    }
-    if (control.id === "styleField") syncStyleInputs();
-    if (["fieldFontSize", "fieldColor", "fieldFontFamily", "fieldTextAlign", "fieldVerticalAlign", "fieldWrapMode"].includes(control.id)) updateSelectedFieldStyle();
-    if (control.id === "singleFont") syncSubjectFontSize();
-    if (control.id === "enableDuplex") syncDuplexSetting();
-    render();
-  }));
-
-  document.getElementById("confirmNewTemplate")?.addEventListener("click", createCustomTemplate);
-  $("summaryVariant")?.addEventListener("change", () => {
-    handleSummaryVariantChange();
-  });
-  relocateSharedStyleEditor();
-  loadAllSamples();
-  await loadServerTemplates();
-  if (templateDesignerMode || $("templateSelect")?.options?.length) {
-    applyTemplate();
-  } else {
-    render();
-  }
-  loadRitualOptions();
-  loadDedicationTypeOptions();
-  applyLaunchParams();
-}
 
 function handleSingleVariantChange() {
   if (state.mode !== "single") return;
@@ -1883,7 +1717,7 @@ function normalizeSingleVariantKey(key) {
 function currentSingleVariantBaseKey(row = null, forPrint = false) {
   if (state.mode !== "single") return "";
   const detectedKey = normalizeSingleVariantKey(row?.__variant || "");
-  if ((forPrint || !templateDesignerMode) && detectedKey) {
+  if ((forPrint || !state.isDesignerPage) && detectedKey) {
     return detectedKey;
   }
   return normalizeSingleVariantKey(state.singleVariantKey || $("singleVariant")?.value || singleVariantPresetsForCurrentType()[0].key);
@@ -2682,7 +2516,7 @@ function renderTable() {
 function render() {
   closeFieldContextMenu();
   syncPrintSize();
-  if (!templateDesignerMode && !$("templateSelect").options.length) {
+  if (!state.isDesignerPage && !$("templateSelect").options.length) {
     $("preview").innerHTML = '<div class="empty">未读取到已同步模板，请先在主窗口同步服务器模板。</div>';
     $("statusText").textContent = "未读取到已同步模板";
     $("pageText").textContent = "";
@@ -2706,7 +2540,7 @@ function renderSingle() {
     buildFieldMapping();
     buildStyleEditor();
   }
-  if (templateDesignerMode) bindDragHandles();
+  if (state.isDesignerPage) bindDragHandles();
   fitAllFields();
   $("statusText").textContent = rows.length ? `${currentTabletType().name}：${fieldValue(row, "subject") || `第 ${state.pageIndex + 1} 条`}` : "暂无数据";
   $("pageText").textContent = `第 ${state.pageIndex + 1} / ${total} 张`;
@@ -2723,7 +2557,7 @@ function renderSummary() {
   const pageRows = rows.slice(start, start + pageSize);
   clampSummaryFieldsIntoView();
   $("preview").innerHTML = summarySheet(pageRows);
-  if (templateDesignerMode) bindDragHandles();
+  if (state.isDesignerPage) bindDragHandles();
   fitAllFields();
   $("statusText").textContent = `${currentDataGroupName()}汇总：共 ${rows.length} 条`;
   $("pageText").textContent = `第 ${state.pageIndex + 1} / ${totalPages} 页`;
@@ -3091,7 +2925,7 @@ async function printRangeFrom(startIndex = 0) {
     });
     $("preview").innerHTML = pages.join("");
   }
-  if (templateDesignerMode) bindDragHandles();
+  if (state.isDesignerPage) bindDragHandles();
   await fitAllFields();
   await waitForPrintPreviewReady();
   window.addEventListener("afterprint", restoreAfterPrint, { once: true });
@@ -3542,7 +3376,7 @@ async function loadServerTemplates() {
       saveLayouts();
       saveCustomTemplatesToStorage();
       setTemplateStatus(localTemplates.length ? "本地已同步模板" : "内置模板", localTemplates.length ? "本地已同步" : "未发现本地模板");
-      if (templateDesignerMode || $("templateSelect")?.options?.length) applyTemplate();
+      if (state.isDesignerPage || $("templateSelect")?.options?.length) applyTemplate();
     } catch (error) {
       setTemplateStatus("内置模板", "本地模板读取失败");
       console.warn("加载本地模板失败，继续使用内置模板:", error);
@@ -3561,7 +3395,7 @@ async function loadServerTemplates() {
     saveLayouts();
     saveCustomTemplatesToStorage();
     setTemplateStatus(serverTemplates.length ? "服务器模板" : "内置模板", serverTemplates.length ? "服务器已同步" : "服务器无模板");
-    if (templateDesignerMode || $("templateSelect")?.options?.length) applyTemplate();
+    if (state.isDesignerPage || $("templateSelect")?.options?.length) applyTemplate();
   } catch (error) {
     setTemplateStatus("本地/内置模板", "服务器模板读取失败");
     console.warn("加载服务器模板失败，继续使用本地模板:", error);

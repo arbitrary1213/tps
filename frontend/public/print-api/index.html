@@ -70,7 +70,6 @@
               <option value="CANCELLED">已取消</option>
             </select>
           </label>
-
         </div>
         <div class="grid-2">
           <label>
@@ -140,8 +139,6 @@
           模板
           <select id="templateSelect"></select>
         </label>
-        <button id="newTemplateBtn" type="button">新建模板</button>
-        <button id="deleteTemplateBtn" type="button">删除模板</button>
         <label>
           纸张
           <select id="paperSelect">
@@ -161,133 +158,9 @@
             <input id="paperHeight" type="number" min="1" value="297">
           </label>
         </div>
-        <p class="hint">高度不设上限；长纸请填写实际毫米数，并在打印机驱动里选择相同自定义纸张。</p>
-        <label class="file-picker">
-          <input id="bgInput" type="file" accept="image/*,.pdf,application/pdf">
-          上传参考底图 / PDF
-        </label>
-        <button id="clearBgBtn" type="button" class="btn-sm">清除参考底图</button>
-        <div class="grid-2">
-          <button id="saveTemplateBtn" type="button">保存模板</button>
-          <button id="resetTemplateBtn" type="button">重置模板</button>
-        </div>
-        <label class="checkbox">
-          <input id="showBg" type="checkbox" checked>
-          显示参考底图
-        </label>
         <label class="checkbox">
           <input id="designPrintBackgroundGraphics" type="checkbox" checked>
           打印 PDF / 参考底图
-        </label>
-        <div id="duplexSettings" class="duplex-settings">
-          <label class="checkbox">
-            <input id="enableDuplex" type="checkbox">
-            双面打印
-          </label>
-          <div class="segmented compact" role="group" aria-label="编辑页面">
-            <button class="active" type="button" data-side="front">正面</button>
-            <button type="button" data-side="back">背面</button>
-          </div>
-          <p class="hint">背面为固定页，只使用底图和静态字段；打印时自动跟在每条正面后面。</p>
-        </div>
-      </section>
-
-      <section id="singleSettings">
-        <h2>牌位设置</h2>
-        <div class="template-type-badge">
-          <span class="control-label">当前模板类型</span>
-          <div id="templateTypeLabel" class="template-type-label">延生禄位模板</div>
-        </div>
-        <div id="singleVariantWrap" class="variant-switcher">
-          <div class="control-label">编辑版式</div>
-          <div id="singleVariantTabs" class="segmented compact" role="group" aria-label="编辑版式"></div>
-          <select id="singleVariant">
-            <option value="layout_one">版式一</option>
-            <option value="layout_two">版式二</option>
-          </select>
-        </div>
-        <div hidden aria-hidden="true">
-          <label>
-            主体字号
-            <input id="singleFont" type="number" min="8" max="120" value="36">
-          </label>
-          <label>
-            上偏移
-            <input id="singleOffsetY" type="number" value="0">
-          </label>
-        </div>
-        <div id="fieldMapping" class="field-mapping"></div>
-        <div class="static-field-tools">
-          <label>
-            静态字段
-            <input id="staticFieldText" type="text" placeholder="输入固定文字">
-          </label>
-          <button id="addStaticFieldBtn" type="button">添加</button>
-        </div>
-        <div id="sharedStaticFieldActions" class="static-field-actions">
-          <button id="copyFieldBtn" type="button">复制</button>
-          <button id="editStaticFieldBtn" type="button">编辑</button>
-          <button id="deleteStaticFieldBtn" type="button">删除</button>
-        </div>
-        <div id="singleStaticVisibility" class="static-visibility" hidden></div>
-        <div class="field-style-editor">
-          <h3>字段样式</h3>
-          <label>
-            编辑字段
-            <select id="styleField"></select>
-          </label>
-          <div class="grid-2">
-            <label>
-              字号
-              <input id="fieldFontSize" type="number" min="8" max="120" value="18">
-            </label>
-            <label>
-              颜色
-              <input id="fieldColor" type="color" value="#16110d">
-            </label>
-          </div>
-          <label>
-            字体
-            <select id="fieldFontFamily">
-              <option value="SimSun, serif">宋体</option>
-              <option value="KaiTi, STKaiti, serif">楷体</option>
-              <option value='Microsoft YaHei, sans-serif'>微软雅黑</option>
-              <option value='"PMingLiU", "MingLiU", "Songti TC", serif'>繁体宋体</option>
-              <option value='"Microsoft JhengHei", "PingFang TC", sans-serif'>繁体黑体</option>
-              <option value="serif">系统衬线</option>
-            </select>
-          </label>
-          <div class="grid-2">
-            <label>
-              水平对齐
-              <select id="fieldTextAlign">
-                <option value="left">左对齐</option>
-                <option value="center">居中</option>
-                <option value="right">右对齐</option>
-              </select>
-            </label>
-            <label>
-              垂直对齐
-              <select id="fieldVerticalAlign">
-                <option value="start">靠上</option>
-                <option value="center">居中</option>
-                <option value="end">靠下</option>
-              </select>
-            </label>
-          </div>
-          <label>
-            换行方式
-            <select id="fieldWrapMode">
-              <option value="anywhere">自动换行</option>
-              <option value="break-word">不断开连续字符</option>
-              <option value="normal">空格处换行</option>
-              <option value="nowrap">不换行</option>
-            </select>
-          </label>
-        </div>
-        <label class="checkbox">
-          <input id="singleVertical" type="checkbox" checked>
-          竖排文字
         </label>
       </section>
 
@@ -298,15 +171,6 @@
           <select id="summaryVariant"></select>
         </label>
         <div id="summaryFieldMapping" class="field-mapping"></div>
-        <div class="static-field-tools">
-          <label>
-            静态字段
-            <input id="summaryStaticFieldText" type="text" placeholder="输入汇总固定文字">
-          </label>
-          <button id="addSummaryStaticFieldBtn" type="button">添加</button>
-        </div>
-        <div id="summaryStaticVisibility" class="static-visibility"></div>
-        <div class="static-field-actions-anchor"></div>
         <textarea id="summaryFormat" rows="7" hidden>{{牌位主体}}
 {{阳上}}
 {{地址}}</textarea>
@@ -353,7 +217,6 @@
           <strong id="statusText">暂无数据</strong>
           <span id="pageText"></span>
         </div>
-        <span class="edit-tip" hidden>拖动字段即可调整位置</span>
         <span class="print-preview-tip">打印预览</span>
         <div class="pager">
           <button id="prevBtn" type="button">上一页</button>
@@ -381,69 +244,9 @@
         </div>
       </section>
     </aside>
-
   </main>
 
-  <dialog id="newTemplateDialog">
-    <h2>新建模板</h2>
-    <form method="dialog" id="newTemplateForm">
-      <div class="grid-2">
-        <label>
-          模板分类
-          <select id="newTemplateCategory">
-            <option value="plaque">牌位模版</option>
-            <option value="blessing_doc">延生牒模版</option>
-            <option value="deliverance_doc">往生牒模版</option>
-            <option value="summary">汇总多列模版</option>
-            <option value="text_doc">文牒模版</option>
-          </select>
-        </label>
-        <label>
-          数据类型
-          <select id="newTemplateDataGroup">
-            <option value="blessing">延生禄位</option>
-            <option value="deliverance">往生莲位</option>
-          </select>
-        </label>
-      </div>
-      <label id="newTemplateModeLabel">
-        创建方式
-        <select id="newTemplateMode">
-          <option value="preset">按内置版式创建</option>
-          <option value="manual">手动选择字段</option>
-        </select>
-      </label>
-      <label>
-        模板名称
-        <input id="newTemplateName" type="text" required>
-      </label>
-      <div class="grid-2">
-        <label>
-          宽度(mm)
-          <input id="newTemplateWidth" type="number" min="30" value="90">
-        </label>
-        <label>
-          高度(mm)
-          <input id="newTemplateHeight" type="number" min="1" value="260">
-        </label>
-      </div>
-      <label class="checkbox">
-        <input id="newTemplateVertical" type="checkbox" checked>
-        竖排
-      </label>
-      <fieldset>
-        <legend>字段选择</legend>
-        <div id="fieldSelection"></div>
-        <button type="button" id="selectAllFields">全选</button>
-        <button type="button" id="deselectAllFields">取消全选</button>
-      </fieldset>
-      <div class="dialog-actions">
-        <button type="button" id="cancelNewTemplate">取消</button>
-        <button type="button" id="confirmNewTemplate" class="primary">创建</button>
-      </div>
-    </form>
-  </dialog>
-
-  <script src="app.js?v=20260517-1130"></script>
+  <script src="shared.js?v=20260517-1130"></script>
+  <script src="print.js?v=20260517-1130"></script>
 </body>
 </html>

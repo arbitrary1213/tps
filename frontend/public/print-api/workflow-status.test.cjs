@@ -3,15 +3,12 @@ const { readFileSync } = require('node:fs');
 const path = require('node:path');
 
 const root = __dirname;
-const app = readFileSync(path.join(root, 'app.js'), 'utf8');
+const app = readFileSync(path.join(root, 'shared.js'), 'utf8');
 const html = readFileSync(path.join(root, 'index.html'), 'utf8');
 
 assert.match(html, /id="workflowStatus"/, 'print page renders a workflow status panel');
-assert.match(html, /id="runtimeStatusValue"/, 'workflow status shows the current runtime');
 assert.match(html, /id="dataSourceValue"/, 'workflow status shows the current data source');
 assert.match(html, /id="templateSourceValue"/, 'workflow status shows the template source');
-assert.match(html, /id="templateSyncValue"/, 'workflow status shows the template sync state');
-assert.match(html, /id="storageModelValue"/, 'workflow status shows the storage model');
 
 assert.match(app, /setWorkflowStatus/, 'app exposes workflow status updates');
 assert.match(app, /setDataSourceStatus/, 'app tracks where print data came from');

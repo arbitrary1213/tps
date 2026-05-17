@@ -106,7 +106,7 @@ function createWindowManager({ BrowserWindow, Menu, screen, frontendPort, getSto
     templateWindow.on('closed', () => {
       templateWindow = null
     })
-    await templateWindow.loadURL(`http://127.0.0.1:${frontendPort}/print-api/?desktopWindow=template-designer`)
+    await templateWindow.loadURL(`http://127.0.0.1:${frontendPort}/print-api/designer.html`)
     return true
   }
 

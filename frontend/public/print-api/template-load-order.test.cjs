@@ -2,8 +2,8 @@ const assert = require('node:assert/strict');
 const { readFileSync } = require('node:fs');
 const path = require('node:path');
 
-const app = readFileSync(path.join(__dirname, 'app.js'), 'utf8');
-const initMatch = app.match(/async function init\(\) \{([\s\S]*?)\n\}/);
+const print = readFileSync(path.join(__dirname, 'print.js'), 'utf8');
+const initMatch = print.match(/async function init\(\) \{([\s\S]*?)\n\}/);
 
 assert.ok(initMatch, 'init function exists');
 const initBody = initMatch[1];

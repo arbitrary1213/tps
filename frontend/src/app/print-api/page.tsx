@@ -18,5 +18,10 @@ export default async function PrintApiPage({
     if (value) query.set(key, value)
   })
 
+  if (resolved.designer === '1' || resolved.desktopWindow === 'template-designer') {
+    query.delete('designer')
+    query.delete('desktopWindow')
+    redirect(query.toString() ? `/print-api/designer.html?${query.toString()}` : '/print-api/designer.html')
+  }
   redirect(query.toString() ? `/print-api/index.html?${query.toString()}` : '/print-api/index.html')
 }

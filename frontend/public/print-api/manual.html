@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>手动输入打印</title>
+  <link rel="stylesheet" href="styles.css?v=20260517-1130">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <h1>手动输入打印</h1>
+      <p>选择模板，手动填写牌位字段，预览并打印。</p>
+    </div>
+    <div class="header-actions">
+      <button id="printBtn" class="primary" type="button">打印</button>
+    </div>
+  </header>
+
+  <section id="workflowStatus" class="workflow-status" aria-label="打印状态">
+    <div class="workflow-status-item">
+      <span class="workflow-status-label">数据来源</span>
+      <strong id="dataSourceValue" class="workflow-status-value">手动输入</strong>
+    </div>
+    <span class="workflow-status-sep">·</span>
+    <div class="workflow-status-item">
+      <span class="workflow-status-label">模板</span>
+      <strong id="templateSourceValue" class="workflow-status-value">内置模板</strong>
+    </div>
+  </section>
+
+  <main class="workspace">
+    <aside class="panel controls">
+      <button class="panel-toggle" type="button" title="折叠/展开左侧面板" aria-label="折叠左侧面板">◀</button>
+      <span class="panel-collapse-label">控制面板</span>
+
+      <section>
+        <h2>选择模板</h2>
+        <label>
+          模板
+          <select id="templateSelect"></select>
+        </label>
+      </section>
+
+      <section>
+        <h2>手动输入数据</h2>
+        <div id="manualInputSection" style="border:1px solid var(--line); border-radius:6px; padding:10px; background:var(--surface);">
+          <p class="hint" style="margin-bottom:6px;">在下方填写字段值后点"填入预览"</p>
+          <div id="manualInputFields"></div>
+          <button id="applyManualInputBtn" type="button" style="margin-top:6px;">填入预览</button>
+        </div>
+      </section>
+    </aside>
+
+    <section class="preview-shell">
+      <div class="preview-toolbar">
+        <div>
+          <strong id="statusText">暂无数据</strong>
+          <span id="pageText"></span>
+        </div>
+        <span class="print-preview-tip">打印预览</span>
+      </div>
+      <div id="preview" class="preview"></div>
+    </section>
+  </main>
+
+  <script src="shared.js?v=20260517-1130"></script>
+  <script src="manual.js?v=20260517-1130"></script>
+</body>
+</html>

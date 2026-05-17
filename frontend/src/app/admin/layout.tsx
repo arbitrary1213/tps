@@ -211,7 +211,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <ul className="space-y-0.5">
                 {group.items.map((item) => {
                   const isActive = pathname === item.path || (item.path !== '/admin' && pathname.startsWith(item.path))
-                  const isTemplateDesigner = item.path === '/print-api/'
+                  const isTemplateDesigner = item.path === '/print-api/designer.html'
                   return (
                     <li key={item.path}>
                       <Link
