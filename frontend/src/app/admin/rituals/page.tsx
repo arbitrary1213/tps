@@ -157,7 +157,14 @@ export default function RitualsPage() {
     UPCOMING: 'warning',
     ONGOING: 'success',
     COMPLETED: 'gray',
+    CANCELLED: 'gray',
   }
+
+  const activeStatuses = ['DRAFT', 'PUBLISHED', 'UPCOMING', 'ONGOING']
+  const pastStatuses = ['COMPLETED', 'CANCELLED']
+
+  const activeRituals = rituals.filter(r => activeStatuses.includes(r.status))
+  const pastRituals = rituals.filter(r => pastStatuses.includes(r.status))
 
   const columns = [
     { key: 'name', title: '法会名称' },
@@ -207,15 +214,31 @@ export default function RitualsPage() {
         </Button>
       </div>
 
-      <Card>
-        <div className="overflow-x-auto rounded-xl border min-w-0"><Table
-          columns={columns}
-          data={rituals}
-          loading={loading}
-          emptyText="暂无法会"
-        />
-        </div>
-      </Card>
+      <section>
+        <h3 className="text-lg font-medium text-ink mb-3">进行中法会</h3>
+        <Card>
+          <div className="overflow-x-auto rounded-xl border min-w-0"><Table
+            columns={columns}
+            data={activeRituals}
+            loading={loading}
+            emptyText="暂无进行中法会"
+          />
+          </div>
+        </Card>
+      </section>
+
+      <section>
+        <h3 className="text-lg font-medium text-ink mb-3">往期法会</h3>
+        <Card>
+          <div className="overflow-x-auto rounded-xl border min-w-0"><Table
+            columns={columns}
+            data={pastRituals}
+            loading={loading}
+            emptyText="暂无往期法会"
+          />
+          </div>
+        </Card>
+      </section>
 
       <Modal
         open={modalOpen}

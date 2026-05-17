@@ -193,6 +193,20 @@ router.put('/plaques/batch', authMiddleware, asyncHandler(async (req: AuthReques
         })
       }
 
+      // 自动归档法会：如果该法会下所有牌位都已过期/取消，则标记法会为已完成
+      const affectedRitualIds = [...new Set(plaques.map(p => p.ritualId).filter(Boolean))] as string[]
+      for (const rid of affectedRitualIds) {
+        const activeCount = await tx.memorialPlaque.count({
+          where: { ritualId: rid, status: 'ACTIVE' },
+        })
+        if (activeCount === 0) {
+          await tx.ritual.update({
+            where: { id: rid },
+            data: { status: 'COMPLETED' },
+          })
+        }
+      }
+
       await tx.operationLog.create({
         data: {
           userId: req.user!.userId,
