@@ -157,4 +157,10 @@ jobs:
               set +a
             fi
             chmod +x ./deploy.sh
-            ./deploy.sh "${{ github.event.inputs.target || 'all' }}"
+            if [ -n "${DEPLOY_PASSWORD:-}" ]; then
+              ./deploy.sh --password "$DEPLOY_PASSWORD" "${{ github.event.inputs.target || 'all' }}"
+            else
+              ./deploy.sh "${{ github.event.inputs.target || 'all' }}"
+            fi
+          env:
+            DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}

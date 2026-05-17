@@ -2,6 +2,33 @@
 set -euo pipefail
 
 APP_DIR="/opt/temple-os"
+
+# --- Deploy password check ---
+PASSWORD_ARG=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --password) PASSWORD_ARG="$2"; shift 2 ;;
+    --password=*) PASSWORD_ARG="${1#*=}"; shift ;;
+    *) break ;;
+  esac
+done
+INPUT_PASSWORD="${PASSWORD_ARG:-${DEPLOY_PASSWORD:-}}"
+if [ -f "$APP_DIR/docker/.env" ]; then
+  set -a; . "$APP_DIR/docker/.env"; set +a
+fi
+if [ -n "${DEPLOY_PASSWORD_HASH:-}" ]; then
+  if [ -z "$INPUT_PASSWORD" ]; then
+    echo "ERROR: Deploy password required. Use --password or DEPLOY_PASSWORD env." >&2
+    exit 1
+  fi
+  EXPECTED_HASH="$(echo -n "$INPUT_PASSWORD" | sha256sum | awk '{print $1}')"
+  if [ "$EXPECTED_HASH" != "$DEPLOY_PASSWORD_HASH" ]; then
+    echo "ERROR: Incorrect deploy password." >&2
+    exit 1
+  fi
+  echo "Password verified OK"
+fi
+# ---------------------------
 BACKUP_DIR="$APP_DIR/backup"
 DOCKER_DIR="$APP_DIR/docker"
 LOG_DIR="$DOCKER_DIR/logs"
