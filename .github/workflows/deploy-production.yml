@@ -72,12 +72,16 @@ jobs:
       - name: Syntax check print service and tests
         run: |
           node --check index.js
-          node --check ../frontend/public/print-api/app.js
+          node --check ../frontend/public/print-api/shared.js
+          node --check ../frontend/public/print-api/designer.js
+          node --check ../frontend/public/print-api/print.js
+          node --check ../frontend/public/print-api/manual.js
           node --check ../frontend/public/print-api/launch-template-order.test.cjs
           node --check ../frontend/public/print-api/pdf-print-quality.test.cjs
           node --check ../frontend/public/print-api/print-output.test.cjs
           node --check ../frontend/public/print-api/template-load-order.test.cjs
           node --check ../frontend/public/print-api/template-server-sync.test.cjs
+          node --check ../frontend/public/print-api/workflow-status.test.cjs
         working-directory: print-service
 
       - name: Run print-api unit tests
@@ -86,6 +90,7 @@ jobs:
           node ../frontend/public/print-api/print-output.test.cjs
           node ../frontend/public/print-api/template-load-order.test.cjs
           node ../frontend/public/print-api/template-server-sync.test.cjs
+          node ../frontend/public/print-api/workflow-status.test.cjs
         working-directory: print-service
 
       - name: Run print-api browser test (Playwright)
