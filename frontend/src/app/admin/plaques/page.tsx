@@ -538,6 +538,33 @@ export default function PlaquesPage() {
     }
   }
 
+  const handleImportDevotee = async () => {
+    const name = (formData.yangShang || formData.holderName || formData.deceasedName || '').trim()
+    if (!name) { alert('请先填写信人姓名或牌位主体'); return }
+    const phone = (formData.phone || '').trim()
+    if (!phone) { alert('请先填写联系电话'); return }
+    try {
+      const devoteeData: any = {
+        name,
+        phone,
+        address: formData.address,
+        zodiac: formData.zodiac || undefined,
+      }
+      // Only pass birthday if it's a valid date string
+      if (formData.birthDate && formData.birthDate.trim()) {
+        const parsed = new Date(formData.birthDate.trim())
+        if (!isNaN(parsed.getTime())) devoteeData.birthday = parsed.toISOString()
+      }
+      const devotee = await businessAPI.createDevotee(token!, devoteeData)
+      setFormData(prev => ({ ...prev, devoteeId: devotee.id }))
+      loadDevotees()
+      alert(`已导入信众「${devotee.name}」`)
+    } catch (error: any) {
+      const msg = error?.message || error?.error || '导入失败'
+      alert(msg.includes('Unique') ? '该电话号码已有关联信众' : msg)
+    }
+  }
+
   const handleEdit = (plaque: Plaque) => {
     setEditing(plaque)
     setFormData({
@@ -1469,9 +1496,18 @@ export default function PlaquesPage() {
             onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
           />
         </div>
-        <div className="flex justify-end gap-3 mt-6">
-          <Button variant="secondary" onClick={() => { setModalOpen(false); setEditing(null); }} className="active:scale-[0.98] transition-all duration-200">取消</Button>
-          <Button onClick={handleSubmit} className="active:scale-[0.98] transition-all duration-200">保存</Button>
+        <div className="flex justify-between gap-3 mt-6">
+          <div>
+            {editing && (
+              <Button variant="secondary" onClick={handleImportDevotee} className="active:scale-[0.98] transition-all duration-200">
+                导入信众
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={() => { setModalOpen(false); setEditing(null); }} className="active:scale-[0.98] transition-all duration-200">取消</Button>
+            <Button onClick={handleSubmit} className="active:scale-[0.98] transition-all duration-200">保存</Button>
+          </div>
         </div>
       </Modal>
 
