@@ -69,8 +69,8 @@ services:
 
   temple-print:
     build:
-      context: ../print-service
-      dockerfile: ../print-service/Dockerfile
+      context: ..
+      dockerfile: print-service/Dockerfile
     container_name: temple-print
     environment:
       PORT: 3001
@@ -83,6 +83,34 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  temple-nginx:
+    image: nginx:alpine
+    container_name: temple-nginx
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/templates/nginx.conf.template:ro
+      - /etc/nginx/ssl:/etc/nginx/ssl:ro
+      - /var/www/html:/var/www/html
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        sed "s/__DOMAIN__/$${DOMAIN}/g" /etc/nginx/templates/nginx.conf.template > /etc/nginx/nginx.conf
+        exec nginx -g 'daemon off;'
+    network_mode: host
+    depends_on:
+      temple-frontend:
+        condition: service_healthy
+      temple-backend:
+        condition: service_healthy
+      temple-print:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   postgres_data:

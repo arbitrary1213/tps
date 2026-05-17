@@ -2,19 +2,27 @@
 set -euo pipefail
 
 APP_DIR="/opt/temple-os"
+DOCKER_DIR="$APP_DIR/docker"
+BACKUP_DIR="$DOCKER_DIR/backup"
+DATE=$(date +%Y%m%d_%H%M%S)
+
+POSTGRES_DB="${POSTGRES_DB:-temple_os}"
+POSTGRES_USER="${POSTGRES_USER:-postgres}"
+POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-postgres}"
 
 # --- Deploy password check ---
 PASSWORD_ARG=""
+PARSED_TARGETS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --password) PASSWORD_ARG="$2"; shift 2 ;;
     --password=*) PASSWORD_ARG="${1#*=}"; shift ;;
-    *) break ;;
+    *) PARSED_TARGETS+=("$1"); shift ;;
   esac
 done
 INPUT_PASSWORD="${PASSWORD_ARG:-${DEPLOY_PASSWORD:-}}"
-if [ -f "$APP_DIR/docker/.env" ]; then
-  set -a; . "$APP_DIR/docker/.env"; set +a
+if [ -f "$DOCKER_DIR/.env" ]; then
+  set -a; . "$DOCKER_DIR/.env"; set +a
 fi
 if [ -n "${DEPLOY_PASSWORD_HASH:-}" ]; then
   if [ -z "$INPUT_PASSWORD" ]; then
@@ -28,30 +36,16 @@ if [ -n "${DEPLOY_PASSWORD_HASH:-}" ]; then
   fi
   echo "Password verified OK"
 fi
-# ---------------------------
-BACKUP_DIR="$APP_DIR/backup"
-DOCKER_DIR="$APP_DIR/docker"
-LOG_DIR="$DOCKER_DIR/logs"
-DATE=$(date +%Y%m%d_%H%M%S)
 
-DB_CONTAINER="temple-db"
-BACKEND_CONTAINER="temple-backend"
-PRINT_CONTAINER="temple-print"
-FRONTEND_SERVICE="temple-frontend.service"
-
-POSTGRES_DB="${POSTGRES_DB:-temple_os}"
-POSTGRES_USER="${POSTGRES_USER:-postgres}"
-POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-postgres}"
-JWT_SECRET="${JWT_SECRET:-SrpuIPv+t/9AUKrOOarrVxgU6CuoiSKvmt3X2SBRHaA=}"
-ALLOWED_ORIGIN="${ALLOWED_ORIGIN:-https://temple.example.com}"
-NEXT_PUBLIC_API_BASE="${NEXT_PUBLIC_API_BASE:-}"
-
-TARGETS=("$@")
+TARGETS=("${PARSED_TARGETS[@]:-}")
 if [ ${#TARGETS[@]} -eq 0 ]; then
-  TARGETS=("backend" "frontend" "print")
+  TARGETS=("all")
 fi
 
-echo "===== Temple OS Deploy ====="
+COMPOSE="docker compose"
+if ! docker compose version >/dev/null 2>&1; then
+  COMPOSE="docker-compose"
+fi
 
 has_target() {
   local wanted="$1"
@@ -63,167 +57,74 @@ has_target() {
   return 1
 }
 
-backup_db() {
-  echo "[1/6] Backing up database..."
-  mkdir -p "$BACKUP_DIR"
-  docker exec "$DB_CONTAINER" pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" > "$BACKUP_DIR/db_backup_$DATE.sql" 2>/dev/null || true
-}
+echo "===== Temple OS Deploy ====="
+echo "Targets: ${TARGETS[*]}"
 
-pull_code() {
-  echo "[2/6] Pulling latest code..."
-  cd "$APP_DIR"
-  local env_backup_dir
-  env_backup_dir="$(mktemp -d)"
-  if [ -f "$APP_DIR/backend/.env" ]; then
-    cp "$APP_DIR/backend/.env" "$env_backup_dir/backend.env"
-  fi
-  if [ -f "$APP_DIR/docker/.env" ]; then
-    cp "$APP_DIR/docker/.env" "$env_backup_dir/docker.env"
-  fi
-  git pull --rebase --autostash origin main
-  if [ -f "$env_backup_dir/backend.env" ]; then
-    cp "$env_backup_dir/backend.env" "$APP_DIR/backend/.env"
-  fi
-  if [ -f "$env_backup_dir/docker.env" ]; then
-    cp "$env_backup_dir/docker.env" "$APP_DIR/docker/.env"
-  fi
-  rm -rf "$env_backup_dir"
-}
-
-build_backend_image() {
-  echo "[3/6] Building backend image..."
-  docker build -t docker_temple-backend:latest "$APP_DIR/backend"
-}
-
-restart_backend() {
-  echo "[4/6] Restarting backend container..."
-  mkdir -p "$LOG_DIR"
-  docker rm -f "$BACKEND_CONTAINER" >/dev/null 2>&1 || true
-  docker run -d \
-    --name "$BACKEND_CONTAINER" \
-    --network host \
-    --restart unless-stopped \
-    -e "DATABASE_URL=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@localhost:5432/$POSTGRES_DB" \
-    -e "JWT_SECRET=$JWT_SECRET" \
-    -e "ALLOWED_ORIGIN=$ALLOWED_ORIGIN" \
-    -e "PORT=3002" \
-    -e "NODE_ENV=production" \
-    -v "$LOG_DIR:/app/logs" \
-    docker_temple-backend:latest >/dev/null
-}
-
-update_backend_db() {
-  echo "[5/6] Updating backend database schema..."
-  docker exec "$BACKEND_CONTAINER" npx prisma db push --accept-data-loss --skip-generate >/dev/null
-  docker exec "$BACKEND_CONTAINER" npx prisma generate >/dev/null
-}
-
-build_frontend() {
-  echo "[3/6] Building frontend..."
-  cd "$APP_DIR/frontend"
-  NEXT_PUBLIC_API_BASE="$NEXT_PUBLIC_API_BASE" npm run build
-}
-
-restart_frontend() {
-  echo "[4/6] Restarting frontend service..."
-  local stale_pids
-  stale_pids=$(ss -ltnp 2>/dev/null | awk '/:3000 / { if (match($0, /pid=[0-9]+/)) print substr($0, RSTART + 4, RLENGTH - 4) }' | sort -u)
-  if [ -n "$stale_pids" ]; then
-    for pid in $stale_pids; do
-      if ! systemctl show "$FRONTEND_SERVICE" -p MainPID --value | grep -qx "$pid"; then
-        kill "$pid" >/dev/null 2>&1 || true
-      fi
-    done
-    sleep 2
-  fi
-  systemctl restart "$FRONTEND_SERVICE"
-}
-
-sync_print_api_assets() {
-  echo "[3/6] Syncing print-api assets to frontend standalone..."
-  local source_dir="$APP_DIR/frontend/public/print-api"
-  local target_dir="$APP_DIR/frontend/.next/standalone/public/print-api"
-  if [ ! -d "$source_dir" ]; then
-    echo "Missing print-api source directory: $source_dir" >&2
-    return 1
-  fi
-  mkdir -p "$(dirname "$target_dir")"
-  rm -rf "$target_dir"
-  cp -a "$source_dir" "$target_dir"
-}
-
-build_print_image() {
-  echo "[3/6] Building print image..."
-  docker build -f "$APP_DIR/print-service/Dockerfile" -t docker_temple-print:latest "$APP_DIR"
-}
-
-restart_print() {
-  echo "[4/6] Restarting print container..."
-  docker rm -f "$PRINT_CONTAINER" >/dev/null 2>&1 || true
-  docker run -d \
-    --name "$PRINT_CONTAINER" \
-    --network host \
-    --restart unless-stopped \
-    -e "PORT=3001" \
-    -e "NODE_ENV=production" \
-    docker_temple-print:latest >/dev/null
-}
-
-verify_backend() {
-  curl -fsS http://127.0.0.1:3002/api/health >/dev/null
-  echo "✓ backend healthy"
-}
-
-verify_frontend() {
-  curl -fsS http://127.0.0.1:3000 >/dev/null
-  echo "✓ frontend healthy"
-}
-
-verify_print() {
-  curl -fsS http://127.0.0.1:3001/health >/dev/null
-  echo "✓ print healthy"
-}
-
-backup_db
-pull_code
-
+# ---- Backup DB ----
 if has_target backend; then
-  build_backend_image
-  restart_backend
-  update_backend_db
+  echo "[1/5] Backing up database..."
+  mkdir -p "$BACKUP_DIR"
+  docker exec temple-db pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" > "$BACKUP_DIR/db_backup_$DATE.sql" 2>/dev/null || true
 fi
 
-if has_target frontend; then
-  build_frontend
-  restart_frontend
+# ---- Pull code ----
+echo "[2/5] Pulling latest code..."
+cd "$APP_DIR"
+if [ -f "$DOCKER_DIR/.env" ]; then
+  cp "$DOCKER_DIR/.env" /tmp/temple_docker_env_backup
+fi
+git pull --rebase --autostash origin main
+if [ -f /tmp/temple_docker_env_backup ]; then
+  mv /tmp/temple_docker_env_backup "$DOCKER_DIR/.env"
 fi
 
-if has_target print; then
-  sync_print_api_assets
-  restart_frontend
-  build_print_image
-  restart_print
+# ---- Build & restart ----
+echo "[3/5] Building and restarting services..."
+cd "$DOCKER_DIR"
+
+if has_target all; then
+  $COMPOSE build --pull
+  $COMPOSE up -d
+else
+  SERVICES=""
+  has_target backend && SERVICES="$SERVICES temple-backend"
+  has_target frontend && SERVICES="$SERVICES temple-frontend"
+  has_target print && SERVICES="$SERVICES temple-print"
+  $COMPOSE build $SERVICES
+  $COMPOSE up -d $SERVICES
 fi
 
-echo "[6/6] Verifying services..."
+# ---- DB migration ----
+if has_target backend; then
+  echo "[4/5] Updating database schema..."
+  sleep 10
+  docker exec temple-backend npx prisma db push --accept-data-loss --skip-generate >/dev/null 2>&1 || true
+fi
+
+# ---- Health checks ----
+echo "[5/5] Verifying services..."
 sleep 5
-if has_target backend; then verify_backend; fi
-if has_target frontend; then verify_frontend; fi
-if has_target print; then verify_frontend; fi
-if has_target print; then verify_print; fi
+if has_target backend || has_target all; then
+  curl -fsS http://127.0.0.1:3002/api/health >/dev/null && echo "  ✓ backend" || echo "  ✗ backend"
+fi
+if has_target frontend || has_target all; then
+  curl -fsS http://127.0.0.1:3000 >/dev/null && echo "  ✓ frontend" || echo "  ✗ frontend"
+fi
+if has_target print || has_target all; then
+  curl -fsS http://127.0.0.1:3001/health >/dev/null && echo "  ✓ print" || echo "  ✗ print"
+fi
 
-echo "[7/7] Cleaning up..."
-# Docker cleanup: remove dangling images, stopped containers, build cache
+# ---- Cleanup ----
+echo ""
+echo "Cleaning up..."
 docker image prune -af --filter "until=24h" >/dev/null 2>&1 || true
 docker container prune -f --filter "until=1h" >/dev/null 2>&1 || true
 docker builder prune -af --filter "until=24h" >/dev/null 2>&1 || true
-# Keep only the last 7 database backups
 find "$BACKUP_DIR" -name "db_backup_*.sql" -type f -printf '%T@ %p\n' \
   | sort -rn | tail -n +8 | awk '{print $2}' | xargs -r rm -f
-# Clean system logs older than 7 days
 journalctl --vacuum-time=7d >/dev/null 2>&1 || true
-# Clean apt cache
 apt-get clean >/dev/null 2>&1 || true
-echo "✓ cleanup done"
+echo "  ✓ cleanup done"
 
+echo ""
 echo "===== Deploy Complete ====="
