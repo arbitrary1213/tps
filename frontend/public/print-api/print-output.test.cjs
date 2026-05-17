@@ -20,8 +20,9 @@ assert.match(printMedia, /\.tablet\s*\{[^}]*border:\s*0\s*!important/i, 'browser
 assert.match(printMedia, /\.summary-column\s*\{[^}]*border:\s*0\s*!important/i, 'browser printing removes summary guide borders');
 assert.match(printMedia, /\.summary-editor-surface\b[\s\S]*?\.summary-guide-column\b[\s\S]*?background:\s*transparent\s*!important/i, 'browser printing removes summary guide backgrounds');
 
-assert.match(app, /buildDesktopPrintHtml\(\$\("preview"\)\.innerHTML\)/, 'desktop printing sends rendered preview HTML');
-assert.match(app, /<body>\$\{previewHtml\}<\/body>/, 'desktop print document contains the preview body only');
+assert.match(app, /printRangeFrom/, 'desktop and web printing goes through unified print path');
+assert.match(app, /window\.print\(\)/, 'unified print path invokes native browser/system print dialog');
+assert.match(app, /waitForPrintPreviewReady/, 'printing waits for rendered preview readiness');
 
 assert.match(ipc, /waitForPrintWindowReady/, 'desktop printing waits for print content readiness');
 assert.match(ipc, /document\.fonts\.ready/, 'desktop printing waits for fonts before invoking the OS printer');
