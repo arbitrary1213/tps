@@ -467,13 +467,11 @@ async function init() {
   }
   setWorkflowStatus();
 
-  console.log("[DEBUG] init start, templateDesignerMode:", templateDesignerMode, "isDesktopRuntime:", isDesktopRuntime(), "templates.length:", templates.length);
   templates.forEach((template, index) => {
     templates[index] = normalizeCatalogTemplate(template);
   });
   ensureBuiltinSingleTemplates();
   migrateStoredLayouts();
-  console.log("[DEBUG] after migrateStoredLayouts, templates.length:", templates.length);
   const templateSelect = $("templateSelect");
   if (templateDesignerMode) {
     rebuildTemplateOptions();
@@ -482,7 +480,6 @@ async function init() {
   }
 
   loadCustomTemplatesFromStorage();
-  console.log("[DEBUG] after loadCustomTemplatesFromStorage, templates.length:", templates.length, "select.options.length:", $("templateSelect")?.options?.length);
 
   document.querySelectorAll("[data-mode]").forEach((button) => {
     button.addEventListener("click", () => setMode(button.dataset.mode));
@@ -491,6 +488,8 @@ async function init() {
   $("sampleBtn").addEventListener("click", () => loadRows(sampleData[currentDataGroup()]));
   $("pasteBtn").addEventListener("click", () => loadRows(parseDelimited($("pasteInput").value)));
   $("loadSystemDataBtn").addEventListener("click", loadSystemPlaquesFromFilters);
+  $("openBelieverSearchBtn")?.addEventListener("click", toggleBelieverSearch);
+  $("believerSearchInput")?.addEventListener("input", debounce(handleBelieverSearchInput, 300));
   $("selectAllRowsBtn").addEventListener("click", selectAllCurrentRows);
   $("clearSelectedRowsBtn").addEventListener("click", clearSelectedRows);
   $("fileInput").addEventListener("change", handleFile);
@@ -616,11 +615,9 @@ async function init() {
   relocateSharedStyleEditor();
   loadAllSamples();
   await loadServerTemplates();
-  console.log("[DEBUG] after loadServerTemplates, templates.length:", templates.length, "select.options.length:", $("templateSelect")?.options?.length, "templateDesignerMode:", templateDesignerMode);
   if (templateDesignerMode || $("templateSelect")?.options?.length) {
     applyTemplate();
   } else {
-    console.warn("[DEBUG] no templates to apply, rendering empty");
     render();
   }
   loadRitualOptions();
@@ -840,8 +837,7 @@ function ensureTemplateOptionGroup(select, label) {
 
 function rebuildTemplateOptions(selectedId = $("templateSelect")?.value || "") {
   const select = $("templateSelect");
-  console.log("[DEBUG] rebuildTemplateOptions called, select:", select, "templates.length:", templates.length);
-  if (!select) { console.warn("[DEBUG] rebuildTemplateOptions: templateSelect element not found in DOM"); return; }
+  if (!select) return;
   select.innerHTML = "";
   const sortedTemplates = [...templates].sort((left, right) => {
     const groupDelta = templateGroupOrder(left) - templateGroupOrder(right);
@@ -853,7 +849,6 @@ function rebuildTemplateOptions(selectedId = $("templateSelect")?.value || "") {
   sortedTemplates.forEach((template) => {
     appendTemplateOption(template);
   });
-  console.log("[DEBUG] rebuildTemplateOptions done, options count:", select.options.length, "selectedId:", selectedId, "templates[0]:", templates[0]?.id);
   if (selectedId && Array.from(select.options).some((option) => option.value === selectedId)) {
     select.value = selectedId;
   } else if (templates[0]) {
@@ -1449,6 +1444,125 @@ function loadRows(rows) {
   updateDataHint();
   applySummaryDefault(true);
   render();
+}
+
+function debounce(fn, delay) {
+  let timer = null;
+  return function (...args) {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => { timer = null; fn.apply(this, args); }, delay);
+  };
+}
+
+function toggleBelieverSearch() {
+  const panel = $("believerSearchPanel");
+  if (!panel) return;
+  panel.hidden = !panel.hidden;
+  if (!panel.hidden) {
+    $("believerSearchInput").value = "";
+    $("believerSearchResults").innerHTML = "";
+    $("believerSearchInput").focus();
+  }
+}
+
+async function handleBelieverSearchInput() {
+  const keyword = $("believerSearchInput")?.value?.trim();
+  const resultsDiv = $("believerSearchResults");
+  if (!resultsDiv) return;
+  if (!keyword || keyword.length < 1) {
+    resultsDiv.innerHTML = "";
+    return;
+  }
+
+  try {
+    let devotees;
+    if (isDesktopRuntime()) {
+      devotees = (await listDesktopRows("devotees") || [])
+        .filter((d) => {
+          const searchLower = keyword.toLowerCase();
+          return (d.name || "").toLowerCase().includes(searchLower) ||
+            (d.phone || "").toLowerCase().includes(searchLower);
+        })
+        .slice(0, 20);
+    } else {
+      const response = await fetchJson(`/api/search/devotees?${new URLSearchParams({ keyword })}`, {
+        headers: authHeaders(),
+      });
+      devotees = normalizeListResponse(response).slice(0, 20);
+    }
+
+    if (!devotees.length) {
+      resultsDiv.innerHTML = '<div class="hint" style="padding:8px;">未找到匹配的信众</div>';
+      return;
+    }
+
+    resultsDiv.innerHTML = devotees.map((d) => {
+      const name = d.name || "未命名";
+      const phone = d.phone || "";
+      const label = phone ? `${name} (${phone})` : name;
+      return `<button type="button" class="believer-result-item" data-devotee-id="${d.id}" style="display:block;width:100%;text-align:left;padding:6px 8px;border:none;background:none;cursor:pointer;border-radius:4px;">${escapeHtml(label)}</button>`;
+    }).join("");
+
+    resultsDiv.querySelectorAll(".believer-result-item").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        loadPlaquesByBeliever(btn.dataset.devoteeId, btn.textContent);
+      });
+    });
+  } catch (error) {
+    console.warn("搜索信众失败:", error);
+    resultsDiv.innerHTML = '<div class="hint" style="padding:8px;color:var(--accent);">搜索失败，请重试</div>';
+  }
+}
+
+async function loadPlaquesByBeliever(devoteeId, label) {
+  const panel = $("believerSearchPanel");
+  if (panel) panel.hidden = true;
+  const group = currentDataGroup();
+
+  try {
+    setDataSourceStatus(`信人：${label || devoteeId}`);
+    setBusy(`正在读取信人关联牌位...`);
+    let rows;
+    if (isDesktopRuntime()) {
+      const localPlaques = await listDesktopRows("plaques");
+      rows = localPlaques
+        .filter((plaque) => plaque.devoteeId === devoteeId)
+        .map(plaqueToRow)
+        .map((row, index) => normalizeRow(row, group, index));
+    } else {
+      const response = await fetchJson(`/api/plaques?${new URLSearchParams({
+        devoteeId,
+        pageSize: "200",
+      })}`, {
+        headers: authHeaders(),
+      });
+      const plaques = normalizeListResponse(response);
+      rows = plaques
+        .map(plaqueToRow)
+        .map((row, index) => normalizeRow(row, group, index));
+    }
+    state.datasets[group] = rows;
+    state.selectedRowIds[group].clear();
+    state.pageIndex = 0;
+    state.singleVariantManualOverride = false;
+    buildFieldMapping();
+    buildStyleEditor();
+    renderTable();
+    updateDataHint();
+    applySummaryDefault(true);
+    render();
+    setBusy(`已读取${rows.length}条信人关联数据`);
+  } catch (error) {
+    console.error("读取信人数据失败:", error);
+    alert(error.message || "读取信人数据失败");
+    setBusy("读取信人数据失败");
+  }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 function loadSystemPlaquesFromFilters() {
@@ -3432,12 +3546,6 @@ async function upsertDesktopRows(entityType, rows) {
 }
 
 async function fetchJson(url, options = {}) {
-  if (isDesktopRuntime() && url.startsWith("/api/")) {
-    const allowedPaths = ["/api/plaque-templates", "/api/auth/", "/api/system/settings"];
-    if (!allowedPaths.some((prefix) => url.startsWith(prefix))) {
-      throw new Error("桌面打印工具只读取本地数据库，请先在主窗口完成同步。");
-    }
-  }
   const headers = {
     ...(options.body ? { "Content-Type": "application/json" } : {}),
     ...(options.headers || {}),
@@ -3512,13 +3620,11 @@ async function loadServerTemplates() {
   if (isDesktopRuntime()) {
     try {
       const localTemplates = dedupeTemplateRecords(await listDesktopRows("plaque_template"));
-      console.log("[DEBUG] loadServerTemplates desktop: localTemplates count:", localTemplates.length, "tablet-print count:", localTemplates.filter(t => t?.elements?.source === "tablet-print").length);
       localTemplates
         .filter((template) => template?.elements?.source === "tablet-print")
         .forEach(importServerTemplate);
 
       if (authToken()) {
-        console.log("[DEBUG] loadServerTemplates desktop: auth token present, fetching from server");
         try {
           const serverTemplates = dedupeTemplateRecords(
             await fetchJson("/api/plaque-templates?pageSize=200", authFetchOptions({ headers: authHeaders(), allowDesktopApi: true }))
@@ -3561,7 +3667,6 @@ async function loadServerTemplates() {
 
   try {
     const serverTemplates = dedupeTemplateRecords(await fetchJson("/api/plaque-templates?pageSize=200", authFetchOptions({ headers: authHeaders() })));
-    console.log("[DEBUG] loadServerTemplates web: serverTemplates count:", serverTemplates.length, "tablet-print count:", serverTemplates.filter(t => t?.elements?.source === "tablet-print").length);
     serverTemplates
       .filter((template) => template?.elements?.source === "tablet-print")
       .forEach(importServerTemplate);
@@ -3634,9 +3739,8 @@ function migrateLocalTemplateId(oldId, newId) {
 function importServerTemplate(template) {
   const selectedId = $("templateSelect")?.value || "";
   const data = template.elements;
-  console.log("[DEBUG] importServerTemplate called, template.id:", template.id, "data.template.id:", data?.template?.id);
-  if (!data?.template?.id) { console.warn("[DEBUG] importServerTemplate: no data.template.id, skipping"); return; }
-  if (HIDDEN_LEGACY_TEMPLATE_IDS.has(data.template.id)) { console.log("[DEBUG] importServerTemplate: hidden legacy template, skipping"); return; }
+  if (!data?.template?.id) return;
+  if (HIDDEN_LEGACY_TEMPLATE_IDS.has(data.template.id)) return;
   const localTemplate = {
     ...data.template,
     id: data.template.id,

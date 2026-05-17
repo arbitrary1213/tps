@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>牌位套打软件</title>
-  <link rel="stylesheet" href="styles.css?v=20260516-1230">
+  <link rel="stylesheet" href="styles.css?v=20260517-1000">
 </head>
 <body>
   <header class="app-header">
@@ -118,6 +118,14 @@
           </label>
         </div>
         <button id="loadSystemDataBtn" type="button">读取数据</button>
+        <div id="believerSearchArea" style="margin-top:10px;">
+          <button id="openBelieverSearchBtn" type="button" class="btn-sm">按信人加载</button>
+          <div id="believerSearchPanel" hidden style="margin-top:8px; border:1px solid var(--line); border-radius:6px; padding:10px; background:var(--surface);">
+            <input id="believerSearchInput" type="search" placeholder="搜索信人姓名或电话...">
+            <div id="believerSearchResults" style="max-height:160px; overflow-y:auto; margin-top:4px;"></div>
+            <p class="hint" style="margin-top:4px;">选择信人后将加载其关联的全部牌位</p>
+          </div>
+        </div>
         <p id="dataHint" class="hint">先选择牌位分类，再导入对应数据。延生和超度的数据会分开保存，不会混在一起。</p>
       </section>
 
@@ -491,6 +499,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=20260516-1230"></script>
+  <script src="app.js?v=20260517-1000"></script>
 </body>
 </html>
