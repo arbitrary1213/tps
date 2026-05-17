@@ -3,6 +3,10 @@ name: Deploy Production
 on:
   workflow_dispatch:
     inputs:
+      deploy_password:
+        description: "Deploy password (required)"
+        required: true
+        type: string
       target:
         description: "Deploy target: all, backend, frontend, or print"
         required: true
@@ -22,6 +26,22 @@ jobs:
     name: Verify
     runs-on: ubuntu-latest
     steps:
+      - name: Verify deploy password
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
+        run: |
+          if [ -z "$DEPLOY_PASSWORD" ]; then
+            echo "ERROR: DEPLOY_PASSWORD secret is not set in repository settings"
+            exit 1
+          fi
+          INPUT="${{ github.event.inputs.deploy_password }}"
+          if [ "$INPUT" != "$DEPLOY_PASSWORD" ]; then
+            echo "ERROR: Incorrect deploy password"
+            exit 1
+          fi
+          echo "Password verified OK"
+
       - name: Checkout
         uses: actions/checkout@v4
 
