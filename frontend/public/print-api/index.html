@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>牌位套打软件</title>
-  <link rel="stylesheet" href="styles.css?v=20260517-1100">
+  <link rel="stylesheet" href="styles.css?v=20260517-1130">
 </head>
 <body>
   <header class="app-header">
@@ -50,6 +50,11 @@
         </label>
         <textarea id="pasteInput" rows="7" placeholder="也可以从 Excel 复制表格后粘贴到这里，第一行作为表头"></textarea>
         <button id="pasteBtn" type="button">使用粘贴数据</button>
+        <div id="manualInputSection" style="margin-top:10px; border:1px solid var(--line); border-radius:6px; padding:10px; background:var(--surface);">
+          <p class="hint" style="margin-bottom:6px;">手动输入单张：直接在下方填写字段值后点"填入预览"</p>
+          <div id="manualInputFields"></div>
+          <button id="applyManualInputBtn" type="button" style="margin-top:6px;">填入预览</button>
+        </div>
         <p class="hint">支持图片或 PDF 作为参考底图；PDF 会自动使用第 1 页。</p>
         <div class="grid-2">
           <label>
@@ -348,7 +353,7 @@
           <strong id="statusText">暂无数据</strong>
           <span id="pageText"></span>
         </div>
-        <span class="edit-tip">拖动字段即可调整位置</span>
+        <span class="edit-tip" hidden>拖动字段即可调整位置</span>
         <span class="print-preview-tip">打印预览</span>
         <div class="pager">
           <button id="prevBtn" type="button">上一页</button>
@@ -439,6 +444,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=20260517-1100"></script>
+  <script src="app.js?v=20260517-1130"></script>
 </body>
 </html>

@@ -532,6 +532,8 @@ async function init() {
     document.querySelectorAll(".field-checkbox").forEach(cb => cb.checked = false);
   });
 
+  $("applyManualInputBtn")?.addEventListener("click", applyManualInput);
+
   document.getElementById("newTemplateBtn")?.addEventListener("click", () => {
     const newTemplateCategory = document.getElementById("newTemplateCategory");
     const newTemplateDataGroup = document.getElementById("newTemplateDataGroup");
@@ -1706,6 +1708,44 @@ async function applyLaunchParams() {
   }
 }
 
+function buildManualInputFields() {
+  const container = $("manualInputFields");
+  if (!container) return;
+  const type = currentTabletType();
+  const fields = (type && type.fields) || [];
+  container.innerHTML = fields.map((field) => {
+    const label = field.label || field.key;
+    return `<label style="display:block; margin-bottom:4px;">
+      <span style="font-size:12px; color:var(--tea);">${escapeHtml(label)}</span>
+      <input class="manual-field-input" data-field-key="${escapeHtml(field.key)}" type="text" placeholder="${escapeHtml(label)}" style="width:100%; box-sizing:border-box; margin-top:2px;">
+    </label>`;
+  }).join("") || '<p class="hint">请先选择模板</p>';
+}
+
+function applyManualInput() {
+  const inputs = document.querySelectorAll(".manual-field-input");
+  if (!inputs.length) { alert("请先选择模板"); return; }
+  const row = {};
+  inputs.forEach((input) => {
+    const key = input.dataset.fieldKey;
+    const value = input.value.trim();
+    if (value) row[key] = value;
+  });
+  if (!Object.values(row).some((v) => v)) { alert("请至少填写一个字段"); return; }
+  const group = currentDataGroup();
+  const normalized = normalizeRow(row, group, 0);
+  state.datasets[group] = [normalized];
+  state.selectedRowIds[group] = new Set([normalized.__rowId]);
+  state.pageIndex = 0;
+  state.singleVariantManualOverride = false;
+  buildFieldMapping();
+  buildStyleEditor();
+  renderTable();
+  updateDataHint();
+  render();
+  setBusy(`手动输入：${Object.values(row).filter(Boolean).join(" / ")}`);
+}
+
 function applyLaunchTemplate(templateId) {
   if (!templateId) return;
   const select = $("templateSelect");
@@ -2656,6 +2696,7 @@ function render() {
   }
   if (state.mode === "single") renderSingle();
   if (state.mode === "summary") renderSummary();
+  buildManualInputFields();
   renderDebugInfo();
 }
 
@@ -2671,7 +2712,7 @@ function renderSingle() {
     buildFieldMapping();
     buildStyleEditor();
   }
-  bindDragHandles();
+  if (templateDesignerMode) bindDragHandles();
   fitAllFields();
   $("statusText").textContent = rows.length ? `${currentTabletType().name}：${fieldValue(row, "subject") || `第 ${state.pageIndex + 1} 条`}` : "暂无数据";
   $("pageText").textContent = `第 ${state.pageIndex + 1} / ${total} 张`;
@@ -2688,7 +2729,7 @@ function renderSummary() {
   const pageRows = rows.slice(start, start + pageSize);
   clampSummaryFieldsIntoView();
   $("preview").innerHTML = summarySheet(pageRows);
-  bindDragHandles();
+  if (templateDesignerMode) bindDragHandles();
   fitAllFields();
   $("statusText").textContent = `${currentDataGroupName()}汇总：共 ${rows.length} 条`;
   $("pageText").textContent = `第 ${state.pageIndex + 1} / ${totalPages} 页`;
@@ -2898,7 +2939,6 @@ function draggableField(key, className, content, placeholder = false, variantKey
   return `
     <div class="${className} editable-field${placeholderClass}" data-edit-key="${key}" data-wrap-mode="${style.wrapMode || "anywhere"}" data-base-font="${style.fontSize}" style="left:${pos.x}%; top:${pos.y}%; width:${size.w}%; height:${size.h}%; font-size:${style.fontSize}px; color:${style.color}; font-family:${style.fontFamily}; text-align:${align.textAlign};">
       <div class="field-content" style="text-align:${align.textAlign}; justify-content:${align.justifyContent}; align-items:${align.alignItems}; white-space:${wrapStyle.whiteSpace}; overflow-wrap:${wrapStyle.overflowWrap}; word-break:${wrapStyle.wordBreak};"><span class="field-flow">${displayContent}</span></div>
-      <span class="resize-handle" data-resize-key="${key}" aria-hidden="true"></span>
     </div>
   `;
 }
@@ -3057,7 +3097,7 @@ async function printRangeFrom(startIndex = 0) {
     });
     $("preview").innerHTML = pages.join("");
   }
-  bindDragHandles();
+  if (templateDesignerMode) bindDragHandles();
   await fitAllFields();
   await waitForPrintPreviewReady();
   window.addEventListener("afterprint", restoreAfterPrint, { once: true });
