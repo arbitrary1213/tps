@@ -20,7 +20,6 @@ const navItems = [
   ]},
   { group: '模板与打印', items: [
     { href: '/print-api/', label: '模板设计', icon: '模' },
-    { href: '/admin/plaques/batch-print', label: '批量打印', icon: '印' },
   ]},
   { group: '公众号运营', items: [
     { href: '/admin/wechat', label: '公众号控制台', icon: '微' },

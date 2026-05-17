@@ -19,11 +19,6 @@ const actions = [
     desc: '查看服务器已保存的模板、底图状态、单张/通名类型和最近修改时间。',
     href: '/admin/plaque-templates',
   },
-  {
-    title: '旧批量打印页',
-    desc: '这是历史入口，仍可使用，但后续会逐步并入统一打印流程。',
-    href: '/admin/plaques/batch-print',
-  },
 ]
 
 export default function PrintCenterPage() {

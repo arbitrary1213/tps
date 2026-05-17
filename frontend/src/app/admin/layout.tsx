@@ -23,7 +23,6 @@ const sidebarNav = [
   { group: '模板与打印', items: [
     { name: '模板中心', path: '/admin/print-center' },
     { name: '模板库', path: '/admin/plaque-templates' },
-    { name: '批量打印', path: '/admin/plaques/batch-print' },
   ]},
   { group: '公众号运营', items: [
     { name: '公众号控制台', path: '/admin/wechat' },
