@@ -1576,7 +1576,7 @@ function applyManualInput() {
 }
 
 function applyLaunchTemplate(templateId) {
-  if (!templateId) return;
+  if (!templateId) return false;
   const select = $("templateSelect");
   const matchingOption = Array.from(select.options).find((option) => {
     if (option.value === templateId) return true;
@@ -1584,10 +1584,11 @@ function applyLaunchTemplate(templateId) {
   });
   if (!matchingOption) {
     console.warn("未找到指定打印模板:", templateId);
-    return;
+    return false;
   }
   select.value = matchingOption.value;
   applyTemplate();
+	  return true;
 }
 
 async function loadRitualOptions() {
@@ -3378,7 +3379,7 @@ async function loadServerTemplates() {
       saveLayouts();
       saveCustomTemplatesToStorage();
       setTemplateStatus(localTemplates.length ? "本地已同步模板" : "内置模板", localTemplates.length ? "本地已同步" : "未发现本地模板");
-      if (state.isDesignerPage || $("templateSelect")?.options?.length) applyTemplate();
+      if (!state.isDesignerPage && $("templateSelect")?.options?.length) applyTemplate();
     } catch (error) {
       setTemplateStatus("内置模板", "本地模板读取失败");
       console.warn("加载本地模板失败，继续使用内置模板:", error);
@@ -3397,7 +3398,7 @@ async function loadServerTemplates() {
     saveLayouts();
     saveCustomTemplatesToStorage();
     setTemplateStatus(serverTemplates.length ? "服务器模板" : "内置模板", serverTemplates.length ? "服务器已同步" : "服务器无模板");
-    if (state.isDesignerPage || $("templateSelect")?.options?.length) applyTemplate();
+    if (!state.isDesignerPage && $("templateSelect")?.options?.length) applyTemplate();
   } catch (error) {
     setTemplateStatus("本地/内置模板", "服务器模板读取失败");
     console.warn("加载服务器模板失败，继续使用本地模板:", error);
@@ -3726,10 +3727,17 @@ function ensureLayout(type) {
   if (!isSummaryTemplateId(type) && !state.layouts[type].singleVariantKey) {
     state.layouts[type].singleVariantKey = defaultSingleVariantKeyForTemplate(templates.find((item) => item.id === type));
   }
-  if (isSummaryTemplateId(type)) {
-    if (!state.layouts[type].paper) state.layouts[type].paper = summaryTemplatePaper(type);
-    if (!state.layouts[type].summary) state.layouts[type].summary = normalizeSummarySettings();
-  }
+	if (isSummaryTemplateId(type)) {
+		if (!state.layouts[type].paper) state.layouts[type].paper = summaryTemplatePaper(type);
+		if (!state.layouts[type].summary) state.layouts[type].summary = normalizeSummarySettings();
+	} else if (!state.layouts[type].paper) {
+		const tpl = templates.find((item) => item.id === type);
+		state.layouts[type].paper = {
+			width: tpl?.width || 210,
+			height: tpl?.height || 297,
+			vertical: tpl?.vertical ?? true,
+		};
+	}
   if (state.layouts[type].backSide) normalizeSideLayout(state.layouts[type].backSide);
   if (isSummaryTemplateId(type) && repairSummaryTemplateLayout(type)) saveLayouts();
   return state.layouts[type];

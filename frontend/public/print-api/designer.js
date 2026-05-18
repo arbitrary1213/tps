@@ -138,8 +138,8 @@ async function init() {
 
   relocateSharedStyleEditor();
   await loadServerTemplates();
-  applyLaunchTemplate(launchParams.get("templateId"));
-  applyTemplate();
+  const launched = applyLaunchTemplate(launchParams.get("templateId"));
+  if (!launched) applyTemplate();
 }
 
 function render() {
