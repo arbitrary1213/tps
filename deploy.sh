@@ -64,7 +64,11 @@ sync_print_api_assets() {
   if [ -d "$src" ]; then
     mkdir -p "$dst"
     cp -r "$src"/* "$dst"/
-    echo "  print-api assets synced"
+    echo "  print-api assets synced to frontend"
+  fi
+  if docker inspect temple-print >/dev/null 2>&1 && [ -d "$src" ]; then
+    docker cp "$src/." temple-print:/app/frontend/public/print-api/
+    echo "  print-api assets synced to print container"
   fi
 }
 
