@@ -89,9 +89,6 @@ services:
     container_name: temple-nginx
     environment:
       DOMAIN: ${DOMAIN:-localhost}
-    ports:
-      - "80:80"
-      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/templates/nginx.conf.template:ro
       - /etc/nginx/ssl:/etc/nginx/ssl:ro
