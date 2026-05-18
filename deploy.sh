@@ -57,6 +57,33 @@ has_target() {
   return 1
 }
 
+sync_print_api_assets() {
+  echo "  Syncing print-api assets to frontend static directory..."
+  local src="$APP_DIR/frontend/public/print-api"
+  local dst="$APP_DIR/frontend/.next/standalone/public/print-api"
+  if [ -d "$src" ]; then
+    mkdir -p "$dst"
+    cp -r "$src"/* "$dst"/
+    echo "  print-api assets synced"
+  fi
+}
+
+restart_frontend() {
+  $COMPOSE up -d temple-frontend
+}
+
+build_print_image() {
+  $COMPOSE build temple-print
+}
+
+restart_print() {
+  $COMPOSE up -d temple-print
+}
+
+verify_frontend() {
+  curl -fsS http://127.0.0.1:3000 >/dev/null && echo "  ✓ frontend" || echo "  ✗ frontend"
+}
+
 echo "===== Temple OS Deploy ====="
 echo "Targets: ${TARGETS[*]}"
 
@@ -107,12 +134,19 @@ if has_target all; then
   $COMPOSE build --pull
   $COMPOSE up -d
 else
+  if has_target print; then
+    sync_print_api_assets
+    restart_frontend
+    build_print_image
+    restart_print
+  fi
   SERVICES=""
   has_target backend && SERVICES="$SERVICES temple-backend"
-  has_target frontend && SERVICES="$SERVICES temple-frontend"
-  has_target print && SERVICES="$SERVICES temple-print"
-  $COMPOSE build $SERVICES
-  $COMPOSE up -d $SERVICES
+  has_target frontend && ! has_target print && SERVICES="$SERVICES temple-frontend"
+  if [ -n "$SERVICES" ]; then
+    $COMPOSE build $SERVICES
+    $COMPOSE up -d $SERVICES
+  fi
 fi
 
 # ---- DB migration ----
@@ -134,6 +168,7 @@ fi
 if has_target print || has_target all; then
   curl -fsS http://127.0.0.1:3001/health >/dev/null && echo "  ✓ print" || echo "  ✗ print"
 fi
+if has_target print; then verify_frontend; fi
 
 # ---- Cleanup ----
 echo ""
