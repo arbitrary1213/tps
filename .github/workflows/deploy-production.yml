@@ -160,4 +160,4 @@ jobs:
               set +a
             fi
             chmod +x ./deploy.sh
-            ./deploy.sh "${{ github.event.inputs.target || 'all' }}"
+            ./deploy.sh --password "$DEPLOY_PASSWORD" "${{ github.event.inputs.target || 'all' }}"
