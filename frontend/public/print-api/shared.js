@@ -19,6 +19,7 @@ const BUILTIN_TEMPLATE_IDS = new Set([
 const BUILTIN_SINGLE_TEMPLATE_IDS = new Set(["cmp6vaj3l000gbjnjoak9q9wx", "cmozm19an001ahmbwqm8nmi1q"]);
 const TEMPLATE_CATALOG = {
   cmp6vaj3l000gbjnjoak9q9wx: { name: "延生禄位", groupLabel: "牌位模版", groupOrder: 1, order: 1, mode: "single", dataGroup: "blessing" },
+	  cmp805m5q004mtv6zrijpw91y: { name: "牒壳反面", groupLabel: "牌位模版", groupOrder: 1, order: 3, mode: "single", dataGroup: "blessing" },
   cmozm19an001ahmbwqm8nmi1q: { name: "往生牌位", groupLabel: "牌位模版", groupOrder: 1, order: 2, mode: "single", dataGroup: "deliverance" },
   cmoz9dtgc015wcyyxjcwqcumq: { name: "延生｜红牒", groupLabel: "延生牒模版", groupOrder: 2, order: 1, mode: "single", dataGroup: "blessing" },
   "92171e1d-e697-46df-bfcc-4cb8f9a29661": { name: "延生｜红壳", groupLabel: "延生牒模版", groupOrder: 2, order: 2, mode: "single", dataGroup: "blessing" },
@@ -377,6 +378,7 @@ function isAllowedSingleTemplate(template) {
   if (!template || isSummaryTemplate(template)) return true;
   if (CATALOG_SINGLE_TEMPLATE_IDS.has(template.id)) return true;
   if (isBuiltinSingleTemplate(template)) return true;
+	  if (state.remoteTemplateIds[template.id]) return true;
   return Boolean(template?.id?.startsWith("custom_"));
 }
 
