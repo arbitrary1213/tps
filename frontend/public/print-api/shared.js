@@ -505,7 +505,7 @@ function setMode(mode) {
   relocateSharedStyleEditor();
   buildFieldMapping();
   buildStyleEditor();
-  renderTable();
+  if (mode === "summary") renderTable();
   updateDataHint();
   applySummaryDefault();
   render();
@@ -1591,6 +1591,31 @@ function applyLaunchTemplate(templateId) {
   select.value = matchingOption.value;
   applyTemplate();
 	  return true;
+}
+
+async function refreshDesignerBackground() {
+	var template = currentTemplate();
+	var remoteId = state.remoteTemplateIds[template.id];
+	if (!remoteId) return;
+	try {
+		var result = await fetchJson(
+			"/api/plaque-templates/" + remoteId,
+			authFetchOptions({ headers: authHeaders() })
+		);
+		var data = result && result.data;
+		if (!data) return;
+		var fullBg = data.backgroundImage
+			|| (data.elements && data.elements.layout && data.elements.layout.background)
+			|| (data.elements && data.elements.template && data.elements.template.backgroundImage)
+			|| "";
+		if (fullBg) {
+			var layout = ensureLayout(template.id);
+			layout.background = fullBg;
+			render();
+		}
+	} catch (e) {
+		console.warn("获取高清底图失败:", e);
+	}
 }
 
 async function loadRitualOptions() {

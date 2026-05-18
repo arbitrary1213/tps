@@ -143,6 +143,14 @@ button.primary:hover {
   grid-template-columns: 36px minmax(420px, 1fr) 36px;
 }
 
+.workspace.no-data-panel {
+  grid-template-columns: 320px 1fr;
+}
+
+.workspace.no-data-panel.left-collapsed {
+  grid-template-columns: 36px 1fr;
+}
+
 .panel,
 .preview-shell {
   min-height: 0;
