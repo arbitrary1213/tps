@@ -160,5 +160,9 @@ jobs:
               . docker/.env
               set +a
             fi
+            # Remove old docker-run containers so Compose can take over (one-time migration)
+            for c in temple-backend temple-print temple-frontend temple-nginx; do
+              docker rm -f "$c" 2>/dev/null && echo "Migrated $c to Compose" || true
+            done
             chmod +x ./deploy.sh
             ./deploy.sh --password "$DEPLOY_PASSWORD" "${{ github.event.inputs.target || 'all' }}"

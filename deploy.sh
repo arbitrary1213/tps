@@ -131,12 +131,11 @@ if systemctl is-active --quiet temple-frontend 2>/dev/null; then
 fi
 
 # Migration: remove old docker-run containers so Compose can take over
+echo "  Cleaning up old containers (migration to Compose)..."
 for c in temple-backend temple-print temple-frontend temple-nginx; do
-  if docker inspect "$c" >/dev/null 2>&1; then
-    docker rm -f "$c" >/dev/null 2>&1 || true
-    echo "  Removed old container $c (migrating to Compose)"
-  fi
+  docker rm -f "$c" 2>/dev/null && echo "  Removed old container $c" || true
 done
+echo "  Container cleanup done"
 
 if has_target all; then
   $COMPOSE build --pull
