@@ -56,8 +56,8 @@ async function init() {
     "summaryLineGap", "pageMargin", "columnGap", "summaryVertical",
   ].map($).filter(Boolean);
 
-  loadAllSamples();
   await loadServerTemplates();
+  loadAllSamples();
   if ($("templateSelect")?.options?.length) {
     applyTemplate();
   } else {
