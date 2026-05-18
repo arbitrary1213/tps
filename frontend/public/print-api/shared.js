@@ -1598,7 +1598,7 @@ async function applyLaunchTemplate(templateId) {
         authFetchOptions({ headers: authHeaders() })
       );
       var data = result;
-      if (data && data.elements && data.elements.source === "tablet-print") {
+      if (data && data.elements) {
         importServerTemplate(data);
         matchingOption = findMatchingOption();
       }
