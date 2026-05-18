@@ -142,6 +142,8 @@ jobs:
 
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
         with:
           host: ${{ secrets.PRODUCTION_HOST }}
           username: ${{ secrets.PRODUCTION_USER }}
@@ -162,5 +164,3 @@ jobs:
             else
               ./deploy.sh "${{ github.event.inputs.target || 'all' }}"
             fi
-          env:
-            DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
