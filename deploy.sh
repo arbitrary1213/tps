@@ -138,7 +138,19 @@ done
 echo "  Container cleanup done"
 
 if has_target all; then
-  $COMPOSE build --pull
+	  missing_base_images=0
+	  for img in node:20-slim node:22-slim node:22-alpine postgres:15-alpine nginx:alpine; do
+	    if ! docker image inspect "$img" >/dev/null 2>&1; then
+	      missing_base_images=1
+	      echo "  Missing base image $img, will pull"
+	      break
+	    fi
+	  done
+	  if [ "$missing_base_images" -eq 1 ]; then
+	    $COMPOSE build --pull
+	  else
+	    $COMPOSE build
+	  fi
   $COMPOSE up -d
 else
   if has_target print; then
