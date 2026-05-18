@@ -149,6 +149,7 @@ jobs:
           username: ${{ secrets.PRODUCTION_USER }}
           key: ${{ secrets.PRODUCTION_SSH_KEY }}
           port: ${{ secrets.PRODUCTION_SSH_PORT || 22 }}
+          envs: DEPLOY_PASSWORD
           script_stop: true
           script: |
             set -euo pipefail
@@ -159,8 +160,4 @@ jobs:
               set +a
             fi
             chmod +x ./deploy.sh
-            if [ -n "${DEPLOY_PASSWORD:-}" ]; then
-              ./deploy.sh --password "$DEPLOY_PASSWORD" "${{ github.event.inputs.target || 'all' }}"
-            else
-              ./deploy.sh "${{ github.event.inputs.target || 'all' }}"
-            fi
+            ./deploy.sh "${{ github.event.inputs.target || 'all' }}"
