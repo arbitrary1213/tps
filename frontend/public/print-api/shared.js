@@ -1489,7 +1489,7 @@ async function applyLaunchParams() {
   const targetMode = launchMode === "summary" ? "summary" : "single";
   if (state.mode !== targetMode) setMode(targetMode);
   setDataSourceStatus("牌位管理选中数据");
-  applyLaunchTemplate(templateId);
+  await applyLaunchTemplate(templateId);
 
   try {
     setBusy("正在载入牌位数据...");
@@ -1577,20 +1577,43 @@ function applyManualInput() {
   setBusy(`手动输入：${Object.values(row).filter(Boolean).join(" / ")}`);
 }
 
-function applyLaunchTemplate(templateId) {
+async function applyLaunchTemplate(templateId) {
   if (!templateId) return false;
   const select = $("templateSelect");
-  const matchingOption = Array.from(select.options).find((option) => {
-    if (option.value === templateId) return true;
-    return state.remoteTemplateIds[option.value] === templateId;
-  });
+
+  function findMatchingOption() {
+    return Array.from(select.options).find((opt) => {
+      if (opt.value === templateId) return true;
+      return state.remoteTemplateIds[opt.value] === templateId;
+    });
+  }
+
+  var matchingOption = findMatchingOption();
+
+  if (!matchingOption) {
+    console.warn("模板未在本地缓存中，尝试从服务器获取:", templateId);
+    try {
+      var result = await fetchJson(
+        "/api/plaque-templates/" + templateId,
+        authFetchOptions({ headers: authHeaders() })
+      );
+      var data = result;
+      if (data && data.elements && data.elements.source === "tablet-print") {
+        importServerTemplate(data);
+        matchingOption = findMatchingOption();
+      }
+    } catch (err) {
+      console.warn("从服务器获取模板失败:", templateId, err);
+    }
+  }
+
   if (!matchingOption) {
     console.warn("未找到指定打印模板:", templateId);
     return false;
   }
   select.value = matchingOption.value;
   applyTemplate();
-	  return true;
+  return true;
 }
 
 async function refreshDesignerBackground() {
@@ -1598,11 +1621,11 @@ async function refreshDesignerBackground() {
 	var remoteId = state.remoteTemplateIds[template.id];
 	if (!remoteId) return;
 	try {
-		var result = await fetchJson(
+		var data = await fetchJson(
 			"/api/plaque-templates/" + remoteId,
 			authFetchOptions({ headers: authHeaders() })
 		);
-		var data = result && result.data;
+		
 		if (!data) return;
 		var fullBg = data.backgroundImage
 			|| (data.elements && data.elements.layout && data.elements.layout.background)

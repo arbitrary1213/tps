@@ -138,7 +138,7 @@ async function init() {
 
   relocateSharedStyleEditor();
   await loadServerTemplates();
-  const launched = applyLaunchTemplate(launchParams.get("templateId"));
+  const launched = await applyLaunchTemplate(launchParams.get("templateId"));
   if (!launched) applyTemplate();
   if (launched) refreshDesignerBackground();
 }
