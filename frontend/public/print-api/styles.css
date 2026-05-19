@@ -1062,11 +1062,6 @@ body.print-preview-mode .resize-handle {
 }
 
 @media print {
-  @page {
-    size: var(--print-w) var(--print-h);
-    margin: 0;
-  }
-
   html,
   body {
     width: var(--print-w);

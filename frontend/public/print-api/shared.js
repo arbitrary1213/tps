@@ -4856,7 +4856,7 @@ function syncPrintSize() {
     pageSizeStyle.id = "printPageSize";
     document.head.appendChild(pageSizeStyle);
   }
-  pageSizeStyle.textContent = `@media print { @page { size: ${width}mm ${height}mm; margin: 0; } }`;
+  pageSizeStyle.textContent = `@page { size: ${width}mm ${height}mm; margin: 0; }`;
 }
 
 function clamp(number, min, max) {
