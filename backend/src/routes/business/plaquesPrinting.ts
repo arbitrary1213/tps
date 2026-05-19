@@ -612,7 +612,15 @@ router.get('/plaque-templates/:id', authMiddleware, asyncHandler(async (req: Aut
 
 router.post('/plaque-templates', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
-    const template = await prisma.plaqueTemplate.create({ data: req.body })
+    const body = { ...req.body }
+    const postElements = body.elements as Record<string, any> | null
+    if (body.paperWidth === undefined && postElements?.template?.width) {
+      body.paperWidth = postElements.template.width
+    }
+    if (body.paperHeight === undefined && postElements?.template?.height) {
+      body.paperHeight = postElements.template.height
+    }
+    const template = await prisma.plaqueTemplate.create({ data: body })
     const elements = template.elements as Record<string, any> | null
     if (elements?.template?.id && elements.template.id !== template.id) {
       const fixed = await prisma.plaqueTemplate.update({
@@ -641,6 +649,12 @@ router.put('/plaque-templates/:id', authMiddleware, asyncHandler(async (req: Aut
     const elements = body.elements as Record<string, any> | null
     if (elements?.template?.id && elements.template.id !== req.params.id) {
       body.elements = { ...elements, template: { ...elements.template, id: req.params.id } }
+    }
+    if (body.paperWidth === undefined && elements?.template?.width) {
+      body.paperWidth = elements.template.width
+    }
+    if (body.paperHeight === undefined && elements?.template?.height) {
+      body.paperHeight = elements.template.height
     }
     const template = await prisma.plaqueTemplate.update({ where: { id: req.params.id }, data: body })
     await logOperation(req.user, 'UPDATE', 'plaque_template', template.id, before, template)

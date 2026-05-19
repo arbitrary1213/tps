@@ -3610,6 +3610,8 @@ async function syncCurrentTemplateToServer(skipRemoteSync = false) {
     name: payload.template.name,
     type: payload.template.dataGroup === "blessing" ? "LONGEVITY" : "DELIVERANCE",
     backgroundImage: payload.template.backgroundImage || payload.layout?.background || "",
+    paperWidth: payload.template.width,
+    paperHeight: payload.template.height,
     elements: payload,
   };
 
