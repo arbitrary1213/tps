@@ -552,7 +552,7 @@ async function compressBackgroundImage(dataUrl: string | null): Promise<string |
     const buffer = Buffer.from(match[2], 'base64')
     const compressed = await sharp(buffer)
       .resize(2400, 3200, { fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: 85 })
+      .webp({ quality: 60 })
       .toBuffer()
     return `data:image/webp;base64,${compressed.toString('base64')}`
   } catch {

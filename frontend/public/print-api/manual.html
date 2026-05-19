@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>手动输入打印</title>
-  <link rel="stylesheet" href="styles.css?v=20260519-1530">
+  <link rel="stylesheet" href="styles.css?v=20260519-1600">
 </head>
 <body>
   <header class="app-header">
     <div>
       <h1>手动输入打印</h1>
-      <p>选择模板，手动填写牌位字段，预览并打印。</p>
+      <p>选择模板，直接在预览中填写字段，切换版式，预览并打印。</p>
     </div>
     <div class="header-actions">
       <button id="printBtn" class="primary" type="button">打印</button>
@@ -42,12 +42,25 @@
         </label>
       </section>
 
+      <section id="manualVariantSection">
+        <h2>编辑版式</h2>
+        <div id="singleVariantWrap" class="variant-switcher">
+          <div class="control-label">编辑版式</div>
+          <div id="singleVariantTabs" class="segmented compact" role="group" aria-label="编辑版式"></div>
+          <select id="singleVariant">
+            <option value="layout_one">版式一</option>
+            <option value="layout_two">版式二</option>
+          </select>
+        </div>
+      </section>
+
       <section>
-        <h2>手动输入数据</h2>
-        <div id="manualInputSection" style="border:1px solid var(--line); border-radius:6px; padding:10px; background:var(--surface);">
-          <p class="hint" style="margin-bottom:6px;">在下方填写字段值后点"填入预览"</p>
-          <div id="manualInputFields"></div>
-          <button id="applyManualInputBtn" type="button" style="margin-top:6px;">填入预览</button>
+        <h2>输入数据</h2>
+        <p class="hint">直接在右侧预览中的字段框内输入文字，无需点按钮。</p>
+        <div id="manualInputFields" hidden></div>
+        <button id="applyManualInputBtn" type="button" hidden>填入预览</button>
+        <div style="margin-top:8px; display:flex; gap:6px;">
+          <button id="clearManualInputBtn" type="button" class="btn-sm">清空所有字段</button>
         </div>
       </section>
     </aside>
@@ -58,13 +71,13 @@
           <strong id="statusText">暂无数据</strong>
           <span id="pageText"></span>
         </div>
-        <span class="print-preview-tip">打印预览</span>
+        <span class="print-preview-tip">点击字段直接输入</span>
       </div>
       <div id="preview" class="preview"></div>
     </section>
   </main>
 
-  <script src="shared.js?v=20260519-1530"></script>
-  <script src="manual.js?v=20260519-1530"></script>
+  <script src="shared.js?v=20260519-1600"></script>
+  <script src="manual.js?v=20260519-1600"></script>
 </body>
 </html>

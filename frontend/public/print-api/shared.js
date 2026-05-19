@@ -4839,14 +4839,20 @@ function formatSummaryColumn(row) {
 }
 
 function sheetVars() {
-  const width = Number($("paperWidth").value) || 210;
-  const height = Math.max(Number($("paperHeight").value) || 297, 1);
+  const paperWidthEl = $("paperWidth");
+  const paperHeightEl = $("paperHeight");
+  const template = currentTemplate();
+  const width = (paperWidthEl ? Number(paperWidthEl.value) : 0) || template?.width || 210;
+  const height = Math.max((paperHeightEl ? Number(paperHeightEl.value) : 0) || template?.height || 297, 1);
   return `--paper-w:${width}mm; --paper-h:${height}mm;`;
 }
 
 function syncPrintSize() {
-  const width = Number($("paperWidth").value) || 210;
-  const height = Math.max(Number($("paperHeight").value) || 297, 1);
+  const paperWidthEl = $("paperWidth");
+  const paperHeightEl = $("paperHeight");
+  const template = currentTemplate();
+  const width = (paperWidthEl ? Number(paperWidthEl.value) : 0) || template?.width || 210;
+  const height = Math.max((paperHeightEl ? Number(paperHeightEl.value) : 0) || template?.height || 297, 1);
   document.documentElement.style.setProperty("--print-w", `${width}mm`);
   document.documentElement.style.setProperty("--print-h", `${height}mm`);
 
