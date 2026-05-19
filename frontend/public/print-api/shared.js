@@ -3076,7 +3076,7 @@ function loadAllSamples() {
 }
 
 function updateDataHint() {
-  $("dataHint").textContent = `当前导入目标：${currentDataGroupName()}数据。延生和超度数据分开保存、分开预览、分开打印。`;
+  if ($("dataHint")) $("dataHint").textContent = `当前导入目标：${currentDataGroupName()}数据。延生和超度数据分开保存、分开预览、分开打印。`;
 }
 
 function applySummaryDefault(force = false) {
