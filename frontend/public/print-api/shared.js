@@ -1208,7 +1208,7 @@ async function importPdfBackground(file) {
 }
 
 function shouldPrintTemplateBackground(forPrint = false) {
-  if (!$("showBg")?.checked) return false;
+  if ($("showBg") && !$("showBg").checked) return false;
   if (!forPrint) return true;
   return $("designPrintBackgroundGraphics")?.checked ?? true;
 }
