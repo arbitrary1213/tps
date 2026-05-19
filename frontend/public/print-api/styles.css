@@ -1107,11 +1107,11 @@ body.print-preview-mode .resize-handle {
   .sheet {
     display: block;
     position: relative;
-    width: var(--print-w);
-    min-width: var(--print-w);
-    max-width: var(--print-w);
-    height: var(--print-h);
-    min-height: var(--print-h);
+    width: var(--paper-w);
+    min-width: var(--paper-w);
+    max-width: var(--paper-w);
+    height: var(--paper-h);
+    min-height: var(--paper-h);
     margin: 0;
     padding: 0;
     border: 0;
