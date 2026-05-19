@@ -2698,7 +2698,7 @@ function singleSheet(row, side = state.editSide, forPrint = false) {
   const previousSingleVariant = state.renderSingleVariant;
   state.renderSide = side;
   state.renderSingleVariant = side === "front" ? currentSingleVariantKey(row, forPrint) : "";
-  const vertical = $("singleVertical").checked ? " vertical-text" : "";
+  const vertical = ($("singleVertical")?.checked ?? (ensureLayout(currentLayoutKey()).paper?.vertical ?? currentTemplate().vertical ?? true)) ? " vertical-text" : "";
   const type = currentDataGroup() === "blessing" ? "blessing" : "deliverance";
   const fields = singleFieldsForVariant(state.renderSingleVariant, row, forPrint);
   const layout = side === "back" ? backLayoutFor(currentLayoutKey()) : ensureLayout(currentLayoutKey());
@@ -3586,7 +3586,7 @@ function exportCurrentTemplatePayload() {
       width: Number($("paperWidth").value) || template.width,
       height: Number($("paperHeight").value) || template.height,
       font: template.font,
-      vertical: state.mode === "summary" ? false : $("singleVertical").checked,
+      vertical: state.mode === "summary" ? false : ($("singleVertical")?.checked ?? (ensureLayout(currentLayoutKey()).paper?.vertical ?? currentTemplate().vertical ?? true)),
       tabletType: state.mode === "summary"
         ? undefined
         : normalizeTabletType(template?.tabletType || template?.dataGroup || "blessing"),
@@ -3837,7 +3837,7 @@ async function saveCurrentLayout() {
   layout.paper = {
     width: Number($("paperWidth").value) || 210,
     height: Number($("paperHeight").value) || 297,
-    vertical: $("singleVertical").checked,
+    vertical: $("singleVertical")?.checked ?? (ensureLayout(currentLayoutKey()).paper?.vertical ?? currentTemplate().vertical ?? true),
   };
   if (state.mode === "summary") {
     layout.summary = currentSummarySettings();
@@ -3913,7 +3913,7 @@ function resetCurrentLayout() {
   const template = templates.find((item) => item.id === $("templateSelect").value) || templates[0];
   $("paperWidth").value = template.width;
   $("paperHeight").value = template.height;
-  $("singleVertical").checked = template.vertical;
+  if ($("singleVertical")) $("singleVertical").checked = template.vertical;
   saveLayouts();
   $("bgInput").value = "";
   state.activeFieldKey = "";
