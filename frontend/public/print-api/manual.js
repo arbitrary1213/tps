@@ -28,6 +28,7 @@ async function init() {
 }
 
 function render() {
+  syncPrintSize();
   if (!state.isDesignerPage && !$("templateSelect").options.length) {
     $("preview").innerHTML = '<div class="empty">未读取到已同步模板，请先在主窗口同步服务器模板。</div>';
     $("statusText").textContent = "未读取到已同步模板";
