@@ -1028,6 +1028,7 @@ async function deleteCurrentTemplate() {
       await fetchJson(`/api/plaque-templates/${remoteId}`, {
         method: "DELETE",
         headers: authHeaders(),
+        timeout: 8000,
       });
     } catch (error) {
       console.warn("删除服务器模板失败:", error);
@@ -1349,7 +1350,7 @@ async function handleBelieverSearchInput() {
         .slice(0, 20);
     } else {
       const response = await fetchJson(`/api/search/devotees?${new URLSearchParams({ keyword })}`, {
-        headers: authHeaders(),
+        headers: authHeaders(), timeout: 10000,
       });
       devotees = normalizeListResponse(response).slice(0, 20);
     }
@@ -1397,7 +1398,7 @@ async function loadPlaquesByBeliever(devoteeId, label) {
         devoteeId,
         pageSize: "200",
       })}`, {
-        headers: authHeaders(),
+        headers: authHeaders(), timeout: 10000,
       });
       const plaques = normalizeListResponse(response);
       rows = plaques
@@ -1668,7 +1669,7 @@ async function applyLaunchTemplate(templateId) {
     try {
       var result = await fetchJson(
         "/api/plaque-templates/" + templateId,
-        authFetchOptions({ headers: authHeaders() })
+        authFetchOptions({ headers: authHeaders(), timeout: 8000 })
       );
       var data = result;
       if (data && data.elements) {
@@ -1696,7 +1697,7 @@ async function refreshDesignerBackground() {
 	try {
 		var data = await fetchJson(
 			"/api/plaque-templates/" + remoteId,
-			authFetchOptions({ headers: authHeaders() })
+			authFetchOptions({ headers: authHeaders(), timeout: 8000 })
 		);
 		
 		if (!data) return;
@@ -1732,7 +1733,7 @@ async function loadRitualOptions() {
   }
 
   try {
-    const rituals = await fetchJson("/api/rituals", { headers: authHeaders() });
+    const rituals = await fetchJson("/api/rituals", { headers: authHeaders(), timeout: 8000 });
     const select = $("systemRitual");
     rituals.forEach((ritual) => {
       const option = document.createElement("option");
@@ -1751,7 +1752,7 @@ async function loadDedicationTypeOptions() {
     if (isDesktopRuntime()) {
       settings = await window.templeDesktop?.getCache?.("GET:/api/system/settings").then((cached) => cached?.value || {}).catch(() => ({}));
     } else {
-      settings = await fetchJson("/api/system/settings");
+      settings = await fetchJson("/api/system/settings", { timeout: 8000 });
     }
     const types = String(settings?.dedicationTypes || "")
       .split(",")
@@ -3721,6 +3722,7 @@ async function syncCurrentTemplateToServer(skipRemoteSync = false) {
           headers: authHeaders(),
           body: JSON.stringify(body),
           allowDesktopApi: true,
+          timeout: 10000,
         });
       } else {
         const response = await fetchJson("/api/plaque-templates", {
@@ -3728,6 +3730,7 @@ async function syncCurrentTemplateToServer(skipRemoteSync = false) {
           headers: authHeaders(),
           body: JSON.stringify(body),
           allowDesktopApi: true,
+          timeout: 10000,
         });
         const created = response.data || response;
         if (created?.id) {
@@ -3756,12 +3759,14 @@ async function syncCurrentTemplateToServer(skipRemoteSync = false) {
       method: "PUT",
       headers: authHeaders(),
       body: JSON.stringify(body),
+      timeout: 10000,
     });
   } else {
     const response = await fetchJson("/api/plaque-templates", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify(body),
+      timeout: 10000,
     });
     const created = response.data || response;
     if (created?.id) {
