@@ -1478,7 +1478,14 @@ async function loadSystemPlaques(group) {
           ...extraParams,
         };
         const firstUrl = `/api/plaques?${new URLSearchParams({ ...baseParams, page: "1" }).toString()}`;
-        const firstResp = await fetch(firstUrl, { cache: "no-store", credentials: "include", headers: authHeaders() });
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 10000);
+        let firstResp;
+        try {
+          firstResp = await fetch(firstUrl, { cache: "no-store", credentials: "include", headers: authHeaders(), signal: controller.signal });
+        } finally {
+          clearTimeout(timer);
+        }
         const firstJson = await firstResp.json();
         if (!firstResp.ok || firstJson.success === false) throw new Error(firstJson.error || `请求失败：${firstResp.status}`);
         const all = firstJson.data || [];
@@ -1487,7 +1494,7 @@ async function loadSystemPlaques(group) {
           const totalPages = Math.ceil(total / PAGE_SIZE);
           const remaining = await Promise.all(
             Array.from({ length: totalPages - 1 }, (_, i) =>
-              fetchJson(`/api/plaques?${new URLSearchParams({ ...baseParams, page: String(i + 2) }).toString()}`, { headers: authHeaders() })
+              fetchJson(`/api/plaques?${new URLSearchParams({ ...baseParams, page: String(i + 2) }).toString()}`, { headers: authHeaders(), timeout: 10000 })
             )
           );
           all.push(...remaining.flat());
@@ -1568,7 +1575,7 @@ async function applyLaunchParams() {
           : {}),
         pageSize: String(selectedIds.size ? 200 : 200),
       });
-      plaques = await fetchJson(`/api/plaques?${query.toString()}`, { headers: authHeaders() });
+      plaques = await fetchJson(`/api/plaques?${query.toString()}`, { headers: authHeaders(), timeout: 10000 });
       if (selectedIds.size) plaques = plaques.filter((plaque) => selectedIds.has(plaque.id));
     }
     const rows = plaques
@@ -3390,12 +3397,25 @@ async function fetchJson(url, options = {}) {
     ...(options.body ? { "Content-Type": "application/json" } : {}),
     ...(options.headers || {}),
   };
-  const response = await fetch(url, { cache: "no-store", credentials: "include", ...options, headers });
-  const json = await response.json().catch(() => ({}));
-  if (!response.ok || json.success === false) {
-    throw new Error(json.error || `请求失败：${response.status}`);
+  const timeout = options.timeout || 0;
+  const controller = timeout ? new AbortController() : undefined;
+  const timer = controller ? setTimeout(() => controller.abort(), timeout) : undefined;
+  try {
+    const response = await fetch(url, {
+      cache: "no-store",
+      credentials: "include",
+      ...options,
+      headers,
+      ...(controller ? { signal: controller.signal } : {}),
+    });
+    const json = await response.json().catch(() => ({}));
+    if (!response.ok || json.success === false) {
+      throw new Error(json.error || `请求失败：${response.status}`);
+    }
+    return json.data ?? json;
+  } finally {
+    if (timer) clearTimeout(timer);
   }
-  return json.data ?? json;
 }
 
 function normalizeListResponse(value) {
@@ -3467,7 +3487,7 @@ async function loadServerTemplates() {
       if (authToken()) {
         try {
           const serverTemplates = dedupeTemplateRecords(
-            await fetchJson("/api/plaque-templates?pageSize=200", authFetchOptions({ headers: authHeaders(), allowDesktopApi: true }))
+            await fetchJson("/api/plaque-templates?pageSize=200", authFetchOptions({ headers: authHeaders(), allowDesktopApi: true, timeout: 8000 }))
           );
           const localMap = new Map(localTemplates.map((lt) => [templateRecordLogicalId(lt), lt]));
           for (const st of serverTemplates) {
@@ -3507,7 +3527,7 @@ async function loadServerTemplates() {
   }
 
   try {
-    const serverTemplates = dedupeTemplateRecords(await fetchJson("/api/plaque-templates?pageSize=200", authFetchOptions({ headers: authHeaders() })));
+    const serverTemplates = dedupeTemplateRecords(await fetchJson("/api/plaque-templates?pageSize=200", authFetchOptions({ headers: authHeaders(), timeout: 8000 })));
     serverTemplates
       .filter((template) => template?.elements?.source === "tablet-print")
       .forEach(importServerTemplate);
