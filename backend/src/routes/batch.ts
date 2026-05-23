@@ -94,7 +94,7 @@ router.post('/approve-requests', authMiddleware, requireRole('ADMIN', 'OPERATOR'
               const nextCode = latest?.code ? parseInt(latest.code, 10) + 1 : 1
               plaqueData.code = String(nextCode).padStart(6, '0')
 
-              await tx.memorialPlaque.create({ data: plaqueData })
+              await tx.memorialPlaque.create({ data: plaqueData as any })
               break
             }
 

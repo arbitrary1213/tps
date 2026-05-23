@@ -61,7 +61,7 @@ router.post('/plaques', authMiddleware, asyncHandler(async (req: AuthRequest, re
       return res.status(400).json({ success: false, error: dateError })
     }
 
-    const dupKey = buildPlaqueImportDuplicateKey(data)
+    const dupKey = buildPlaqueImportDuplicateKey(data as any)
     if (dupKey) {
       const existing = await prisma.memorialPlaque.findFirst({
         where: {
@@ -75,7 +75,7 @@ router.post('/plaques', authMiddleware, asyncHandler(async (req: AuthRequest, re
         },
       })
       if (existing) {
-        const existingKey = buildPlaqueImportDuplicateKey(existing)
+        const existingKey = buildPlaqueImportDuplicateKey(existing as any)
         if (existingKey === dupKey) {
           return res.status(409).json({ success: false, error: '该牌位已存在，请勿重复创建' })
         }
