@@ -2,6 +2,7 @@ import { Router, Response } from 'express'
 import { asyncHandler } from '../middleware/errorHandler'
 import { authMiddleware, requireRole, AuthRequest } from '../middleware/auth'
 import { prisma } from '../lib/prisma'
+import { sanitizePlaqueBody, validatePlaqueDates } from './business/shared'
 
 const router = Router()
 
@@ -51,35 +52,51 @@ router.post('/approve-requests', authMiddleware, requireRole('ADMIN', 'OPERATOR'
               })
               break
 
-            case 'PLAQUE':
-              await tx.memorialPlaque.create({
-                data: {
-                  plaqueType: data.plaqueType || 'LONGEVITY',
-                  holderName: data.holderName,
-                  deceasedName: data.deceasedName,
-                  deceasedName2: data.deceasedName2,
-                  birthDate2: data.birthDate2,
-                  deathDate2: data.deathDate2,
-                  zodiac2: data.zodiac2,
-                  gender2: data.gender2,
-                  gender: data.gender,
-                  zodiac: data.zodiac,
-                  birthDate: data.birthDate,
-                  birthLunar: data.birthLunar?.includes('1'),
-                  deathDate: data.deathDate,
-                  deathLunar: data.deathLunar?.includes('1'),
-                  yangShang: data.yangShang || request.submitterName,
-                  phone: data.phone || request.submitterPhone,
-                  address: data.address,
-                  dedicationType: data.dedicationType,
-                  longevitySubtype: data.longevitySubtype,
-                  size: data.size,
-                  blessingText: data.blessingText,
-                  startDate: data.startDate ? new Date(data.startDate) : new Date(),
-                  endDate: data.endDate ? new Date(data.endDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-                }
+            case 'PLAQUE': {
+              const plaqueData = sanitizePlaqueBody({
+                plaqueType: data.plaqueType || 'LONGEVITY',
+                holderName: data.holderName,
+                deceasedName: data.deceasedName,
+                deceasedName2: data.deceasedName2,
+                birthDate2: data.birthDate2,
+                deathDate2: data.deathDate2,
+                zodiac2: data.zodiac2,
+                gender2: data.gender2,
+                gender: data.gender,
+                zodiac: data.zodiac,
+                birthDate: data.birthDate,
+                birthLunar: data.birthLunar?.includes('1') ?? false,
+                deathDate: data.deathDate,
+                deathLunar: data.deathLunar?.includes('1') ?? false,
+                yangShang: data.yangShang || request.submitterName,
+                phone: data.phone || request.submitterPhone,
+                address: data.address,
+                dedicationType: data.dedicationType,
+                longevitySubtype: data.longevitySubtype,
+                size: data.size,
+                blessingText: data.blessingText,
+                startDate: data.startDate ? new Date(data.startDate) : new Date(),
+                endDate: data.endDate ? new Date(data.endDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
               })
+
+              const dateError = validatePlaqueDates(plaqueData)
+              if (dateError) {
+                errors.push(`ID ${id}: ${dateError}`)
+                failed++
+                continue
+              }
+
+              const latest = await tx.memorialPlaque.findFirst({
+                where: { code: { not: null } },
+                orderBy: { code: 'desc' },
+                select: { code: true },
+              })
+              const nextCode = latest?.code ? parseInt(latest.code, 10) + 1 : 1
+              plaqueData.code = String(nextCode).padStart(6, '0')
+
+              await tx.memorialPlaque.create({ data: plaqueData })
               break
+            }
 
             case 'RITUAL':
               if (data.ritualId) {
@@ -279,23 +296,33 @@ router.post('/export-plaques', authMiddleware, requireRole('ADMIN', 'OPERATOR'),
       orderBy: { createdAt: 'desc' }
     })
 
-    const headers = ['ID', '类型', '持名者', '亡者姓名', '性别', '生肖', '生日', '忌日', '阳上', '电话', '地址', '超度类型', '状态', '开始日期', '结束日期', '创建时间']
+    const headers = ['编码', '类型', '禄位子类型', '持名者', '亡者姓名', '亡者二', '阴庚', '亡者二阴庚', '性别', '属相', '年龄', '生日', '忌日', '亡者二生日', '亡者二忌日', '阳上', '电话', '地址', '超度类型', '规格', '祈福语', '状态', '开始日期', '结束日期', '备注', '创建时间']
     const rows = plaques.map(p => [
-      p.id,
+      p.code || '',
       p.plaqueType,
+      p.longevitySubtype || '',
       p.holderName || '',
       p.deceasedName || '',
+      p.deceasedName2 || '',
+      p.yinGeng || '',
+      p.yinGeng2 || '',
       p.gender || '',
       p.zodiac || '',
+      p.age || '',
       p.birthDate || '',
       p.deathDate || '',
+      p.birthDate2 || '',
+      p.deathDate2 || '',
       p.yangShang || '',
       p.phone || '',
       p.address || '',
       p.dedicationType || '',
+      p.size || '',
+      p.blessingText || '',
       p.status,
       p.startDate ? p.startDate.toISOString().split('T')[0] : '',
       p.endDate ? p.endDate.toISOString().split('T')[0] : '',
+      p.remarks || '',
       p.createdAt.toISOString()
     ])
 

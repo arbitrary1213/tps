@@ -61,6 +61,27 @@ router.post('/plaques', authMiddleware, asyncHandler(async (req: AuthRequest, re
       return res.status(400).json({ success: false, error: dateError })
     }
 
+    const dupKey = buildPlaqueImportDuplicateKey(data)
+    if (dupKey) {
+      const existing = await prisma.memorialPlaque.findFirst({
+        where: {
+          plaqueType: data.plaqueType,
+          status: { in: ['ACTIVE', 'EXPIRED', 'RENEWED'] },
+          OR: [
+            data.holderName ? { holderName: data.holderName } : {},
+            data.deceasedName ? { deceasedName: data.deceasedName } : {},
+            data.dedicationType ? { dedicationType: data.dedicationType } : {},
+          ].filter(o => Object.keys(o).length > 0),
+        },
+      })
+      if (existing) {
+        const existingKey = buildPlaqueImportDuplicateKey(existing)
+        if (existingKey === dupKey) {
+          return res.status(409).json({ success: false, error: '该牌位已存在，请勿重复创建' })
+        }
+      }
+    }
+
     const plaque = await createPlaqueWithCode(data, req.user)
     res.json({ success: true, data: plaque })
   } catch (error: any) {
@@ -108,6 +129,10 @@ router.put('/plaques/batch', authMiddleware, asyncHandler(async (req: AuthReques
 
     const result = await prisma.$transaction(async (tx) => {
       if (action === 'delete') {
+        await tx.printJobItem.updateMany({
+          where: { plaqueId: { in: ids } },
+          data: { plaqueId: null },
+        })
         const deleted = await tx.memorialPlaque.deleteMany({ where: { id: { in: ids } } })
         await tx.operationLog.create({
           data: {
@@ -240,6 +265,19 @@ router.put('/plaques/:id', authMiddleware, asyncHandler(async (req: AuthRequest,
 
     const before = await prisma.memorialPlaque.findUnique({ where: { id: req.params.id } })
     const plaque = await prisma.memorialPlaque.update({ where: { id: req.params.id }, data })
+
+    if (data.status && data.status !== 'ACTIVE' && plaque.ritualId) {
+      const activeCount = await prisma.memorialPlaque.count({
+        where: { ritualId: plaque.ritualId, status: 'ACTIVE' },
+      })
+      if (activeCount === 0) {
+        await prisma.ritual.update({
+          where: { id: plaque.ritualId },
+          data: { status: 'COMPLETED' },
+        })
+      }
+    }
+
     await logOperation(req.user, 'UPDATE', 'memorial_plaque', plaque.id, before, plaque)
     res.json({ success: true, data: plaque })
   } catch (error: any) {
@@ -250,8 +288,22 @@ router.put('/plaques/:id', authMiddleware, asyncHandler(async (req: AuthRequest,
 
 router.delete('/plaques/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
-    await prisma.memorialPlaque.delete({ where: { id: req.params.id } })
-    await logOperation(req.user, 'DELETE', 'memorial_plaque', req.params.id)
+    await prisma.$transaction(async (tx) => {
+      await tx.printJobItem.updateMany({
+        where: { plaqueId: req.params.id },
+        data: { plaqueId: null },
+      })
+      await tx.memorialPlaque.delete({ where: { id: req.params.id } })
+      await tx.operationLog.create({
+        data: {
+          userId: req.user!.userId,
+          username: req.user!.username,
+          action: 'DELETE',
+          targetType: 'memorial_plaque',
+          targetId: req.params.id,
+        },
+      })
+    })
     res.json({ success: true })
   } catch (error: any) {
     if (error?.code === 'P2025' || error?.message?.includes('Record to delete does not exist')) {
@@ -801,7 +853,7 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), asyncHandl
       longevitySubtype: getValue(row, '禄位类型'),
       size: getValue(row, '规格'),
       gender: getValue(row, '性别'),
-      birthDate: getValue(row, '亡者生日') || getValue(row, '出生日期'),
+      birthDate: getValue(row, '亡者生日') || getValue(row, '出生日期') || getValue(row, '生日'),
       birthLunar: getValue(row, '农历') === '是' || getValue(row, '亡者农历') === '是' || getValue(row, '生日农历') === '是',
       deceasedName: getValue(row, '亡者') || getValue(row, '亡者姓名'),
       deceasedName2: getValue(row, '亡者二') || getValue(row, '第二亡者'),
@@ -831,7 +883,7 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), asyncHandl
       importKeys.some((k) => k.startsWith('LONGEVITY|')) ? prisma.memorialPlaque.findMany({
         where: {
           plaqueType: 'LONGEVITY',
-          status: 'ACTIVE',
+          status: { in: ['ACTIVE', 'EXPIRED', 'RENEWED'] },
           holderName: { in: [...new Set(rows.filter((r) => typeMap[getValue(r, '牌位类型') as keyof typeof typeMap] === 'LONGEVITY').map((r) => getValue(r, '牌位主体')))] },
         },
         select: { holderName: true, longevitySubtype: true, size: true, gender: true, birthDate: true, birthLunar: true, yangShang: true, phone: true, address: true, blessingText: true, startDate: true, endDate: true },
@@ -839,15 +891,15 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), asyncHandl
       importKeys.some((k) => k.startsWith('REBIRTH|')) ? prisma.memorialPlaque.findMany({
         where: {
           plaqueType: 'REBIRTH',
-          status: 'ACTIVE',
-          deceasedName: { in: [...new Set(rows.filter((r) => typeMap[getValue(r, '牌位类型') as keyof typeof typeMap] === 'REBIRTH').map((r) => getValue(r, '亡者姓名')))] },
+          status: { in: ['ACTIVE', 'EXPIRED', 'RENEWED'] },
+          deceasedName: { in: [...new Set(rows.filter((r) => typeMap[getValue(r, '牌位类型') as keyof typeof typeMap] === 'REBIRTH').map((r) => getValue(r, '亡者') || getValue(r, '亡者姓名')))] },
         },
         select: { deceasedName: true, deceasedName2: true, yinGeng: true, size: true, gender: true, birthDate: true, birthLunar: true, deathDate: true, deathLunar: true, birthDate2: true, deathDate2: true, yinGeng2: true, yangShang: true, phone: true, address: true, startDate: true, endDate: true },
       }) : [],
       importKeys.some((k) => k.startsWith('DELIVERANCE|')) ? prisma.memorialPlaque.findMany({
         where: {
           plaqueType: 'DELIVERANCE',
-          status: 'ACTIVE',
+          status: { in: ['ACTIVE', 'EXPIRED', 'RENEWED'] },
           dedicationType: { in: [...new Set(rows.filter((r) => typeMap[getValue(r, '牌位类型') as keyof typeof typeMap] === 'DELIVERANCE').map((r) => getValue(r, '牌位主体')))] },
         },
         select: { dedicationType: true, deceasedName: true, deceasedName2: true, yinGeng: true, size: true, birthDate: true, deathDate: true, yinGeng2: true, birthDate2: true, deathDate2: true, yangShang: true, phone: true, address: true, startDate: true, endDate: true },
@@ -900,7 +952,7 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), asyncHandl
         plaqueData.age = getOptionalValue(row, '年龄')
         plaqueData.blessingText = getOptionalValue(row, '祈愿语') || getOptionalValue(row, '祝福语')
       } else if (plaqueData.plaqueType === 'REBIRTH') {
-        const deceasedName = getValue(row, '亡者姓名')
+        const deceasedName = getValue(row, '亡者') || getValue(row, '亡者姓名')
         if (!deceasedName) {
           errors.push('第 ' + rowNum + ' 行: 往生莲位缺少亡者姓名')
           continue
@@ -908,9 +960,9 @@ router.post('/import/plaques', authMiddleware, upload.single('file'), asyncHandl
         plaqueData.deceasedName = deceasedName
         plaqueData.size = getOptionalValue(row, '规格')
         plaqueData.gender = getOptionalValue(row, '性别')
-        plaqueData.birthDate = getOptionalValue(row, '出生日期') || getOptionalValue(row, '生日')
+        plaqueData.birthDate = getOptionalValue(row, '亡者生日') || getOptionalValue(row, '出生日期') || getOptionalValue(row, '生日')
         plaqueData.birthLunar = getValue(row, '亡者农历') === '是' || getValue(row, '农历') === '是' || getValue(row, '生日农历') === '是'
-        plaqueData.deathDate = getOptionalValue(row, '忌日')
+        plaqueData.deathDate = getOptionalValue(row, '亡者忌日') || getOptionalValue(row, '忌日')
         plaqueData.deathLunar = getValue(row, '忌日农历') === '是'
         plaqueData.yinGeng = getOptionalValue(row, '亡者阴庚') || getOptionalValue(row, '阴庚')
         plaqueData.deceasedName2 = getOptionalValue(row, '亡者二') || getOptionalValue(row, '第二亡者')

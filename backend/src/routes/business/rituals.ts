@@ -12,7 +12,11 @@ router.get('/rituals', async (req: Request, res: Response) => {
     if (status) where.status = status
     if (ritualType) where.ritualType = ritualType
 
-    const rituals = await prisma.ritual.findMany({ where, orderBy: { ritualDate: 'desc' } })
+    const rituals = await prisma.ritual.findMany({
+      where,
+      orderBy: { ritualDate: 'desc' },
+      include: { _count: { select: { plaques: true } } },
+    })
     res.json({ success: true, data: rituals })
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
@@ -60,6 +64,18 @@ router.delete('/rituals/:id', authMiddleware, asyncHandler(async (req: AuthReque
     await prisma.ritual.delete({ where: { id: req.params.id } })
     await logOperation(req.user, 'DELETE', 'ritual', req.params.id)
     res.json({ success: true })
+  } catch (error) {
+    res.status(500).json({ success: false, error: '服务器错误' })
+  }
+}))
+
+router.get('/rituals/:id/plaques', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
+  try {
+    const plaques = await prisma.memorialPlaque.findMany({
+      where: { ritualId: req.params.id },
+      orderBy: { createdAt: 'desc' },
+    })
+    res.json({ success: true, data: plaques })
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }

@@ -301,67 +301,7 @@ export default function PlaquesPage() {
     downloadWorkbook(wb, '延生禄位导入模板.xlsx')
   }
 
-  // 往生莲位导入模板
-  const downloadRebirthTemplate = () => {
-    const templateData = [
-      {
-        '牌位类型': '往生莲位',
-        '亡者姓名': '亡者姓名 (必填)',
-        '阴庚': '',
-        '亡者二': '',
-        '亡者二阴庚': '',
-        '规格': '',
-        '性别': '',
-        '生日': '',
-        '生日农历': '是/否',
-        '忌日': '',
-        '忌日农历': '是/否',
-        '亡者二生日': '',
-        '亡者二忌日': '',
-        '属相': '',
-        '年龄': '',
-        '阳上': '',
-        '寄语': '',
-        '电话': '',
-        '地址': '',
-        '开始日期': '',
-        '结束日期': '',
-      },
-      {
-        '牌位类型': '往生莲位',
-        '亡者姓名': '王五莲位',
-        '阴庚': '甲午年三月十二日建生',
-        '亡者二': '王小五',
-        '亡者二阴庚': '',
-        '规格': '大',
-        '性别': '男',
-        '生日': '甲午年三月十二',
-        '生日农历': '否',
-        '忌日': '八月初一',
-        '忌日农历': '是',
-        '亡者二生日': '',
-        '亡者二忌日': '',
-        '阳上': '王家眷属',
-        '寄语': '蒙佛接引 早登极乐',
-        '电话': '13800138002',
-        '地址': '本市西街三号',
-        '开始日期': '2024-01-01',
-        '结束日期': '2025-01-01',
-      },
-    ]
-    const ws = XLSX.utils.json_to_sheet(templateData)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, '往生莲位导入模板')
-    ws['!cols'] = [
-      { wch: 12 }, { wch: 14 }, { wch: 18 }, { wch: 10 }, { wch: 16 },
-      { wch: 8 }, { wch: 8 }, { wch: 16 }, { wch: 8 }, { wch: 14 },
-      { wch: 10 }, { wch: 16 }, { wch: 16 }, { wch: 8 }, { wch: 8 },
-      { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 30 }, { wch: 14 }, { wch: 14 },
-    ]
-    downloadWorkbook(wb, '往生莲位导入模板.xlsx')
-  }
-
-  // 超度牌位导入模板（3个Sheet对应3种版式）
+  // 超度牌位/往生莲位导入模板（含记名/不记名，3个Sheet）
   const downloadDeliveranceTemplate = () => {
     const baseCols = ['牌位类型', '牌位主体', '亡者', '亡者阴庚', '亡者生日', '亡者忌日', '亡者二', '亡者二阴庚', '亡者二生日', '亡者二忌日', '规格', '阳上', '寄语', '地址', '电话', '开始日期', '结束日期']
 
@@ -380,7 +320,7 @@ export default function PlaquesPage() {
     const sheet2 = [
       baseCols.reduce((obj, k) => ({ ...obj, [k]: '' }), {}),
       {
-        '牌位类型': '超度牌位',
+        '牌位类型': '往生莲位',
         '牌位主体': '李四',
         '亡者': '李四', '亡者阴庚': '戊午年正月初三日建生', '亡者生日': '1978-01-15', '亡者忌日': '2020-03-15',
         '亡者二': '', '亡者二阴庚': '', '亡者二生日': '', '亡者二忌日': '',
@@ -419,7 +359,7 @@ export default function PlaquesPage() {
       XLSX.utils.book_append_sheet(wb, ws, name as string)
     })
 
-    downloadWorkbook(wb, '超度牌位导入模板.xlsx')
+    downloadWorkbook(wb, '超度及往生牌位导入模板.xlsx')
   }
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -451,7 +391,17 @@ export default function PlaquesPage() {
       return;
     }
     try {
-      await businessAPI.exportPlaques(token!, Array.from(selectedIds));
+      // 按牌位类型分组：延生禄位 vs 超度牌位(含往生)
+      const selectedPlaques = plaques.filter(p => selectedIds.has(p.id))
+      const longevityIds = selectedPlaques.filter(p => p.plaqueType === 'LONGEVITY').map(p => p.id)
+      const deliveranceIds = selectedPlaques.filter(p => p.plaqueType !== 'LONGEVITY').map(p => p.id)
+      const dateStr = new Date().toISOString().slice(0, 10)
+      if (longevityIds.length > 0) {
+        await businessAPI.exportPlaques(token!, longevityIds, `延生禄位_${dateStr}.csv`)
+      }
+      if (deliveranceIds.length > 0) {
+        await businessAPI.exportPlaques(token!, deliveranceIds, `超度牌位_${dateStr}.csv`)
+      }
     } catch (error: any) {
       alert(error.message || "导出失败");
     }
@@ -466,24 +416,15 @@ export default function PlaquesPage() {
     loadPlaques()
   }, [filterType, filterSubtype, filterStatus, filterSize, filterDevotee, filterRitual])
 
+  // Client-side filtering for params not supported by the API (longevitySubtype, dedicationType, size)
   const filteredPlaques = plaques.filter(p => {
-    const searchLower = search.toLowerCase()
-    const matchesSearch = !searchLower || (
-      p.code?.toLowerCase().includes(searchLower) ||
-      p.holderName?.toLowerCase().includes(searchLower) ||
-      p.deceasedName?.toLowerCase().includes(searchLower) ||
-      p.yangShang?.toLowerCase().includes(searchLower)
-    )
-    const matchesType = !filterType || p.plaqueType === filterType
-    const matchesSubtype = !filterSubtype ||
-      (filterType === 'LONGEVITY' && p.longevitySubtype === filterSubtype) ||
-      (filterType === 'DELIVERANCE' && (p.dedicationType === filterSubtype || p.customDedicationType === filterSubtype))
-    const matchesStatus = !filterStatus || p.status === filterStatus
-    const matchesSize = !filterSize || p.size === filterSize
-    const matchesDevotee = !filterDevotee || p.devoteeId === filterDevotee
-    const matchesRitual = !filterRitual || p.ritualId === filterRitual
-
-    return matchesSearch && matchesType && matchesSubtype && matchesStatus && matchesSize && matchesDevotee && matchesRitual
+    if (filterSubtype) {
+      if (filterType === 'LONGEVITY' && p.longevitySubtype !== filterSubtype) return false
+      if (filterType === 'DELIVERANCE' && p.dedicationType !== filterSubtype) return false
+      if (!filterType && p.longevitySubtype !== filterSubtype && p.dedicationType !== filterSubtype) return false
+    }
+    if (filterSize && p.size !== filterSize) return false
+    return true
   })
 
   const handleSubmit = async () => {
@@ -1645,11 +1586,10 @@ export default function PlaquesPage() {
             <p className="text-sm text-amber-800 font-medium mb-2">导入说明</p>
             <ul className="text-xs text-amber-700 space-y-1 list-disc list-inside">
               <li>日期格式：YYYY-MM-DD，如 2024-01-15；农历列填"是"或"否"；规格填 大/中/小</li>
-              <li><strong>延生禄位</strong>：必填"牌位主体"</li>
-              <li><strong>往生莲位</strong>：必填"亡者姓名"；可选填"阴庚"、"亡者二"等</li>
-              <li><strong>超度牌位</strong>（3种版式自动切换）：</li>
-              <li className="ml-4">版式一 — 只填"牌位主体"、"阳上"、"地址"，无需亡者信息</li>
-              <li className="ml-4">版式二 — 加填"亡者"（阴庚/生日/忌日选填）</li>
+              <li><strong>延生禄位</strong>：下载延生模板，必填"牌位主体"</li>
+              <li><strong>往生莲位 / 超度牌位</strong>（共用同一模板，3种版式自动切换）：</li>
+              <li className="ml-4">版式一 — 只填"牌位主体"、"阳上"、"地址"，无需亡者信息（超度牌位专用）</li>
+              <li className="ml-4">版式二 — 加填"亡者"（阴庚/生日/忌日选填），牌位类型填"往生莲位"或"超度牌位"</li>
               <li className="ml-4">版式三 — 再加填"亡者二"（对应阴庚/生日/忌日选填）</li>
             </ul>
           </div>
@@ -1658,11 +1598,8 @@ export default function PlaquesPage() {
             <Button variant="secondary" onClick={downloadLongevityTemplate} className="active:scale-[0.98] transition-all duration-200">
               下载延生禄位模板
             </Button>
-            <Button variant="secondary" onClick={downloadRebirthTemplate} className="active:scale-[0.98] transition-all duration-200">
-              下载往生莲位模板
-            </Button>
-            <Button variant="secondary" onClick={downloadDeliveranceTemplate} className="active:scale-[0.98] transition-all duration-200">
-              下载超度牌位模板
+<Button variant="secondary" onClick={downloadDeliveranceTemplate} className="active:scale-[0.98] transition-all duration-200">
+              下载超度/往生模板
             </Button>
             <input
               ref={fileInputRef}

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { businessAPI } from '@/lib/api'
 import { Button, Card, Table, Badge, Modal, Input, Select, Textarea, Empty } from '@/components/ui'
+import type { PlaqueRecord } from '@/types/api'
 
 const ritualTypeOptions = [
   { value: 'BUDDHA_BIRTH', label: '佛诞法会' },
@@ -43,6 +44,9 @@ export default function RitualsPage() {
   const { token } = useAuthStore()
   const [rituals, setRituals] = useState<Ritual[]>([])
   const [loading, setLoading] = useState(true)
+  const [expandedRitualId, setExpandedRitualId] = useState<string | null>(null)
+  const [ritualPlaques, setRitualPlaques] = useState<PlaqueRecord[]>([])
+  const [loadingPlaques, setLoadingPlaques] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Ritual | null>(null)
   const [formData, setFormData] = useState({
@@ -125,6 +129,24 @@ export default function RitualsPage() {
     }
   }
 
+  const togglePlaques = async (ritualId: string) => {
+    if (expandedRitualId === ritualId) {
+      setExpandedRitualId(null)
+      setRitualPlaques([])
+      return
+    }
+    setExpandedRitualId(ritualId)
+    setLoadingPlaques(true)
+    try {
+      const plaques = await businessAPI.getRitualPlaques(token!, ritualId)
+      setRitualPlaques(plaques || [])
+    } catch (error) {
+      console.error('加载牌位失败:', error)
+    } finally {
+      setLoadingPlaques(false)
+    }
+  }
+
   const handleStatusChange = async (ritual: Ritual, newStatus: string) => {
     try {
       await businessAPI.updateRitual(token!, ritual.id, { ...ritual, status: newStatus })
@@ -133,6 +155,67 @@ export default function RitualsPage() {
       console.error('状态更新失败:', error)
     }
   }
+
+  const plaqueTypeLabels: Record<string, string> = {
+    LONGEVITY: '延生禄位', REBIRTH: '往生莲位', DELIVERANCE: '超度牌位',
+  }
+  const plaqueStatusLabels: Record<string, string> = {
+    ACTIVE: '有效', EXPIRED: '已过期', CANCELLED: '已作废', RENEWED: '已延期',
+  }
+
+  const renderPlaqueSubTable = () => (
+    <div className="px-4 py-3 bg-paper-dark border-t border-[#E8E0D0]">
+      <h4 className="text-sm font-medium text-tea mb-3">
+        关联牌位（{ritualPlaques.length}个，含已归档）
+      </h4>
+      {loadingPlaques ? (
+        <p className="text-sm text-tea/60 py-4 text-center">加载中...</p>
+      ) : ritualPlaques.length === 0 ? (
+        <p className="text-sm text-tea/60 py-4 text-center">该法会暂无关联牌位</p>
+      ) : (
+        <div className="overflow-x-auto rounded border border-[#E8E0D0]">
+          <table className="w-full text-sm">
+            <thead className="bg-[#F5F0E8]">
+              <tr>
+                <th className="px-3 py-2 text-left text-tea font-medium">编码</th>
+                <th className="px-3 py-2 text-left text-tea font-medium">类型</th>
+                <th className="px-3 py-2 text-left text-tea font-medium">牌位主体</th>
+                <th className="px-3 py-2 text-left text-tea font-medium">阳上</th>
+                <th className="px-3 py-2 text-left text-tea font-medium">规格</th>
+                <th className="px-3 py-2 text-left text-tea font-medium">有效期</th>
+                <th className="px-3 py-2 text-left text-tea font-medium">状态</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ritualPlaques.map((p: PlaqueRecord) => (
+                <tr key={p.id} className="border-t border-[#E8E0D0] hover:bg-white/50">
+                  <td className="px-3 py-2 font-mono text-xs text-tea/70">{p.code || '-'}</td>
+                  <td className="px-3 py-2">
+                    <Badge variant="info">{plaqueTypeLabels[p.plaqueType] || p.plaqueType}</Badge>
+                  </td>
+                  <td className="px-3 py-2 text-ink">
+                    {p.plaqueType === 'LONGEVITY' ? p.holderName || '-'
+                      : p.plaqueType === 'DELIVERANCE' ? (p.dedicationType || '-')
+                      : p.deceasedName ? `${p.deceasedName}往生莲位` : '-'}
+                  </td>
+                  <td className="px-3 py-2 text-tea">{p.yangShang || '-'}</td>
+                  <td className="px-3 py-2 text-tea">{p.size || '-'}</td>
+                  <td className="px-3 py-2 text-tea text-xs whitespace-nowrap">
+                    {p.startDate ? new Date(p.startDate).toLocaleDateString('zh-CN') : '-'} ~ {p.endDate ? new Date(p.endDate).toLocaleDateString('zh-CN') : '-'}
+                  </td>
+                  <td className="px-3 py-2">
+                    <Badge variant={p.status === 'ACTIVE' ? 'success' : p.status === 'EXPIRED' ? 'warning' : 'gray'}>
+                      {plaqueStatusLabels[p.status] || p.status}
+                    </Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
 
   const resetForm = () => {
     setFormData({
@@ -185,8 +268,8 @@ export default function RitualsPage() {
         {statusOptions.find(s => s.value === row.status)?.label || row.status}
       </Badge>
     )},
-    { key: 'actions', title: '操作', render: (row: Ritual) => (
-      <div className="flex gap-2">
+    { key: 'actions', title: '操作', render: (row: Ritual & { _count?: { plaques: number } }) => (
+      <div className="flex gap-2 items-center">
         <Button size="sm" variant="ghost" onClick={() => handleEdit(row)} className="active:scale-[0.98] transition-all duration-200">编辑</Button>
         <select
           value={row.status}
@@ -197,6 +280,14 @@ export default function RitualsPage() {
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
+        <Button
+          size="sm"
+          variant={expandedRitualId === row.id ? 'primary' : 'ghost'}
+          onClick={() => togglePlaques(row.id)}
+          className="active:scale-[0.98] transition-all duration-200"
+        >
+          牌位{row._count?.plaques ? ` (${row._count.plaques})` : ''}
+        </Button>
         <Button size="sm" variant="danger" onClick={() => handleDelete(row.id)} className="active:scale-[0.98] transition-all duration-200">删除</Button>
       </div>
     )},
@@ -217,12 +308,14 @@ export default function RitualsPage() {
       <section>
         <h3 className="text-lg font-medium text-ink mb-3">进行中法会</h3>
         <Card>
-          <div className="overflow-x-auto rounded-xl border min-w-0"><Table
-            columns={columns}
-            data={activeRituals}
-            loading={loading}
-            emptyText="暂无进行中法会"
-          />
+          <div className="overflow-x-auto rounded-xl border min-w-0">
+            <Table
+              columns={columns}
+              data={activeRituals}
+              loading={loading}
+              emptyText="暂无进行中法会"
+            />
+            {expandedRitualId && activeRituals.some(r => r.id === expandedRitualId) && renderPlaqueSubTable()}
           </div>
         </Card>
       </section>
@@ -230,12 +323,14 @@ export default function RitualsPage() {
       <section>
         <h3 className="text-lg font-medium text-ink mb-3">往期法会</h3>
         <Card>
-          <div className="overflow-x-auto rounded-xl border min-w-0"><Table
-            columns={columns}
-            data={pastRituals}
-            loading={loading}
-            emptyText="暂无往期法会"
-          />
+          <div className="overflow-x-auto rounded-xl border min-w-0">
+            <Table
+              columns={columns}
+              data={pastRituals}
+              loading={loading}
+              emptyText="暂无往期法会"
+            />
+            {expandedRitualId && pastRituals.some(r => r.id === expandedRitualId) && renderPlaqueSubTable()}
           </div>
         </Card>
       </section>

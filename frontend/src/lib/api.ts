@@ -310,6 +310,8 @@ export const businessAPI = {
     const query = params ? '?' + new URLSearchParams(params).toString() : ''
     return request<RitualRecord[]>(`/api/rituals${query}`, options)
   },
+  getRitualPlaques: (token: string, ritualId: string) =>
+    request<PlaqueRecord[]>(`/api/rituals/${ritualId}/plaques`, { token }),
   createRitual: (token: string, data: any) =>
     request<any>('/api/rituals', { method: 'POST', token, body: JSON.stringify(data) }),
   updateRitual: (token: string, id: string, data: any) =>
@@ -425,7 +427,7 @@ export const businessAPI = {
   },
 
 // Export plaques (CSV)
-  exportPlaques: async (token: string, plaqueIds: string[]): Promise<void> => {
+  exportPlaques: async (token: string, plaqueIds: string[], filename?: string): Promise<void> => {
     const API_BASE = process.env.NEXT_PUBLIC_API_BASE || ''
     const url = API_BASE + '/api/batch/export-plaques'
     const res = await fetch(url, {
@@ -444,7 +446,7 @@ export const businessAPI = {
     const objectUrl = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = objectUrl
-    a.download = 'plaques_' + new Date().toISOString().slice(0, 10) + '.csv'
+    a.download = filename || ('plaques_' + new Date().toISOString().slice(0, 10) + '.csv')
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
