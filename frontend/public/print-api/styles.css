@@ -1260,3 +1260,33 @@ dialog fieldset legend {
   color: #333;
   margin-bottom: 4px;
 }
+
+/* Manual page: override designer-centric styles when fields are directly editable */
+.sheet.manual-edit .editable-field {
+  cursor: default;
+  user-select: auto;
+  touch-action: auto;
+}
+
+.sheet.manual-edit .editable-field .field-flow {
+  cursor: text;
+  user-select: text;
+  min-width: 1em;
+  min-height: 1em;
+  outline: none;
+}
+
+.sheet.manual-edit .editable-field .field-flow:focus {
+  outline: 2px solid var(--accent, #c49335);
+  outline-offset: 1px;
+  border-radius: 2px;
+}
+
+.sheet.manual-edit .editable-field.is-placeholder .field-flow {
+  color: var(--muted);
+}
+
+.sheet.manual-edit .editable-field.is-placeholder .field-flow:empty::before {
+  content: attr(data-placeholder);
+  opacity: 0.6;
+}

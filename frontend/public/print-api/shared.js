@@ -683,8 +683,8 @@ function rebuildTemplateOptions(selectedId = $("templateSelect")?.value || "") {
   });
   if (selectedId && Array.from(select.options).some((option) => option.value === selectedId)) {
     select.value = selectedId;
-  } else if (templates[0]) {
-    select.value = templates[0].id;
+  } else if (sortedTemplates[0]) {
+    select.value = sortedTemplates[0].id;
   }
 }
 
@@ -776,9 +776,9 @@ function syncSingleVariantControls() {
   const layout = ensureLayout(currentLayoutKey());
   const presets = singleVariantPresetsForCurrentType();
   const row = currentRows()[state.pageIndex];
-  const detectedKey = normalizeSingleVariantKey(row?.__variant || "");
+  const detectedKey = row ? normalizeSingleVariantKey(row.__variant || "") : "";
   const selectedKey = normalizeSingleVariantKey(layout.singleVariantKey || state.singleVariantKey || presets[0].key);
-  const shouldFollowDetected = detectedKey && !state.singleVariantManualOverride;
+  const shouldFollowDetected = row && detectedKey && !state.singleVariantManualOverride;
   state.singleVariantKey = shouldFollowDetected ? detectedKey : selectedKey;
   refreshSingleVariantOptions();
   if ($("singleVariant")) $("singleVariant").value = state.singleVariantKey || presets[0].key;
@@ -1214,7 +1214,7 @@ function shouldPrintTemplateBackground(forPrint = false) {
 }
 
 function syncPrintBackgroundGraphicsControls(event = null) {
-  // Only designPrintBackgroundGraphics remains (print settings panel removed)
+  render();
 }
 
 function parseDelimited(text) {
@@ -1432,14 +1432,33 @@ async function loadSystemPlaques(group) {
         ].some((value) => String(value || "").includes(keyword));
       }));
     } else {
-      batches = await Promise.all(plaqueTypes.map((plaqueType) => fetchJson(`/api/plaques?${new URLSearchParams({
-        plaqueType,
-        ...(status ? { status } : {}),
-        ...(keyword ? { keyword } : {}),
-        ...(ritualId ? { ritualId } : {}),
-      }).toString()}`, {
-        headers: authHeaders(),
-      })));
+      const PAGE_SIZE = 200;
+      async function fetchAllPlaques(extraParams) {
+        const baseParams = {
+          pageSize: String(PAGE_SIZE),
+          ...(status ? { status } : {}),
+          ...(keyword ? { keyword } : {}),
+          ...(ritualId ? { ritualId } : {}),
+          ...extraParams,
+        };
+        const firstUrl = `/api/plaques?${new URLSearchParams({ ...baseParams, page: "1" }).toString()}`;
+        const firstResp = await fetch(firstUrl, { cache: "no-store", credentials: "include", headers: authHeaders() });
+        const firstJson = await firstResp.json();
+        if (!firstResp.ok || firstJson.success === false) throw new Error(firstJson.error || `请求失败：${firstResp.status}`);
+        const all = firstJson.data || [];
+        const total = firstJson.total || all.length;
+        if (total > PAGE_SIZE) {
+          const totalPages = Math.ceil(total / PAGE_SIZE);
+          const remaining = await Promise.all(
+            Array.from({ length: totalPages - 1 }, (_, i) =>
+              fetchJson(`/api/plaques?${new URLSearchParams({ ...baseParams, page: String(i + 2) }).toString()}`, { headers: authHeaders() })
+            )
+          );
+          all.push(...remaining.flat());
+        }
+        return all;
+      }
+      batches = await Promise.all(plaqueTypes.map((plaqueType) => fetchAllPlaques({ plaqueType })));
     }
     const rows = batches
       .map(normalizeListResponse)
@@ -1496,18 +1515,22 @@ async function applyLaunchParams() {
     const selectedIds = new Set([plaqueId, ...plaqueIds].filter(Boolean));
     let plaques;
     if (isDesktopRuntime()) {
+      const systemStatusEl = $("systemStatus");
+      const statusValue = systemStatusEl ? (systemStatusEl.value || "ACTIVE") : "ACTIVE";
       plaques = (await listDesktopRows("plaques")).filter((plaque) => {
         if (selectedIds.size) return selectedIds.has(plaque.id);
         if (type && plaque.plaqueType !== type) return false;
-        const status = $("systemStatus").value || "ACTIVE";
-        return !status || plaque.status === status;
+        return !statusValue || plaque.status === statusValue;
       });
     } else {
+      const systemStatusEl = $("systemStatus");
+      const statusValue = systemStatusEl ? (systemStatusEl.value || "ACTIVE") : "ACTIVE";
       const query = new URLSearchParams({
         ...(type ? { plaqueType: type } : {}),
-        ...(!selectedIds.size && ($("systemStatus").value || "ACTIVE")
-          ? { status: $("systemStatus").value || "ACTIVE" }
+        ...(!selectedIds.size && statusValue
+          ? { status: statusValue }
           : {}),
+        pageSize: String(selectedIds.size ? 200 : 200),
       });
       plaques = await fetchJson(`/api/plaques?${query.toString()}`, { headers: authHeaders() });
       if (selectedIds.size) plaques = plaques.filter((plaque) => selectedIds.has(plaque.id));
@@ -1536,6 +1559,13 @@ async function applyLaunchParams() {
   } catch (error) {
     console.error("载入入口数据失败:", error);
     setBusy("载入入口数据失败");
+    if ($("preview")) {
+      $("preview").innerHTML = `<div class="empty" style="padding:40px;text-align:center;color:var(--muted);">
+        <p style="font-size:16px;margin-bottom:8px;">数据加载失败</p>
+        <p style="font-size:13px;">${escapeHtml(error.message || "无法读取牌位数据，请检查网络或重新登录")}</p>
+        <p style="font-size:12px;margin-top:12px;">请关闭此页面后重试，或直接在打印工具中手动导入数据。</p>
+      </div>`;
+    }
   }
 }
 
@@ -2534,6 +2564,7 @@ function defaultPaperForTemplateType(templateType) {
 
 function renderTable() {
   const wrap = $("tableWrap");
+  if (!wrap) return;
   const rows = allCurrentRows();
   const fields = currentFields();
   if (!rows.length) {
@@ -3080,6 +3111,7 @@ function updateDataHint() {
 }
 
 function applySummaryDefault(force = false) {
+  if (!$("summaryFormat")) return;
   if (state.mode === "summary") refreshSummaryVariantOptions();
   const nextDefault = defaultSummaryFormat();
   if (force || !$("summaryFormat").value.trim() || $("summaryFormat").value === state.lastSummaryDefault) {
@@ -4600,18 +4632,18 @@ function currentSummarySettings() {
 function applySavedSummarySettings(settings) {
   if (!settings) return;
   refreshSummaryVariantOptions();
-  if (typeof settings.format === "string") $("summaryFormat").value = settings.format;
-  if (settings.columnCount) $("columnCount").value = settings.columnCount;
-  if (settings.rowsPerColumn) $("rowsPerColumn").value = settings.rowsPerColumn;
-  if (settings.fontSize) $("summaryFont").value = settings.fontSize;
-  if (settings.lineGap !== undefined) $("summaryLineGap").value = settings.lineGap;
-  if (settings.pageMargin !== undefined) $("pageMargin").value = settings.pageMargin;
-  if (settings.columnGap !== undefined) $("columnGap").value = settings.columnGap;
-  if (settings.vertical !== undefined) $("summaryVertical").checked = settings.vertical;
+  if (typeof settings.format === "string" && $("summaryFormat")) $("summaryFormat").value = settings.format;
+  if (settings.columnCount && $("columnCount")) $("columnCount").value = settings.columnCount;
+  if (settings.rowsPerColumn && $("rowsPerColumn")) $("rowsPerColumn").value = settings.rowsPerColumn;
+  if (settings.fontSize && $("summaryFont")) $("summaryFont").value = settings.fontSize;
+  if (settings.lineGap !== undefined && $("summaryLineGap")) $("summaryLineGap").value = settings.lineGap;
+  if (settings.pageMargin !== undefined && $("pageMargin")) $("pageMargin").value = settings.pageMargin;
+  if (settings.columnGap !== undefined && $("columnGap")) $("columnGap").value = settings.columnGap;
+  if (settings.vertical !== undefined && $("summaryVertical")) $("summaryVertical").checked = settings.vertical;
   if (settings.variantKey && Array.from($("summaryVariant")?.options || []).some((option) => option.value === settings.variantKey)) {
     $("summaryVariant").value = settings.variantKey;
   }
-  state.lastSummaryDefault = $("summaryFormat").value;
+  if ($("summaryFormat")) state.lastSummaryDefault = $("summaryFormat").value;
 }
 
 function clone(valueToClone) {

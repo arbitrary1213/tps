@@ -18,6 +18,8 @@ async function init() {
   $("singleVariantTabs")?.addEventListener("click", handleSingleVariantTabClick);
   $("clearManualInputBtn")?.addEventListener("click", clearManualInput);
   $("printBtn")?.addEventListener("click", printAll);
+  $("showBg")?.addEventListener("change", render);
+  $("designPrintBackgroundGraphics")?.addEventListener("change", render);
 
   document.querySelectorAll(".panel-toggle").forEach((btn) => {
     btn.addEventListener("click", () => togglePanel(btn.closest(".panel")));
@@ -32,7 +34,7 @@ async function init() {
 
 function render() {
   syncPrintSize();
-  if (!state.isDesignerPage && !$("templateSelect").options.length) {
+  if (!state.isDesignerPage && (!$("templateSelect") || !$("templateSelect").options.length)) {
     $("preview").innerHTML = '<div class="empty">未读取到已同步模板，请先在主窗口同步服务器模板。</div>';
     $("statusText").textContent = "未读取到已同步模板";
     $("pageText").textContent = "";
@@ -56,19 +58,30 @@ function renderSingle() {
 function makeFieldsEditable() {
   const sheet = $("preview").querySelector(".sheet");
   if (!sheet) return;
+  sheet.classList.add("manual-edit");
   sheet.querySelectorAll(".field-flow").forEach((span) => {
     span.contentEditable = "plaintext-only";
     span.addEventListener("input", updateManualRow);
     span.addEventListener("blur", updateManualRow);
+    span.addEventListener("focus", () => {
+      const sel = window.getSelection();
+      if (span.textContent.trim() && sel && span.contains(sel.anchorNode)) {
+        return;
+      }
+      const range = document.createRange();
+      range.selectNodeContents(span);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    });
   });
   sheet.querySelectorAll(".is-placeholder .field-flow").forEach((span) => {
-    span.textContent = "";
+    span.dataset.placeholder = (span.textContent || "").trim();
   });
 }
 
 function updateManualRow() {
   const sheet = $("preview").querySelector(".sheet");
-  if (!sheet) return;
+  if (!sheet || !sheet.classList.contains("manual-edit")) return;
   const row = {};
   sheet.querySelectorAll("[data-edit-key]").forEach((el) => {
     const key = el.dataset.editKey;

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>牌位套打软件</title>
-  <link rel="stylesheet" href="styles.css?v=20260519-1530">
+  <link rel="stylesheet" href="styles.css?v=20260519-1600">
 </head>
 <body>
   <header class="app-header">
@@ -244,9 +244,36 @@
         </div>
       </section>
     </aside>
+
+    <aside class="print-settings-panel">
+      <div class="print-settings-header">
+        <h2>打印设置</h2>
+        <span id="printSettingsStatus" style="font-size:13px;color:var(--gold);"></span>
+      </div>
+      <label>
+        纸张
+        <span id="printSettingsPaper" style="font-size:14px;">A4 210×297mm</span>
+      </label>
+      <label>
+        模板
+        <span id="printSettingsTemplate" style="font-size:14px;">--</span>
+      </label>
+      <label class="print-settings-checkbox">
+        <input id="previewPrintBackgroundGraphics" type="checkbox" checked>
+        打印 PDF / 参考底图
+      </label>
+      <details class="print-more-settings">
+        <summary>更多设置</summary>
+        <span style="font-size:13px;color:#a5a9ae;">请在非预览模式下调整纸张尺寸、页边距等参数。</span>
+      </details>
+      <div class="print-settings-actions">
+        <span id="printSettingsPlaqueCount" style="font-size:13px;color:#a5a9ae;"></span>
+        <button id="previewPrintBtn" class="primary" type="button">打印</button>
+      </div>
+    </aside>
   </main>
 
-  <script src="shared.js?v=20260519-1530"></script>
-  <script src="print.js?v=20260519-1530"></script>
+  <script src="shared.js?v=20260519-1600"></script>
+  <script src="print.js?v=20260519-1600"></script>
 </body>
 </html>

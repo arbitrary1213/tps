@@ -32,7 +32,14 @@ async function init() {
   $("applyManualInputBtn")?.addEventListener("click", applyManualInput);
 
   $("printBtn").addEventListener("click", printAll);
+  $("previewPrintBtn")?.addEventListener("click", printAll);
   $("designPrintBackgroundGraphics")?.addEventListener("change", syncPrintBackgroundGraphicsControls);
+  $("previewPrintBackgroundGraphics")?.addEventListener("change", () => {
+    const mainCb = $("designPrintBackgroundGraphics");
+    const previewCb = $("previewPrintBackgroundGraphics");
+    if (mainCb) mainCb.checked = previewCb?.checked ?? true;
+    syncPrintBackgroundGraphicsControls();
+  });
   $("prevBtn").addEventListener("click", () => changePage(-1));
   $("nextBtn").addEventListener("click", () => changePage(1));
   $("jumpPageBtn").addEventListener("click", jumpToPage);
@@ -50,14 +57,11 @@ async function init() {
     document.body.classList.add("print-preview-mode");
   }
 
-  const controls = [
-    "paperSelect", "paperWidth", "paperHeight",
-    "summaryVariant", "summaryFormat", "columnCount", "rowsPerColumn", "summaryFont",
-    "summaryLineGap", "pageMargin", "columnGap", "summaryVertical",
-  ].map($).filter(Boolean);
-
   await loadServerTemplates();
-  loadAllSamples();
+  const hasLaunchPlaqueIds = !!(launchParams.get("plaqueId") || launchParams.get("plaqueIds"));
+  if (!hasLaunchPlaqueIds) {
+    loadAllSamples();
+  }
   if ($("templateSelect")?.options?.length) {
     applyTemplate();
   } else {
@@ -65,12 +69,13 @@ async function init() {
   }
   loadRitualOptions();
   loadDedicationTypeOptions();
-  applyLaunchParams();
+  await applyLaunchParams();
 }
 
 function render() {
   syncPrintSize();
-  if (!state.isDesignerPage && !$("templateSelect").options.length) {
+  syncPrintSettingsPanel();
+  if (!state.isDesignerPage && (!$("templateSelect") || !$("templateSelect").options.length)) {
     $("preview").innerHTML = '<div class="empty">未读取到已同步模板，请先在主窗口同步服务器模板。</div>';
     $("statusText").textContent = "未读取到已同步模板";
     $("pageText").textContent = "";
@@ -114,6 +119,29 @@ function renderSummary() {
   $("statusText").textContent = `${currentDataGroupName()}汇总：共 ${rows.length} 条`;
   $("pageText").textContent = `第 ${state.pageIndex + 1} / ${totalPages} 页`;
   syncJumpPageInput(totalPages);
+}
+
+function syncPrintSettingsPanel() {
+  const panel = document.querySelector(".print-settings-panel");
+  if (!panel || panel.style.display === "none") return;
+  const template = currentTemplate();
+  const paperW = $("paperWidth")?.value || 210;
+  const paperH = $("paperHeight")?.value || 297;
+  const ps = $("printSettingsPaper");
+  const pt = $("printSettingsTemplate");
+  const pcount = $("printSettingsPlaqueCount");
+  const pstatus = $("printSettingsStatus");
+  const rows = currentRows();
+  if (ps) ps.textContent = `${$("paperSelect")?.value || "custom"} ${paperW}×${paperH}mm`;
+  if (pt) pt.textContent = template ? templateDisplayName(template) : "--";
+  if (pcount) pcount.textContent = rows.length ? `${rows.length} 条数据` : "";
+  if (pstatus) {
+    const st = $("statusText");
+    pstatus.textContent = st ? st.textContent : "";
+  }
+  const previewCb = $("previewPrintBackgroundGraphics");
+  const mainCb = $("designPrintBackgroundGraphics");
+  if (previewCb && mainCb) previewCb.checked = mainCb.checked;
 }
 
 init();
