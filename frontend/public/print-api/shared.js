@@ -438,6 +438,42 @@ function pruneObsoleteSingleTemplates() {
   return true;
 }
 
+function dedupeTemplatesByNameAndGroup() {
+  const seen = new Map();
+  const removedIds = [];
+  for (let index = templates.length - 1; index >= 0; index -= 1) {
+    const template = templates[index];
+    if (!template?.id) continue;
+    const key = `${template.name || ""}__${template.dataGroup || ""}`;
+    const existing = seen.get(key);
+    if (existing) {
+      if (state.remoteTemplateIds[template.id] && !state.remoteTemplateIds[existing]) {
+        migrateLocalTemplateId(existing, template.id);
+        seen.set(key, template.id);
+      } else {
+        removedIds.push(template.id);
+        templates.splice(index, 1);
+      }
+    } else {
+      seen.set(key, template.id);
+    }
+  }
+
+  if (!removedIds.length) return;
+
+  removedIds.forEach((templateId) => {
+    delete templateDefaults[templateId];
+    delete state.layouts[templateId];
+    delete state.remoteTemplateIds[templateId];
+  });
+
+  const currentSelectedId = $("templateSelect")?.value || "";
+  if (removedIds.includes(currentSelectedId) && templates.length) {
+    $("templateSelect").value = templates[0].id;
+  }
+  rebuildTemplateOptions($("templateSelect")?.value || "");
+}
+
 function defaultSingleVariantKeyForGroup(group = currentDataGroup()) {
   return singleVariantPresetsByType[group]?.[0]?.key || singleVariantPresets[0].key;
 }
@@ -3458,6 +3494,7 @@ async function loadServerTemplates() {
       if (pruneObsoleteSingleTemplates()) {
         saveRemoteTemplateIds();
       }
+      dedupeTemplatesByNameAndGroup();
       saveLayouts();
       saveCustomTemplatesToStorage();
       setTemplateStatus(localTemplates.length ? "本地已同步模板" : "内置模板", localTemplates.length ? "本地已同步" : "未发现本地模板");
@@ -3477,6 +3514,7 @@ async function loadServerTemplates() {
     if (pruneObsoleteSingleTemplates()) {
       saveRemoteTemplateIds();
     }
+    dedupeTemplatesByNameAndGroup();
     saveLayouts();
     saveCustomTemplatesToStorage();
     setTemplateStatus(serverTemplates.length ? "服务器模板" : "内置模板", serverTemplates.length ? "服务器已同步" : "服务器无模板");
@@ -3553,7 +3591,7 @@ function importServerTemplate(template) {
   };
   const normalizedTemplate = normalizeCatalogTemplate(localTemplate);
 
-  // Match by direct ID, then fall back to remoteTemplateIds mapping
+  // Match by direct ID, then fall back to remoteTemplateIds mapping, then by name + dataGroup
   let index = templates.findIndex((item) => item.id === localTemplate.id);
   if (index < 0) {
     const mappedLocalId = Object.keys(state.remoteTemplateIds).find(
@@ -3562,6 +3600,14 @@ function importServerTemplate(template) {
     if (mappedLocalId) {
       migrateLocalTemplateId(mappedLocalId, localTemplate.id);
       index = templates.findIndex((item) => item.id === localTemplate.id);
+    }
+  }
+  if (index < 0) {
+    index = templates.findIndex((item) =>
+      item.name === localTemplate.name && item.dataGroup === localTemplate.dataGroup
+    );
+    if (index >= 0) {
+      migrateLocalTemplateId(templates[index].id, localTemplate.id);
     }
   }
 
