@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import crypto from 'crypto'
 
-const CSRF_COOKIE = '__Host-csrf'
+const CSRF_COOKIE = process.env.NODE_ENV === 'production' ? '__Host-csrf' : 'csrf'
 const CSRF_HEADER = 'x-csrf-token'
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 
