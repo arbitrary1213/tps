@@ -16,7 +16,7 @@ const setAuthCookie = (res: Response, token: string) => {
   res.cookie(AUTH_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
     path: '/',
     maxAge: AUTH_COOKIE_MAX_AGE_MS,
   })
@@ -26,7 +26,7 @@ const clearAuthCookie = (res: Response) => {
   res.clearCookie(AUTH_COOKIE_NAME, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
     path: '/',
   })
 }
