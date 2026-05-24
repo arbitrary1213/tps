@@ -9,7 +9,7 @@ const router = Router()
 const loginAttempts = new Map<string, { count: number; lockUntil: number }>()
 const MAX_LOGIN_ATTEMPTS = 5
 const LOCK_DURATION_MS = 15 * 60 * 1000
-const AUTH_COOKIE_NAME = process.env.NODE_ENV === 'production' ? '__Host-temple_token' : 'temple_token'
+const AUTH_COOKIE_NAME = 'temple_token'
 const AUTH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 
 const setAuthCookie = (res: Response, token: string) => {

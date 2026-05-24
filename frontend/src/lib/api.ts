@@ -2,8 +2,7 @@ const API_BASE = ''
 
 function getCsrfToken(): string | undefined {
   if (typeof document === 'undefined') return undefined
-  const name = process.env.NODE_ENV === 'production' ? '__Host-csrf' : 'csrf'
-  return document.cookie.split('; ').find(c => c.startsWith(name + '='))?.split('=')[1]
+  return document.cookie.split('; ').find(c => c.startsWith('csrf='))?.split('=')[1]
 }
 
 import type {
