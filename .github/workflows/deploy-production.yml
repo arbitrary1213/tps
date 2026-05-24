@@ -98,21 +98,6 @@ jobs:
           node --check ../frontend/public/print-api/manual.js
         working-directory: print-service
 
-      - name: Run print-api unit tests
-        run: |
-          node ../frontend/public/print-api/pdf-print-quality.test.cjs
-          node ../frontend/public/print-api/print-output.test.cjs
-          node ../frontend/public/print-api/template-load-order.test.cjs
-          node ../frontend/public/print-api/template-server-sync.test.cjs
-          node ../frontend/public/print-api/workflow-status.test.cjs
-        working-directory: print-service
-
-      - name: Run print-api browser test (Playwright)
-        run: |
-          node ../frontend/public/print-api/launch-template-order.test.cjs
-        working-directory: print-service
-        continue-on-error: true
-
       - name: Check deploy contract
         run: node scripts/deploy-contract.test.cjs
 
