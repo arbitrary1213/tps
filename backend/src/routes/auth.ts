@@ -60,6 +60,10 @@ const clearFailedAttempts = (ip: string): void => {
 }
 
 // 登录
+router.get('/csrf-token', (req: Request, res: Response) => {
+  res.json({ success: true, csrfToken: req.headers['x-csrf-token'] || '' })
+})
+
 router.post('/login', async (req: Request, res: Response) => {
   try {
     const clientIP = getClientIP(req)

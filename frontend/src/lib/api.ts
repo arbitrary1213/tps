@@ -145,7 +145,13 @@ async function request<T = any>(endpoint: string, options: FetchOptions = {}): P
   }
 
   if (method !== 'GET' && method !== 'HEAD') {
-    const csrf = getCsrfToken()
+    let csrf = getCsrfToken()
+    if (!csrf) {
+      try {
+        await fetch('/api/auth/csrf-token').then(r => r.json())
+        csrf = getCsrfToken()
+      } catch {}
+    }
     if (csrf) headers['x-csrf-token'] = csrf
   }
 
