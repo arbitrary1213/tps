@@ -4,11 +4,13 @@ import crypto from 'crypto'
 const CSRF_COOKIE = 'csrf'
 const CSRF_HEADER = 'x-csrf-token'
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
-const CSRF_SKIP_PATHS = new Set([
+const CSRF_SKIP_PREFIXES = [
   '/api/auth/login',
   '/api/auth/register',
   '/api/auth/csrf-token',
-])
+  '/api/auth/logout',
+  '/api/plaque-templates',
+]
 
 function getCookie(req: Request, name: string): string | undefined {
   const h = req.headers.cookie || ''
@@ -29,7 +31,7 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
     return next()
   }
 
-  if (CSRF_SKIP_PATHS.has(req.path)) {
+  if (CSRF_SKIP_PREFIXES.some((prefix) => req.path.startsWith(prefix))) {
     return next()
   }
 

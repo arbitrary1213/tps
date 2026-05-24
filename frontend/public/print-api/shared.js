@@ -3362,9 +3362,17 @@ function authToken() {
   return safeStorageGet("token") || "";
 }
 
+function csrfToken() {
+  const match = document.cookie.match(/(?:^|;\s*)csrf=([^;]*)/);
+  return match ? match[1] : '';
+}
+
 function authHeaders() {
   const token = authToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const csrf = csrfToken();
+  if (csrf) headers['x-csrf-token'] = csrf;
+  return headers;
 }
 
 function canSyncServerTemplates() {
