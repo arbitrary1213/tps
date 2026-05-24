@@ -4,6 +4,11 @@ import crypto from 'crypto'
 const CSRF_COOKIE = 'csrf'
 const CSRF_HEADER = 'x-csrf-token'
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
+const CSRF_SKIP_PATHS = new Set([
+  '/api/auth/login',
+  '/api/auth/register',
+  '/api/auth/csrf-token',
+])
 
 function getCookie(req: Request, name: string): string | undefined {
   const h = req.headers.cookie || ''
@@ -21,6 +26,10 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
         path: '/',
       })
     }
+    return next()
+  }
+
+  if (CSRF_SKIP_PATHS.has(req.path)) {
     return next()
   }
 
