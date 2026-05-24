@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-const DEFAULT_REMOTE_API_BASE = process.env.NEXT_PUBLIC_API_BASE || process.env.API_BASE || ''
-
-function resolveRemoteBase(req: NextRequest) {
-  const headerBase = req.headers.get('x-temple-api-base')
-  return (headerBase || DEFAULT_REMOTE_API_BASE).replace(/\/+$/, '')
-}
+import { resolveRemoteBase } from '@/lib/proxy-whitelist'
 
 async function proxy(req: NextRequest, context: { params: Promise<{ path: string[] }> }) {
-  const remoteBase = resolveRemoteBase(req)
-  if (!remoteBase) {
-    return NextResponse.json({ success: false, error: 'Server API base is not configured' }, { status: 500 })
+  let remoteBase: string
+  try {
+    remoteBase = resolveRemoteBase(req.headers.get('x-temple-api-base'))
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 403 })
   }
 
   const { path } = await context.params

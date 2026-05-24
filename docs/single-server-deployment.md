@@ -35,10 +35,12 @@ admin panel  ---- HTTPS API ---- PostgreSQL
 
 ## Runtime Truth
 
-- Frontend production runtime: `systemd + Next standalone`
+- Frontend production runtime: Docker container (via `docker compose`)
 - Backend production runtime: Docker container
 - Print-service production runtime: Docker container
 - Database production runtime: PostgreSQL container
+- Nginx production runtime: Docker container (temple-nginx)
+- All five services managed by `docker/docker-compose.yml` via `deploy.sh`
 - `desktop-app` does not run on the server; it calls the HTTPS API remotely.
 - `wechat-platform` remains a separately deployable service and is not yet part of the mandatory single-customer runtime path.
 

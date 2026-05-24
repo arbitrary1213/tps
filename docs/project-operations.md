@@ -21,11 +21,11 @@
 
 ## 2. 服务结构
 
-当前线上真实运行结构为：前端由 `systemd + Next standalone` 运行，后端、打印服务、数据库使用容器。
+当前全部服务由 Docker Compose 编排运行，包括 5 个容器：
 
 | 服务 | 容器名 | 端口 | 说明 |
 | --- | --- | --- | --- |
-| 前端 | `temple-frontend.service` | `3000` | Next.js 后台和前台页面（systemd + standalone） |
+| 前端 | `temple-frontend` | `3000` | Next.js 后台和前台页面 |
 | 后端 | `temple-backend` | `3002` | Express API 服务 |
 | 打印服务 | `temple-print` | `3001` | 牌位模板设计和套打工具 |
 | 数据库 | `temple-db` | `5432` | PostgreSQL |
@@ -140,7 +140,7 @@ docker ps
 ```bash
 docker logs --tail=100 temple-backend
 docker logs --tail=100 temple-print
-journalctl -u temple-frontend.service -n 100 --no-pager
+docker logs --tail=100 temple-frontend
 ```
 
 重建并启动服务：
@@ -155,8 +155,7 @@ cd /opt/temple-os
 如果需要手工处理容器，可先删除对应容器再重启：
 
 ```bash
-docker rm -f temple-backend temple-print
-systemctl restart temple-frontend.service
+docker rm -f temple-backend temple-print temple-frontend
 ```
 
 健康检查：

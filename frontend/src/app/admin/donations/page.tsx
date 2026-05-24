@@ -25,10 +25,10 @@ interface Donation {
   devoteeId?: string
   devotee?: { name: string }
   donorName: string
-  donorPhone: string
+  donorPhone?: string
   type: string
   amount: number
-  paymentMethod: string
+  paymentMethod?: string
   donationDate: string
   receiptNumber?: string
   operator?: string

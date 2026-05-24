@@ -24,6 +24,7 @@ wechat-platform/data/
 frontend-deploy/
 frontend-runtime/
 releases/
+test-results/
 
 # Debug
 npm-debug.log*

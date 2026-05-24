@@ -8,9 +8,9 @@ import { Button, Card, Table, Badge, Modal, Input, Select } from '@/components/u
 interface Task {
   id: string
   name: string
-  taskDate: string
-  startTime: string
-  endTime: string
+  taskDate?: string
+  startTime?: string
+  endTime?: string
   status: string
   currentCount: number
 }

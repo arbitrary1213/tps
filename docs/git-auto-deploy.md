@@ -28,9 +28,7 @@ The production server must already have:
 /opt/temple-os
 /opt/temple-os/docker/.env
 /opt/temple-os/backend/.env, if the backend needs it
-Docker
-Node.js
-systemd service temple-frontend.service
+Docker (with compose plugin)
 ```
 
 The workflow does not upload `.env` files. Production secrets stay on the server.
@@ -62,8 +60,8 @@ print
 
 - Do not commit real `.env` files.
 - The server deploy script loads `/opt/temple-os/docker/.env` before building and restarting services.
-- The current frontend runtime is systemd-based, not a frontend Docker container.
-- The backend and print service are containerized with host networking.
+- All five services (frontend, backend, print, DB, nginx) are managed by Docker Compose.
+- All services use host networking for simplified single-server deployment.
 - The deploy script creates a database backup before pulling and rebuilding.
 - `desktop-app` and `wechat-platform` are not deployed by this workflow today.
 

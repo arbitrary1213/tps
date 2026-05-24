@@ -27,8 +27,8 @@
 - Modify: `docs/MODULE_MAP.md`
 - Modify: `docs/MAINTENANCE_AUDIT.md`
 
-- [ ] Confirm production runtime truth.
-  - Frontend production runtime remains `systemd + Next standalone`.
+- [x] Confirm production runtime truth. (Resolved: all 5 services run via Docker Compose)
+  - ~~Frontend production runtime remains `systemd + Next standalone`.~~
   - Backend runtime remains Docker container on host networking.
   - Print runtime remains Docker container on host networking.
   - Database runtime remains PostgreSQL container.

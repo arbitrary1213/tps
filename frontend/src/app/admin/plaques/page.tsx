@@ -370,7 +370,8 @@ export default function PlaquesPage() {
     setImportResult(null)
 
     try {
-      const result = await businessAPI.importPlaques(token!, file)
+      const raw = await businessAPI.importPlaques(token!, file)
+      const result = { success: raw.imported, failed: raw.skipped, errors: raw.errors }
       setImportResult(result)
       if (result.success > 0) {
         loadPlaques()

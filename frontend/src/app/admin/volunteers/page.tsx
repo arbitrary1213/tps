@@ -192,18 +192,10 @@ export default function VolunteersPage() {
     if (!formData.name?.trim()) { alert('请输入姓名'); return; }
     if (!formData.phone?.trim()) { alert('请输入电话'); return; }
     try {
-      const submitData = {
-        ...formData,
-        birthDate: formData.birthDate ? new Date(formData.birthDate) : undefined,
-        refugeTime: formData.refugeTime ? new Date(formData.refugeTime) : undefined,
-        lastVolunteerDate: formData.lastVolunteerDate ? new Date(formData.lastVolunteerDate) : undefined,
-        serviceStartDate: formData.serviceStartDate ? new Date(formData.serviceStartDate) : undefined,
-        serviceEndDate: formData.serviceEndDate ? new Date(formData.serviceEndDate) : undefined,
-      }
       if (editing) {
-        await businessAPI.updateVolunteer(token!, editing.id, submitData)
+        await businessAPI.updateVolunteer(token!, editing.id, formData)
       } else {
-        await businessAPI.createVolunteer(token!, submitData)
+        await businessAPI.createVolunteer(token!, formData)
       }
       setModalOpen(false)
       setEditing(null)

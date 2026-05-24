@@ -21,7 +21,24 @@ export {
   normalizeReportedItemStatus,
 }
 
-export const upload = multer({ storage: multer.memoryStorage() })
+const ALLOWED_EXCEL_MIMES = new Set([
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+  'text/csv',
+  'application/csv',
+])
+
+export const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (_req, file, cb) => {
+    if (ALLOWED_EXCEL_MIMES.has(file.mimetype)) {
+      cb(null, true)
+    } else {
+      cb(new Error('仅支持 .xlsx .xls .csv 格式'))
+    }
+  },
+  limits: { fileSize: 10 * 1024 * 1024 },
+})
 export const templateAssetUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 20 * 1024 * 1024 },

@@ -9,14 +9,14 @@ const router = Router()
 const loginAttempts = new Map<string, { count: number; lockUntil: number }>()
 const MAX_LOGIN_ATTEMPTS = 5
 const LOCK_DURATION_MS = 15 * 60 * 1000
-const AUTH_COOKIE_NAME = 'temple_token'
+const AUTH_COOKIE_NAME = process.env.NODE_ENV === 'production' ? '__Host-temple_token' : 'temple_token'
 const AUTH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 
 const setAuthCookie = (res: Response, token: string) => {
   res.cookie(AUTH_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/',
     maxAge: AUTH_COOKIE_MAX_AGE_MS,
   })
@@ -26,7 +26,7 @@ const clearAuthCookie = (res: Response) => {
   res.clearCookie(AUTH_COOKIE_NAME, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/',
   })
 }
@@ -141,8 +141,12 @@ router.post('/register', authMiddleware, requireRole('ADMIN'), async (req: Reque
       return res.status(400).json({ success: false, error: '请输入用户名和密码' })
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ success: false, error: '密码至少6位' })
+    if (password.length < 8) {
+      return res.status(400).json({ success: false, error: '密码至少8位' })
+    }
+
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}/.test(password)) {
+      return res.status(400).json({ success: false, error: '密码需包含大小写字母、数字及特殊字符(!@#$%^&*)' })
     }
 
     const existing = await prisma.user.findFirst({
@@ -219,8 +223,12 @@ router.put('/change-password', authMiddleware, asyncHandler(async (req: AuthRequ
       return res.status(400).json({ success: false, error: '两次输入的密码不一致' })
     }
 
-    if (newPassword.length < 6) {
-      return res.status(400).json({ success: false, error: '新密码至少6位' })
+    if (newPassword.length < 8) {
+      return res.status(400).json({ success: false, error: '新密码至少8位' })
+    }
+
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}/.test(newPassword)) {
+      return res.status(400).json({ success: false, error: '新密码需包含大小写字母、数字及特殊字符(!@#$%^&*)' })
     }
 
     const user = await prisma.user.findUnique({

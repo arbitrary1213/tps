@@ -20,10 +20,10 @@ const statusOptions = [
 
 interface Monk {
   id: string
-  name: string
-  dharmaName?: string
+  name?: string
+  dharmaName: string
   phone?: string
-  position: string
+  position?: string
   ordinationDate?: string
   birthDate?: string
   origin?: string
@@ -110,10 +110,10 @@ export default function MonksPage() {
   const handleEdit = (monk: Monk) => {
     setEditing(monk)
     setFormData({
-      name: monk.name,
+      name: monk.name || '',
       dharmaName: monk.dharmaName || '',
       phone: monk.phone || '',
-      position: monk.position,
+      position: monk.position || '',
       ordinationDate: monk.ordinationDate?.split('T')[0] || '',
       birthDate: monk.birthDate?.split('T')[0] || '',
       origin: monk.origin || '',

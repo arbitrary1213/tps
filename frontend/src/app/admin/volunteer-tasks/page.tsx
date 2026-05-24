@@ -26,10 +26,10 @@ interface VolunteerTask {
   name: string
   description?: string
   taskType: string
-  location: string
-  taskDate: string
-  startTime: string
-  endTime: string
+  location?: string
+  taskDate?: string
+  startTime?: string
+  endTime?: string
   requiredCount: number
   currentCount: number
   status: string
@@ -91,10 +91,10 @@ export default function VolunteerTasksPage() {
       name: task.name,
       description: task.description || '',
       taskType: task.taskType,
-      location: task.location,
-      taskDate: task.taskDate.split('T')[0],
-      startTime: task.startTime,
-      endTime: task.endTime,
+      location: task.location || '',
+      taskDate: task.taskDate?.split('T')[0] || '',
+      startTime: task.startTime || '',
+      endTime: task.endTime || '',
       requiredCount: task.requiredCount,
     })
     setModalOpen(true)

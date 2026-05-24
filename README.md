@@ -124,8 +124,9 @@ npm start
 cd print-service
 npm install
 node --check index.js
-node --check public/app.js
 ```
+
+> 说明：`print-service` 直接复用 `frontend/public/print-api/` 的静态文件，不持有自己的 `public/app.js`。`index.js` 会 serve 前端的 print-api 目录。
 
 ## 当前已知重点
 
@@ -165,10 +166,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-release.ps1 -ZipPath .\
 
 建议优先看：
 
-- [docs/PROJECT_OVERVIEW.md](C:/Users/28557/Documents/New%20project/temple-os/docs/PROJECT_OVERVIEW.md)
-- [docs/MODULE_MAP.md](C:/Users/28557/Documents/New%20project/temple-os/docs/MODULE_MAP.md)
-- [docs/LOCAL_WORKFLOW.md](C:/Users/28557/Documents/New%20project/temple-os/docs/LOCAL_WORKFLOW.md)
-- [docs/desktop-printing-plan.md](C:/Users/28557/Documents/New%20project/temple-os/docs/desktop-printing-plan.md)
+- [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md)
+- [docs/MODULE_MAP.md](docs/MODULE_MAP.md)
+- [docs/LOCAL_WORKFLOW.md](docs/LOCAL_WORKFLOW.md)
+- [docs/desktop-printing-plan.md](docs/desktop-printing-plan.md)
 
 ## 当前工作树状态
 

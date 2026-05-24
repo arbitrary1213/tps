@@ -62,7 +62,7 @@
 | File | Role |
 | --- | --- |
 | `deploy.sh` | Production pull/build/restart/verify script |
-| `docker/docker-compose.yml` | DB/backend/print and legacy frontend service definitions; frontend production truth is still systemd |
+| `docker/docker-compose.yml` | All 5 services (frontend, backend, print, db, nginx) |
 | `docker/nginx.conf` | Example Nginx reverse proxy config |
 | `docker/.env.example` | Per-server env template |
 | `.github/workflows/ci.yml` | CI checks |

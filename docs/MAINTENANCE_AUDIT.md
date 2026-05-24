@@ -80,7 +80,10 @@ npm test
 cd frontend
 npm ci
 npm run build
+npx tsc --noEmit
 ```
+
+> 注：Next.js 16 已移除内置 `next lint` 命令。如需 lint，需独立安装 ESLint。
 
 打印服务：
 
@@ -88,8 +91,9 @@ npm run build
 cd print-service
 npm ci
 node --check index.js
-node --check public/app.js
 ```
+
+> 注：`print-service` 不持有自己的 `public/app.js`，实际静态文件由 `frontend/public/print-api/` 提供（见 `print-service/index.js` line 9）。
 
 发布包：
 

@@ -9,7 +9,7 @@ interface Hall {
   id: string
   name: string
   description?: string
-  location: string
+  location?: string
   capacity: number
   status: string
   facilities?: string
@@ -75,7 +75,7 @@ export default function HallsPage() {
     setFormData({
       name: hall.name,
       description: hall.description || '',
-      location: hall.location,
+      location: hall.location || '',
       capacity: hall.capacity,
       status: hall.status,
       facilities: hall.facilities || '',

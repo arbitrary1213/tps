@@ -21,7 +21,9 @@ $ExcludedDirs = @(
   "frontend-deploy",
   "frontend-runtime",
   "desktop-app\node_modules",
-  "releases"
+  "releases",
+  "test",
+  "test-results"
 )
 
 $ExcludedFiles = @(

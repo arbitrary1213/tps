@@ -21,6 +21,19 @@ router.get('/users', authMiddleware, async (_req: AuthRequest, res: Response) =>
 router.post('/users', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { username, password, email, name, role } = req.body
+
+    if (!username || !password) {
+      return res.status(400).json({ success: false, error: '用户名和密码不能为空' })
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ success: false, error: '密码至少8位' })
+    }
+
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}/.test(password)) {
+      return res.status(400).json({ success: false, error: '密码需包含大小写字母、数字及特殊字符(!@#$%^&*)' })
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10)
     const user = await prisma.user.create({
       data: { username, password: hashedPassword, email, name, role },
@@ -35,6 +48,15 @@ router.post('/users', authMiddleware, asyncHandler(async (req: AuthRequest, res:
 router.put('/users/:id/password', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { newPassword } = req.body
+
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ success: false, error: '密码至少8位' })
+    }
+
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}/.test(newPassword)) {
+      return res.status(400).json({ success: false, error: '密码需包含大小写字母、数字及特殊字符(!@#$%^&*)' })
+    }
+
     const hashedPassword = await bcrypt.hash(newPassword, 10)
     await prisma.user.update({ where: { id: req.params.id }, data: { password: hashedPassword } })
     await logOperation(req.user, 'UPDATE', 'user', req.params.id, null, { action: 'password_changed' })

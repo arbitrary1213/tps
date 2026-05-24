@@ -1,30 +1,66 @@
 const API_BASE = ''
 
+function getCsrfToken(): string | undefined {
+  if (typeof document === 'undefined') return undefined
+  return document.cookie.split('; ').find(c => c.startsWith('__Host-csrf='))?.split('=')[1]
+}
+
 import type {
+  AccommodationItem,
   ApiUser,
   DashboardStats,
+  DevoteeQueryParams,
   DevoteeRecord,
+  DiningReservationItem,
+  DonationQueryParams,
+  DonationRecord,
+  HallRecord,
+  LampOfferingQueryParams,
+  LampOfferingRecord,
+  LogQueryParams,
+  MonkQueryParams,
+  MonkRecord,
   OperationLogList,
+  PlaqueQueryParams,
   PlaqueRecord,
   PrintClientRecord,
+  PrintJobQueryParams,
   PrintJobRecord,
   RegistrationRequestList,
   RegistrationRequestRecord,
   RegistrationTaskRecord,
+  RitualQueryParams,
   RitualRecord,
+  RoomRecord,
   SystemSettingsRecord,
   UserRecord,
+  VisitItem,
+  VisitQueryParams,
+  VolunteerQueryParams,
+  VolunteerRecord,
+  VolunteerSignupRecord,
+  VolunteerTaskQueryParams,
+  VolunteerTaskRecord,
+  WarehouseInRecord,
+  WarehouseItemQueryParams,
+  WarehouseItemRecord,
+  WarehouseOutRecord,
+  WechatArticleRecord,
+  WechatAuthUrlResult,
+  WechatIntegrationRecord,
+  WechatMessageItem,
+  WechatTemplateMessageRecord,
 } from '@/types/api'
 import type { PlaqueTemplate } from '@/types/template'
 
 declare global {
   interface Window {
     templeDesktop?: {
-      getCache?: (key: string) => Promise<any>
-      setCache?: (key: string, value: any) => Promise<boolean>
-      upsertLocalRows?: (entityType: string, rows: any[]) => Promise<{ count: number }>
-      listLocalRows?: (entityType: string) => Promise<any[]>
-      offlineSave?: (operation: any) => Promise<any>
+      getCache?: (key: string) => Promise<{ value: unknown; savedAt: number } | null>
+      setCache?: (key: string, value: unknown) => Promise<boolean>
+      upsertLocalRows?: (entityType: string, rows: unknown[]) => Promise<{ count: number }>
+      listLocalRows?: (entityType: string) => Promise<unknown[] | null>
+      offlineSave?: (operation: { method: string; body: unknown }) => Promise<{ success: boolean }>
       getLocalDbInfo?: () => Promise<{ path: string; entityCount: number; pendingCount: number }>
       openTemplateDesigner?: () => Promise<boolean>
       printHtml?: (options: { html: string; deviceName?: string; silent?: boolean }) => Promise<{ success: boolean; failureReason?: string }>
@@ -46,10 +82,10 @@ function entityTypeForEndpoint(endpoint: string) {
   return endpointEntityMap.find(([pattern]) => pattern.test(endpoint))?.[1] || ''
 }
 
-function normalizeRows(data: any) {
+function normalizeRows(data: unknown) {
   if (Array.isArray(data)) return data
-  if (Array.isArray(data?.items)) return data.items
-  if (Array.isArray(data?.data)) return data.data
+  if (data && typeof data === 'object' && 'items' in data && Array.isArray(data.items)) return data.items
+  if (data && typeof data === 'object' && 'data' in data && Array.isArray(data.data)) return data.data
   return []
 }
 
@@ -63,7 +99,7 @@ function isDesktopRuntime() {
   return typeof window !== 'undefined' && Boolean(window.templeDesktop)
 }
 
-function attachCacheMeta(value: any, meta: any) {
+function attachCacheMeta(value: unknown, meta: Record<string, unknown>) {
   if (value && typeof value === 'object') {
     Object.defineProperty(value, '__desktopCache', { value: meta, enumerable: false, configurable: true })
   }
@@ -106,6 +142,11 @@ async function request<T = any>(endpoint: string, options: FetchOptions = {}): P
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
+  }
+
+  if (method !== 'GET' && method !== 'HEAD') {
+    const csrf = getCsrfToken()
+    if (csrf) headers['x-csrf-token'] = csrf
   }
 
   const url = API_BASE ? `${API_BASE}${endpoint}` : endpoint
@@ -203,7 +244,7 @@ export const registrationAPI = {
     request(`/api/registration/tasks/${id}`, { method: 'DELETE', token }),
 
   getRequests: (token: string, params?: Record<string, string>, options?: FetchOptions) => {
-    const query = params ? '?' + new URLSearchParams(params).toString() : ''
+    const query = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''
     return request<RegistrationRequestList>(`/api/registration/requests${query}`, { token, ...(options || {}) })
   },
   submitRequest: (data: { taskId: string; submitterName: string; submitterPhone: string; formData: Record<string, unknown> }) =>
@@ -219,50 +260,50 @@ export const registrationAPI = {
 // 业务模块
 export const businessAPI = {
   // 僧众
-  getMonks: (token: string, params?: any) => {
-    const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    return request<any[]>(`/api/monks${query}`, { token })
+  getMonks: (token: string, params?: MonkQueryParams) => {
+    const query = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''
+    return request<MonkRecord[]>(`/api/monks${query}`, { token })
   },
-  createMonk: (token: string, data: any) =>
-    request<any>('/api/monks', { method: 'POST', token, body: JSON.stringify(data) }),
-  updateMonk: (token: string, id: string, data: any) =>
-    request<any>(`/api/monks/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
+  createMonk: (token: string, data: Partial<MonkRecord>) =>
+    request<MonkRecord>('/api/monks', { method: 'POST', token, body: JSON.stringify(data) }),
+  updateMonk: (token: string, id: string, data: Partial<MonkRecord>) =>
+    request<MonkRecord>(`/api/monks/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
   deleteMonk: (token: string, id: string) =>
     request(`/api/monks/${id}`, { method: 'DELETE', token }),
 
   // 义工
-  getVolunteers: (token: string, params?: any) => {
-    const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    return request<any[]>(`/api/volunteers${query}`, { token })
+  getVolunteers: (token: string, params?: VolunteerQueryParams) => {
+    const query = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''
+    return request<VolunteerRecord[]>(`/api/volunteers${query}`, { token })
   },
-  createVolunteer: (token: string, data: any) =>
-    request<any>('/api/volunteers', { method: 'POST', token, body: JSON.stringify(data) }),
-  updateVolunteer: (token: string, id: string, data: any) =>
-    request<any>(`/api/volunteers/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
+  createVolunteer: (token: string, data: Partial<VolunteerRecord>) =>
+    request<VolunteerRecord>('/api/volunteers', { method: 'POST', token, body: JSON.stringify(data) }),
+  updateVolunteer: (token: string, id: string, data: Partial<VolunteerRecord>) =>
+    request<VolunteerRecord>(`/api/volunteers/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
   deleteVolunteer: (token: string, id: string) =>
     request(`/api/volunteers/${id}`, { method: 'DELETE', token }),
 
   // 义工任务
-  getVolunteerTasks: (params?: any) => {
-    const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    return request<any[]>(`/api/volunteer-tasks${query}`)
+  getVolunteerTasks: (params?: VolunteerTaskQueryParams) => {
+    const query = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''
+    return request<VolunteerTaskRecord[]>(`/api/volunteer-tasks${query}`)
   },
-  createVolunteerTask: (token: string, data: any) =>
-    request<any>('/api/volunteer-tasks', { method: 'POST', token, body: JSON.stringify(data) }),
-  updateVolunteerTask: (token: string, id: string, data: any) =>
-    request<any>(`/api/volunteer-tasks/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
+  createVolunteerTask: (token: string, data: Partial<VolunteerTaskRecord>) =>
+    request<VolunteerTaskRecord>('/api/volunteer-tasks', { method: 'POST', token, body: JSON.stringify(data) }),
+  updateVolunteerTask: (token: string, id: string, data: Partial<VolunteerTaskRecord>) =>
+    request<VolunteerTaskRecord>(`/api/volunteer-tasks/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
   deleteVolunteerTask: (token: string, id: string) =>
     request(`/api/volunteer-tasks/${id}`, { method: 'DELETE', token }),
 
   // 义工考勤
   signIn: (data: { taskId: string; volunteerName: string; volunteerPhone: string }) =>
-    request<any>('/api/volunteer-attendance/sign-in', { method: 'POST', body: JSON.stringify(data) }),
+    request<VolunteerSignupRecord>('/api/volunteer-attendance/sign-in', { method: 'POST', body: JSON.stringify(data) }),
   signOut: (data: { taskId: string; volunteerPhone: string }) =>
-    request<any>('/api/volunteer-attendance/sign-out', { method: 'POST', body: JSON.stringify(data) }),
+    request('/api/volunteer-attendance/sign-out', { method: 'POST', body: JSON.stringify(data) }),
 
   // 信众
-  getDevotees: (token: string, params?: any, options?: FetchOptions) => {
-    const query = params ? '?' + new URLSearchParams(params).toString() : ''
+  getDevotees: (token: string, params?: DevoteeQueryParams, options?: FetchOptions) => {
+    const query = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''
     return request<DevoteeRecord[]>(`/api/devotees${query}`, { token, ...(options || {}) })
   },
   createDevotee: (token: string, data: Partial<DevoteeRecord>) =>
@@ -273,8 +314,8 @@ export const businessAPI = {
     request(`/api/devotees/${id}`, { method: 'DELETE', token }),
 
   // 牌位
-  getPlaques: (token: string, params?: any, options?: FetchOptions) => {
-    const query = params ? '?' + new URLSearchParams(params).toString() : ''
+  getPlaques: (token: string, params?: PlaqueQueryParams, options?: FetchOptions) => {
+    const query = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''
     return request<PlaqueRecord[]>(`/api/plaques${query}`, { token, ...(options || {}) })
   },
   createPlaque: (token: string, data: Partial<PlaqueRecord> & { customDedicationType?: string }) =>
@@ -282,7 +323,7 @@ export const businessAPI = {
   updatePlaque: (token: string, id: string, data: Partial<PlaqueRecord> & { customDedicationType?: string }) =>
     request<PlaqueRecord>(`/api/plaques/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
   batchUpdatePlaques: (token: string, data: { ids: string[]; action: string; ritualId?: string; endDate?: string }) =>
-    request<any>('/api/plaques/batch', { method: 'PUT', token, body: JSON.stringify(data) }),
+    request<{ updated: number; failed: number }>('/api/plaques/batch', { method: 'PUT', token, body: JSON.stringify(data) }),
   deletePlaque: (token: string, id: string) =>
     request(`/api/plaques/${id}`, { method: 'DELETE', token }),
   createPrintJob: (token: string, data: {
@@ -290,7 +331,7 @@ export const businessAPI = {
     plaqueIds: string[]
     templateId?: string
     templateName?: string
-    templateSnapshot?: any
+    templateSnapshot?: unknown
     plaqueType?: string
     paperWidthMm?: number
     paperHeightMm?: number
@@ -298,86 +339,86 @@ export const businessAPI = {
     remarks?: string
   }) =>
     request<Pick<PrintJobRecord, 'id' | 'jobNo' | 'totalCount'> & { missingIds: string[] }>('/api/print-jobs', { method: 'POST', token, body: JSON.stringify(data) }),
-  getPrintJobs: (token: string, params?: any, options?: FetchOptions) => {
-    const query = params ? '?' + new URLSearchParams(params).toString() : ''
+  getPrintJobs: (token: string, params?: PrintJobQueryParams, options?: FetchOptions) => {
+    const query = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''
     return request<PrintJobRecord[]>(`/api/print-jobs${query}`, { token, ...(options || {}) })
   },
   getPrintJob: (token: string, id: string) =>
     request<PrintJobRecord>(`/api/print-jobs/${id}`, { token }),
 
   // 法会
-  getRituals: (params?: any, options?: FetchOptions) => {
-    const query = params ? '?' + new URLSearchParams(params).toString() : ''
+  getRituals: (params?: RitualQueryParams, options?: FetchOptions) => {
+    const query = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''
     return request<RitualRecord[]>(`/api/rituals${query}`, options)
   },
   getRitualPlaques: (token: string, ritualId: string) =>
     request<PlaqueRecord[]>(`/api/rituals/${ritualId}/plaques`, { token }),
-  createRitual: (token: string, data: any) =>
-    request<any>('/api/rituals', { method: 'POST', token, body: JSON.stringify(data) }),
-  updateRitual: (token: string, id: string, data: any) =>
-    request<any>(`/api/rituals/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
+  createRitual: (token: string, data: Partial<RitualRecord>) =>
+    request<RitualRecord>('/api/rituals', { method: 'POST', token, body: JSON.stringify(data) }),
+  updateRitual: (token: string, id: string, data: Partial<RitualRecord>) =>
+    request<RitualRecord>(`/api/rituals/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
   deleteRitual: (token: string, id: string) =>
     request(`/api/rituals/${id}`, { method: 'DELETE', token }),
 
   // 殿堂
-  getHalls: () => request<any[]>('/api/halls'),
-  createHall: (token: string, data: any) =>
-    request<any>('/api/halls', { method: 'POST', token, body: JSON.stringify(data) }),
-  updateHall: (token: string, id: string, data: any) =>
-    request<any>(`/api/halls/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
+  getHalls: () => request<HallRecord[]>('/api/halls'),
+  createHall: (token: string, data: Partial<HallRecord>) =>
+    request<HallRecord>('/api/halls', { method: 'POST', token, body: JSON.stringify(data) }),
+  updateHall: (token: string, id: string, data: Partial<HallRecord>) =>
+    request<HallRecord>(`/api/halls/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
 
   // 供灯
-  getLampOfferings: (params?: any) => {
-    const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    return request<any[]>(`/api/lamp-offerings${query}`)
+  getLampOfferings: (params?: LampOfferingQueryParams) => {
+    const query = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''
+    return request<LampOfferingRecord[]>(`/api/lamp-offerings${query}`)
   },
-  createLampOffering: (data: any) =>
-    request<any>('/api/lamp-offerings', { method: 'POST', body: JSON.stringify(data) }),
+  createLampOffering: (data: Partial<LampOfferingRecord>) =>
+    request<LampOfferingRecord>('/api/lamp-offerings', { method: 'POST', body: JSON.stringify(data) }),
 
   // 功德
-  getDonations: (token: string, params?: any) => {
-    const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    return request<any[]>(`/api/donations${query}`, { token })
+  getDonations: (token: string, params?: DonationQueryParams) => {
+    const query = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''
+    return request<DonationRecord[]>(`/api/donations${query}`, { token })
   },
-  createDonation: (token: string, data: any) =>
-    request<any>('/api/donations', { method: 'POST', token, body: JSON.stringify(data) }),
+  createDonation: (token: string, data: Partial<DonationRecord>) =>
+    request<DonationRecord>('/api/donations', { method: 'POST', token, body: JSON.stringify(data) }),
 
   // 库房
-  getWarehouseItems: (token: string, params?: any) => {
-    const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    return request<any[]>(`/api/warehouse/items${query}`, { token })
+  getWarehouseItems: (token: string, params?: WarehouseItemQueryParams) => {
+    const query = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''
+    return request<WarehouseItemRecord[]>(`/api/warehouse/items${query}`, { token })
   },
-  createWarehouseItem: (token: string, data: any) =>
-    request<any>('/api/warehouse/items', { method: 'POST', token, body: JSON.stringify(data) }),
-  warehouseIn: (token: string, data: any) =>
-    request<any>('/api/warehouse/in', { method: 'POST', token, body: JSON.stringify(data) }),
-  warehouseOut: (token: string, data: any) =>
-    request<any>('/api/warehouse/out', { method: 'POST', token, body: JSON.stringify(data) }),
+  createWarehouseItem: (token: string, data: Partial<WarehouseItemRecord>) =>
+    request<WarehouseItemRecord>('/api/warehouse/items', { method: 'POST', token, body: JSON.stringify(data) }),
+  warehouseIn: (token: string, data: { itemId: string; quantity: number; price?: number; supplier?: string }) =>
+    request<WarehouseInRecord>('/api/warehouse/in', { method: 'POST', token, body: JSON.stringify(data) }),
+  warehouseOut: (token: string, data: { itemId: string; quantity: number; purpose?: string }) =>
+    request<WarehouseOutRecord>('/api/warehouse/out', { method: 'POST', token, body: JSON.stringify(data) }),
 
   // 住宿
-  getRooms: (token: string) => request<any[]>('/api/rooms', { token }),
-  createRoom: (token: string, data: any) =>
-    request<any>('/api/rooms', { method: 'POST', token, body: JSON.stringify(data) }),
-  updateRoom: (token: string, id: string, data: any) =>
-    request<any>(`/api/rooms/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
-  getAccommodations: (token: string) => request<any[]>('/api/accommodations', { token }),
-  createAccommodation: (token: string, data: any) =>
-    request<any>('/api/accommodations', { method: 'POST', token, body: JSON.stringify(data) }),
+  getRooms: (token: string) => request<RoomRecord[]>('/api/rooms', { token }),
+  createRoom: (token: string, data: Partial<RoomRecord>) =>
+    request<RoomRecord>('/api/rooms', { method: 'POST', token, body: JSON.stringify(data) }),
+  updateRoom: (token: string, id: string, data: Partial<RoomRecord>) =>
+    request<RoomRecord>(`/api/rooms/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
+  getAccommodations: (token: string) => request<AccommodationItem[]>('/api/accommodations', { token }),
+  createAccommodation: (token: string, data: Partial<AccommodationItem>) =>
+    request<AccommodationItem>('/api/accommodations', { method: 'POST', token, body: JSON.stringify(data) }),
   checkoutAccommodation: (token: string, id: string) =>
-    request<any>(`/api/accommodations/${id}/checkout`, { method: 'PUT', token }),
+    request<AccommodationItem>(`/api/accommodations/${id}/checkout`, { method: 'PUT', token }),
 
   // 斋堂
-  getDining: (token: string) => request<any[]>('/api/dining', { token }),
-  createDining: (token: string, data: any) =>
-    request<any>('/api/dining', { method: 'POST', token, body: JSON.stringify(data) }),
+  getDining: (token: string) => request<DiningReservationItem[]>('/api/dining', { token }),
+  createDining: (token: string, data: Partial<DiningReservationItem>) =>
+    request<DiningReservationItem>('/api/dining', { method: 'POST', token, body: JSON.stringify(data) }),
 
   // 来访
-  getVisits: (token: string, params?: any) => {
-    const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    return request<any[]>(`/api/visits${query}`, { token })
+  getVisits: (token: string, params?: VisitQueryParams) => {
+    const query = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''
+    return request<VisitItem[]>(`/api/visits${query}`, { token })
   },
-  createVisit: (token: string, data: any) =>
-    request<any>('/api/visits', { method: 'POST', token, body: JSON.stringify(data) }),
+  createVisit: (token: string, data: Partial<VisitItem>) =>
+    request<VisitItem>('/api/visits', { method: 'POST', token, body: JSON.stringify(data) }),
 
   // 用户
   getUsers: (token: string) => request<UserRecord[]>('/api/users', { token }),
@@ -389,7 +430,7 @@ export const businessAPI = {
     request(`/api/users/${id}`, { method: 'DELETE', token }),
 
   // 日志
-  getLogs: (token: string, params?: Record<string, string | number>) => {
+  getLogs: (token: string, params?: LogQueryParams) => {
     const query = params
       ? '?' + new URLSearchParams(
           Object.fromEntries(Object.entries(params).map(([key, value]) => [key, String(value)]))
@@ -421,9 +462,9 @@ export const businessAPI = {
       method: 'POST',
       token,
       headers: {},
-      body: formData as any,
+      body: formData as unknown as RequestInit['body'],
     })
-    return result.data || result
+    return (result.data || result) as { total: number; imported: number; skipped: number; errors: string[] }
   },
 
 // Export plaques (CSV)
@@ -455,18 +496,18 @@ export const businessAPI = {
 }
 
 export const wechatAPI = {
-  getStatus: (token: string) => request<any>('/api/integrations/wechat/status', { token }),
-  getAuthUrl: (token: string) => request<any>('/api/integrations/wechat/auth-url', { token }),
-  bind: (token: string, data: any) =>
-    request<any>('/api/integrations/wechat/bind', { method: 'POST', token, body: JSON.stringify(data) }),
-  getMessages: (token: string) => request<any[]>('/api/wechat/messages', { token }),
+  getStatus: (token: string) => request<WechatIntegrationRecord>('/api/integrations/wechat/status', { token }),
+  getAuthUrl: (token: string) => request<WechatAuthUrlResult>('/api/integrations/wechat/auth-url', { token }),
+  bind: (token: string, data: Partial<WechatIntegrationRecord>) =>
+    request<WechatIntegrationRecord>('/api/integrations/wechat/bind', { method: 'POST', token, body: JSON.stringify(data) }),
+  getMessages: (token: string) => request<WechatMessageItem[]>('/api/wechat/messages', { token }),
   replyMessage: (token: string, id: string, content: string) =>
-    request<any>(`/api/wechat/messages/${id}/reply`, { method: 'POST', token, body: JSON.stringify({ content }) }),
-  getArticles: (token: string) => request<any[]>('/api/wechat/articles', { token }),
-  createArticle: (token: string, data: any) =>
-    request<any>('/api/wechat/articles', { method: 'POST', token, body: JSON.stringify(data) }),
+    request<WechatMessageItem>(`/api/wechat/messages/${id}/reply`, { method: 'POST', token, body: JSON.stringify({ content }) }),
+  getArticles: (token: string) => request<WechatArticleRecord[]>('/api/wechat/articles', { token }),
+  createArticle: (token: string, data: { title: string; author?: string; digest?: string; content: string; thumbMediaId?: string }) =>
+    request<WechatArticleRecord>('/api/wechat/articles', { method: 'POST', token, body: JSON.stringify(data) }),
   publishArticle: (token: string, id: string) =>
-    request<any>(`/api/wechat/articles/${id}/publish`, { method: 'POST', token }),
-  sendTemplateMessage: (token: string, data: any) =>
-    request<any>('/api/wechat/template-messages/send', { method: 'POST', token, body: JSON.stringify(data) }),
+    request<WechatArticleRecord>(`/api/wechat/articles/${id}/publish`, { method: 'POST', token }),
+  sendTemplateMessage: (token: string, data: { openId: string; businessType: string; templateId?: string; title?: string; payload?: unknown }) =>
+    request<WechatTemplateMessageRecord>('/api/wechat/template-messages/send', { method: 'POST', token, body: JSON.stringify(data) }),
 }

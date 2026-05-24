@@ -50,14 +50,10 @@ Nginx HTTPS
 | --- | --- | --- |
 | `temple-db` | PostgreSQL 15 | Main database |
 | `temple-backend` | Docker + Node.js | API, auth, business logic, Prisma |
-| `temple-frontend` | systemd + Next standalone on production | Public site and admin panel |
+| `temple-frontend` | Docker + Next.js | Public site and admin panel |
 | `temple-print` | Docker + Node.js | Current web template/print tool |
 
-注意：`docker/docker-compose.yml` 里保留了 `temple-frontend` 服务定义，但当前生产环境实际前端由 `temple-frontend.service` 运行：
-
-```text
-/opt/temple-os/frontend/.next/standalone/server.js
-```
+所有 5 个服务（frontend, backend, print, db, nginx）均由 Docker Compose 编排运行。
 
 ## 3. Backend
 
@@ -191,10 +187,7 @@ desktop app reports status to server
 
 阶段 1 实施统一遵守以下基线：
 
-- 生产前端主路径是 `systemd + Next standalone`，不是 Docker Compose 前端容器。
-- 生产后端主路径是 Docker 容器。
-- 生产打印服务主路径是 Docker 容器。
-- 生产数据库主路径是 PostgreSQL 容器。
+- 所有生产服务（前端、后端、打印、数据库、Nginx）均由 Docker Compose 编排运行。
 - `print-service` 负责模板设计、Web 预览和备用打印，不作为长期主打印执行端。
 - `desktop-app` 是后续本地打印主执行端，负责打印机发现、任务领取、本地执行和状态回传。
 - `wechat-platform` 在阶段 1 仅做结构整理，不扩业务面，不接入主业务强依赖。

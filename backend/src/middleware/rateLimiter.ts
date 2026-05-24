@@ -8,7 +8,7 @@ interface RateLimitEntry {
 const store = new Map<string, RateLimitEntry>()
 
 const WINDOW_MS = 60 * 1000 // 1 minute
-const MAX_REQUESTS = 300
+const MAX_REQUESTS = 100
 const MAX_STORE_ENTRIES = 50000
 
 export const rateLimiter = (req: Request, res: Response, next: NextFunction) => {

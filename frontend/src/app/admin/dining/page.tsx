@@ -18,7 +18,7 @@ interface Dining {
   mealCount: number
   contactName: string
   contactPhone: string
-  status: string
+  paymentStatus: string
   operator?: string
   remarks?: string
   createdAt: string
@@ -86,9 +86,9 @@ export default function DiningPage() {
     { key: 'mealCount', title: '用餐人数' },
     { key: 'contactName', title: '联系人' },
     { key: 'contactPhone', title: '联系电话' },
-    { key: 'status', title: '状态', render: (row: Dining) => (
-      <Badge variant={row.status === 'CONFIRMED' ? 'success' : 'warning'}>
-        {row.status === 'CONFIRMED' ? '已确认' : '待确认'}
+    { key: 'paymentStatus', title: '状态', render: (row: Dining) => (
+      <Badge variant={row.paymentStatus === 'CONFIRMED' ? 'success' : 'warning'}>
+        {row.paymentStatus === 'CONFIRMED' ? '已确认' : '待确认'}
       </Badge>
     )},
     { key: 'operator', title: '经手人' },
