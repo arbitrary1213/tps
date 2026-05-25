@@ -100,6 +100,7 @@ function renderSingle() {
   const total = Math.max(rows.length, 1);
   state.pageIndex = clamp(state.pageIndex, 0, total - 1);
   $("preview").innerHTML = singleSheet(row, state.editSide);
+  console.log("[renderSingle] preview innerHTML length:", $("preview").innerHTML.length, "preview display:", window.getComputedStyle($("preview")).display);
   const previousVariantKey = state.singleVariantKey;
   syncSingleVariantControls();
   if (previousVariantKey !== state.singleVariantKey) {

@@ -924,6 +924,7 @@ function singleSheet(row, side = state.editSide, forPrint = false) {
   `;
   state.renderSide = previousRenderSide;
   state.renderSingleVariant = previousSingleVariant;
+  console.log("[singleSheet] html length:", html.length, "background:", !!background, "subject:", subjectContent?.substring(0, 20), "details:", fields.length - 1, "type:", type);
   return html;
 }
 
