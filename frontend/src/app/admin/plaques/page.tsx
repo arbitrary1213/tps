@@ -569,7 +569,7 @@ export default function PlaquesPage() {
 
   const openPrintTool = (params?: Record<string, string>) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    window.location.href = `/print-api/index.html${query}`
+    window.open(`/print-api/index.html${query}`, '_blank')
   }
 
   const handlePreview = (plaque: Plaque) => {
@@ -602,7 +602,7 @@ export default function PlaquesPage() {
     const templateId = validSelection ? selectedTemplateId : ''
     const params: Record<string, string> = {
       type: printTargetType || '',
-      preview: '1',
+      autoPrint: '1',
       ...(templateId ? { templateId } : {}),
     }
     if (printTargetIds.length === 1) params.plaqueId = printTargetIds[0]
