@@ -925,6 +925,8 @@ function singleSheet(row, side = state.editSide, forPrint = false) {
   state.renderSide = previousRenderSide;
   state.renderSingleVariant = previousSingleVariant;
   console.log("[singleSheet] html length:", html.length, "background:", !!background, "subject:", subjectContent?.substring(0, 20), "details:", fields.length - 1, "type:", type);
+  console.log("[singleSheet] subjectContent type:", typeof subjectContent, "value:", JSON.stringify(subjectContent));
+  console.log("[singleSheet] firstFields:", fields.slice(0,3).map(f => f.key +"="+ fieldValue(row, f.key)));
   return html;
 }
 

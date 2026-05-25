@@ -97,10 +97,12 @@ function renderSingle() {
   const rows = currentRows();
   const row = rows[state.pageIndex] || {};
   console.log("[renderSingle] rows:", rows.length, "pageIndex:", state.pageIndex, "row keys:", Object.keys(row).length, "row id:", row.__rowId);
+  console.log("[renderSingle] sample row values:", JSON.stringify(Object.entries(row).slice(0,5).reduce((a, [k,v]) => ({...a, [k]: String(v).substring(0,30)}), {})));
   const total = Math.max(rows.length, 1);
   state.pageIndex = clamp(state.pageIndex, 0, total - 1);
   $("preview").innerHTML = singleSheet(row, state.editSide);
   console.log("[renderSingle] preview innerHTML length:", $("preview").innerHTML.length, "preview display:", window.getComputedStyle($("preview")).display);
+  console.log("[renderSingle] preview snippet:", $("preview").innerHTML.substring(0, 500));
   const previousVariantKey = state.singleVariantKey;
   syncSingleVariantControls();
   if (previousVariantKey !== state.singleVariantKey) {
