@@ -111,4 +111,12 @@ function clearManualInput() {
   render();
 }
 
-init();
+init().catch(function (error) {
+  console.error("手动输入初始化失败:", error);
+  var busyEl = document.getElementById("busyText");
+  if (busyEl) busyEl.textContent = "初始化失败，请刷新页面重试";
+  var previewEl = document.getElementById("preview");
+  if (previewEl) {
+    previewEl.innerHTML = '<div class="empty" style="padding:40px;text-align:center;color:var(--muted);"><p style="font-size:16px;margin-bottom:8px;">初始化失败</p><p style="font-size:13px;">请关闭页面后重试，或联系管理员。</p></div>';
+  }
+});

@@ -24,28 +24,33 @@ const router = Router()
 
 router.get('/plaques', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
-    const { plaqueType, status, keyword, devoteeId, ritualId, updatedSince, page = '1', pageSize = '20' } = req.query
+    const { plaqueType, status, keyword, devoteeId, ritualId, updatedSince, page = '1', pageSize = '20', ids } = req.query
+    const idList = ids ? (ids as string).split(',').map((id: string) => id.trim()).filter(Boolean) : null
     const where: any = {}
-    if (plaqueType) where.plaqueType = plaqueType
-    if (status) where.status = status
-    if (devoteeId) where.devoteeId = devoteeId
-    if (ritualId) where.ritualId = ritualId
-    if (updatedSince) where.updatedAt = { gte: new Date(updatedSince as string) }
-    if (keyword) {
-      where.OR = [
-        { code: { contains: keyword as string } },
-        { holderName: { contains: keyword as string } },
-        { yangShang: { contains: keyword as string } },
-      ]
+    if (idList) {
+      where.id = { in: idList }
+    } else {
+      if (plaqueType) where.plaqueType = plaqueType
+      if (status) where.status = status
+      if (devoteeId) where.devoteeId = devoteeId
+      if (ritualId) where.ritualId = ritualId
+      if (updatedSince) where.updatedAt = { gte: new Date(updatedSince as string) }
+      if (keyword) {
+        where.OR = [
+          { code: { contains: keyword as string } },
+          { holderName: { contains: keyword as string } },
+          { yangShang: { contains: keyword as string } },
+        ]
+      }
     }
 
-    const take = Math.min(parseInt(pageSize as string) || 20, 200)
-    const skip = (Math.max(parseInt(page as string) || 1, 1) - 1) * take
+    const take = idList ? idList.length : Math.min(parseInt(pageSize as string) || 20, 200)
+    const skip = idList ? 0 : (Math.max(parseInt(page as string) || 1, 1) - 1) * take
     const [plaques, total] = await Promise.all([
       prisma.memorialPlaque.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take }),
       prisma.memorialPlaque.count({ where }),
     ])
-    res.json({ success: true, data: plaques, total, page: Math.max(parseInt(page as string) || 1, 1), pageSize: take })
+    res.json({ success: true, data: plaques, total: idList ? plaques.length : total, page: Math.max(parseInt(page as string) || 1, 1), pageSize: take })
   } catch (error) {
     res.status(500).json({ success: false, error: '服务器错误' })
   }

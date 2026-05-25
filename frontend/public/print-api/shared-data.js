@@ -313,15 +313,16 @@ async function applyLaunchParams() {
     } else {
       const systemStatusEl = $("systemStatus");
       const statusValue = systemStatusEl ? (systemStatusEl.value || "ACTIVE") : "ACTIVE";
-      const query = new URLSearchParams({
-        ...(type ? { plaqueType: type } : {}),
-        ...(!selectedIds.size && statusValue
-          ? { status: statusValue }
-          : {}),
-        pageSize: String(selectedIds.size ? 200 : 200),
-      });
+      var queryParams = {};
+      if (selectedIds.size) {
+        queryParams = { ids: Array.from(selectedIds).join(",") };
+      } else {
+        if (type) queryParams.plaqueType = type;
+        if (statusValue) queryParams.status = statusValue;
+        queryParams.pageSize = "200";
+      }
+      var query = new URLSearchParams(queryParams);
       plaques = await fetchJson(`/api/plaques?${query.toString()}`, { headers: authHeaders(), timeout: 10000 });
-      if (selectedIds.size) plaques = plaques.filter((plaque) => selectedIds.has(plaque.id));
     }
     const rows = plaques
       .map(plaqueToRow)

@@ -57,8 +57,13 @@ async function init() {
     document.body.classList.add("print-preview-mode");
   }
 
-  await loadServerTemplates();
-  const hasLaunchPlaqueIds = !!(launchParams.get("plaqueId") || launchParams.get("plaqueIds"));
+  var hasLaunchTemplateId = !!launchParams.get("templateId");
+  var hasLaunchPlaqueIds = !!(launchParams.get("plaqueId") || launchParams.get("plaqueIds"));
+  if (hasLaunchTemplateId && hasLaunchPlaqueIds) {
+    setTemplateStatus("指定模板", "从入口直接加载模板");
+  } else {
+    await loadServerTemplates();
+  }
   if (!hasLaunchPlaqueIds) {
     loadAllSamples();
   }
@@ -144,4 +149,12 @@ function syncPrintSettingsPanel() {
   if (previewCb && mainCb) previewCb.checked = mainCb.checked;
 }
 
-init();
+init().catch(function (error) {
+  console.error("打印工具初始化失败:", error);
+  var busyEl = document.getElementById("busyText");
+  if (busyEl) busyEl.textContent = "初始化失败，请刷新页面重试";
+  var previewEl = document.getElementById("preview");
+  if (previewEl) {
+    previewEl.innerHTML = '<div class="empty" style="padding:40px;text-align:center;color:var(--muted);"><p style="font-size:16px;margin-bottom:8px;">初始化失败</p><p style="font-size:13px;">请关闭页面后重试，或联系管理员。</p></div>';
+  }
+});
