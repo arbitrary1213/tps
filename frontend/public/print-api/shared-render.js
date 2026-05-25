@@ -679,6 +679,10 @@ function singleVariantDefaultValue(type, variantKey, bucket, key, fallback) {
   if (templateBucket && Object.prototype.hasOwnProperty.call(templateBucket, key)) {
     return clone(templateBucket[key]);
   }
+  const dataGroup = templates.find((t) => t.id === type)?.dataGroup;
+  if (dataGroup && dataGroup !== type) {
+    return singleVariantDefaultValue(dataGroup, variantKey, bucket, key, fallback);
+  }
   return clone(fallback);
 }
 
@@ -924,9 +928,6 @@ function singleSheet(row, side = state.editSide, forPrint = false) {
   `;
   state.renderSide = previousRenderSide;
   state.renderSingleVariant = previousSingleVariant;
-  console.log("[singleSheet] html length:", html.length, "background:", !!background, "subject:", subjectContent?.substring(0, 20), "details:", fields.length - 1, "type:", type);
-  console.log("[singleSheet] subjectContent type:", typeof subjectContent, "value:", JSON.stringify(subjectContent));
-  console.log("[singleSheet] firstFields:", JSON.stringify(fields.slice(0,3).map(f => ({key: f.key, aliases: f.aliases, label: f.label}))));
   return html;
 }
 
@@ -1294,18 +1295,14 @@ function resolveFieldNameForKey(key) {
 function fieldValue(row, key) {
   if (isSummaryFieldKey(key)) {
     const definition = summaryFieldDefinitions().find((field) => field.key === key) || dynamicFieldDefinitionByKey(key, currentSummaryVariantKey());
-    console.log("[fieldValue] summary path key:", key, "definition:", definition?.key, "sourceKey:", definition?.sourceKey);
     return definition ? fieldValue(row, definition.sourceKey) : "";
   }
   const dynamicField = dynamicFieldDefinitionByKey(key, state.renderSingleVariant || currentSingleVariantKey());
   if (dynamicField?.sourceKey) {
-    console.log("[fieldValue] dynamic sourceKey redirect:", key, "→", dynamicField.sourceKey);
     return fieldValue(row, dynamicField.sourceKey);
   }
   const fieldName = resolveFieldNameForKey(key);
-  const val = fieldName ? value(row, fieldName) : "";
-  console.log("[fieldValue]", key, "→ fieldName:", fieldName, "→ value:", JSON.stringify(val));
-  return val;
+  return fieldName ? value(row, fieldName) : "";
 }
 
 function currentFieldMappings() {

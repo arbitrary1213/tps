@@ -2583,6 +2583,10 @@ function singleVariantDefaultValue(type, variantKey, bucket, key, fallback) {
   if (templateBucket && Object.prototype.hasOwnProperty.call(templateBucket, key)) {
     return clone(templateBucket[key]);
   }
+  const dataGroup = templates.find((t) => t.id === type)?.dataGroup;
+  if (dataGroup && dataGroup !== type) {
+    return singleVariantDefaultValue(dataGroup, variantKey, bucket, key, fallback);
+  }
   return clone(fallback);
 }
 
