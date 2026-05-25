@@ -86,6 +86,21 @@ function render() {
     $("pageText").textContent = "";
     return;
   }
+  var currentGroup = currentDataGroup();
+  var currentData = state.datasets[currentGroup];
+  var otherGroup = currentGroup === "blessing" ? "deliverance" : "blessing";
+  var otherData = state.datasets[otherGroup];
+  if ((!currentData || !currentData.length) && otherData && otherData.length) {
+    var templateName = currentTemplate()?.name || currentTemplate()?.id || "当前模板";
+    var otherGroupLabel = dataGroupLabel(otherGroup);
+    var hint = "当前 <strong>" + escapeHtml(templateName) + "</strong> 属于「" + escapeHtml(dataGroupLabel(currentGroup)) + "」类别，但数据已加载在「" + escapeHtml(otherGroupLabel) + "」中（" + otherData.length + " 条）。<br>请在下方表格中切换到「" + escapeHtml(otherGroupLabel) + "」后重试，或重新导入数据。";
+    $("preview").innerHTML = '<div class="empty" style="padding:40px;text-align:center;color:var(--muted);"><p style="font-size:14px;line-height:2;margin-bottom:8px;">' + hint + '</p></div>';
+    $("statusText").textContent = "数据分组不匹配";
+    $("pageText").textContent = "";
+    buildManualInputFields();
+    renderDebugInfo();
+    return;
+  }
   if (state.mode === "single") renderSingle();
   if (state.mode === "summary") renderSummary();
   buildManualInputFields();

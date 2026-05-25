@@ -292,8 +292,8 @@ async function applyLaunchParams() {
     document.body.classList.add("print-preview-mode");
   }
 
-  await applyLaunchTemplate(templateId);
-  const group = templateId ? currentDataGroup() : dataGroupForPlaqueType(type);
+  const templateApplied = await applyLaunchTemplate(templateId);
+  const group = templateApplied ? currentDataGroup() : dataGroupForPlaqueType(type);
   const targetMode = launchMode === "summary" ? "summary" : "single";
   if (state.mode !== targetMode) setMode(targetMode);
   setDataSourceStatus("牌位管理选中数据");
@@ -363,12 +363,17 @@ function buildManualInputFields() {
   if (!container) return;
   const type = currentTabletType();
   const fields = (type && type.fields) || [];
-  container.innerHTML = fields.map((field) => {
+  const existingValues = {};
+  container.querySelectorAll(".manual-field-input").forEach(function (el) {
+    if (el.dataset.fieldKey) existingValues[el.dataset.fieldKey] = el.value;
+  });
+  container.innerHTML = fields.map(function (field) {
     const label = field.label || field.key;
-    return `<label style="display:block; margin-bottom:4px;">
-      <span style="font-size:12px; color:var(--tea);">${escapeHtml(label)}</span>
-      <input class="manual-field-input" data-field-key="${escapeHtml(field.key)}" type="text" placeholder="${escapeHtml(label)}" style="width:100%; box-sizing:border-box; margin-top:2px;">
-    </label>`;
+    const savedValue = existingValues[field.key] || "";
+    return '<label style="display:block; margin-bottom:4px;">' +
+      '<span style="font-size:12px; color:var(--tea);">' + escapeHtml(label) + '</span>' +
+      '<input class="manual-field-input" data-field-key="' + escapeHtml(field.key) + '" type="text" placeholder="' + escapeHtml(label) + '" value="' + escapeHtml(savedValue) + '" style="width:100%; box-sizing:border-box; margin-top:2px;">' +
+      '</label>';
   }).join("") || '<p class="hint">请先选择模板</p>';
 }
 

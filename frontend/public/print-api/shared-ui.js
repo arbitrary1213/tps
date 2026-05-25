@@ -108,26 +108,30 @@ function applyPaperPreset() {
 }
 
 function applyTemplate() {
-  const template = currentTemplate();
-  ensureLayout(template.id);
-  state.singleVariantManualOverride = false;
-  if (isSummaryTemplate(template)) state.editSide = "front";
-  syncControlsFromSelectedTemplate();
-  if (isSummaryTemplate(template)) {
-    setMode("summary");
-    refreshSummaryVariantOptions();
-    buildSummaryFieldMapping();
-    buildStyleEditor();
-    renderTable();
-    updateDataHint();
-  } else {
-    setMode("single");
-    const ps = $("paperSelect");
-    if (ps) ps.value = "custom";
+  try {
+    const template = currentTemplate();
+    ensureLayout(template.id);
+    state.singleVariantManualOverride = false;
+    if (isSummaryTemplate(template)) state.editSide = "front";
+    syncControlsFromSelectedTemplate();
+    if (isSummaryTemplate(template)) {
+      setMode("summary");
+      refreshSummaryVariantOptions();
+      buildSummaryFieldMapping();
+      buildStyleEditor();
+      renderTable();
+      updateDataHint();
+    } else {
+      setMode("single");
+      const ps = $("paperSelect");
+      if (ps) ps.value = "custom";
+    }
+    const deleteBtn = $("deleteTemplateBtn");
+    if (deleteBtn) deleteBtn.style.display = BUILTIN_TEMPLATE_IDS.has(template.id) ? "none" : "";
+    render();
+  } catch (error) {
+    console.error("applyTemplate 失败:", error);
   }
-  const deleteBtn = $("deleteTemplateBtn");
-  if (deleteBtn) deleteBtn.style.display = BUILTIN_TEMPLATE_IDS.has(template.id) ? "none" : "";
-  render();
 }
 
 function currentTemplate() {

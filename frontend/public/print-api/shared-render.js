@@ -1140,7 +1140,8 @@ async function printRangeFrom(startIndex = 0) {
   syncPrintSize();
   state.restorePageIndex = state.pageIndex;
   if (state.mode === "single") {
-    const allRows = currentRows().length ? currentRows() : [{}];
+    const allRows = currentRows();
+    if (!allRows.length) { alert("当前没有可打印的数据，请先载入数据"); return; }
     const rows = allRows.slice(clamp(startIndex, 0, Math.max(allRows.length - 1, 0)));
     const layout = ensureLayout(currentLayoutKey());
     $("preview").innerHTML = rows.map((row) => {
@@ -1149,6 +1150,7 @@ async function printRangeFrom(startIndex = 0) {
     }).join("");
   } else {
     const rows = currentRows();
+    if (!rows.length) { alert("当前没有可打印的数据，请先载入数据"); return; }
     const columns = Number($("columnCount").value) || 3;
     const pageSize = columns;
     const totalPages = Math.max(Math.ceil(rows.length / pageSize), 1);
