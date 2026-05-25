@@ -996,9 +996,11 @@ function draggableField(key, className, content, placeholder = false, variantKey
   const align = alignmentStyle(style, className.includes("vertical-text"));
   const wrapStyle = wrapModeStyle(style?.wrapMode, className.includes("vertical-text"));
   const displayContent = formatFieldDisplay(content, style, placeholder);
+  const resizeHandle = state.isDesignerPage ? `<div class="resize-handle" data-resize-key="${key}"></div>` : "";
   return `
     <div class="${className} editable-field${placeholderClass}" data-edit-key="${key}" data-wrap-mode="${style.wrapMode || "anywhere"}" data-base-font="${style.fontSize}" style="left:${pos.x}%; top:${pos.y}%; width:${size.w}%; height:${size.h}%; font-size:${style.fontSize}px; color:${style.color}; font-family:${style.fontFamily}; text-align:${align.textAlign};">
       <div class="field-content" style="text-align:${align.textAlign}; justify-content:${align.justifyContent}; align-items:${align.alignItems}; white-space:${wrapStyle.whiteSpace}; overflow-wrap:${wrapStyle.overflowWrap}; word-break:${wrapStyle.wordBreak};"><span class="field-flow">${displayContent}</span></div>
+      ${resizeHandle}
     </div>
   `;
 }

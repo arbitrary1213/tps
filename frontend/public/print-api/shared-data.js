@@ -292,11 +292,11 @@ async function applyLaunchParams() {
     document.body.classList.add("print-preview-mode");
   }
 
-  const group = dataGroupForPlaqueType(type);
+  await applyLaunchTemplate(templateId);
+  const group = templateId ? currentDataGroup() : dataGroupForPlaqueType(type);
   const targetMode = launchMode === "summary" ? "summary" : "single";
   if (state.mode !== targetMode) setMode(targetMode);
   setDataSourceStatus("牌位管理选中数据");
-  await applyLaunchTemplate(templateId);
 
   try {
     setBusy("正在载入牌位数据...");
