@@ -1277,11 +1277,8 @@ function resolveFieldNameForKey(key) {
   if (dynamicField?.sourceKey) {
     return resolveFieldNameForKey(dynamicField.sourceKey);
   }
-  const select = document.querySelector(`[data-field-key="${key}"]`);
-  if (select) {
-    console.log("[resolveFieldNameForKey] select matched for key:", key, "tag:", select.tagName, "value:", JSON.stringify(select.value));
-    return select.value || "";
-  }
+  const select = document.querySelector(`select[data-field-key="${key}"]`);
+  if (select) return select.value || "";
   const layout = ensureLayout(currentLayoutKey());
   const variantKey = state.renderSingleVariant || currentSingleVariantKey();
   const savedMapping = mappingValueForField(layout, key, variantKey);

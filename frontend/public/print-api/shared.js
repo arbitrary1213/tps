@@ -3178,7 +3178,7 @@ function resolveFieldNameForKey(key) {
   if (dynamicField?.sourceKey) {
     return resolveFieldNameForKey(dynamicField.sourceKey);
   }
-  const select = document.querySelector(`[data-field-key="${key}"]`);
+  const select = document.querySelector(`select[data-field-key="${key}"]`);
   if (select) return select.value || "";
   const layout = ensureLayout(currentLayoutKey());
   const variantKey = state.renderSingleVariant || currentSingleVariantKey();
