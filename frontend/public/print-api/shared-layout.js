@@ -188,6 +188,7 @@ async function loadServerTemplates() {
       localTemplates
         .filter((template) => template?.elements?.source === "tablet-print")
         .forEach(importServerTemplate);
+      rebuildTemplateOptions();
 
       if (authToken()) {
         try {
@@ -211,6 +212,7 @@ async function loadServerTemplates() {
             }
             importServerTemplate(st);
           }
+          rebuildTemplateOptions();
         } catch (serverError) {
           console.warn("拉取服务器模板失败，使用本地模板:", serverError);
         }
@@ -240,6 +242,7 @@ async function loadServerTemplates() {
       saveRemoteTemplateIds();
     }
     dedupeTemplatesByNameAndGroup();
+    rebuildTemplateOptions();
     saveLayouts();
     saveCustomTemplatesToStorage();
     setTemplateStatus(serverTemplates.length ? "服务器模板" : "内置模板", serverTemplates.length ? "服务器已同步" : "服务器无模板");
@@ -341,7 +344,6 @@ function importServerTemplate(template) {
   } else {
     templates.push(normalizedTemplate);
   }
-  rebuildTemplateOptions(selectedId || localTemplate.id);
   if (data.defaults) templateDefaults[localTemplate.id] = data.defaults;
   if (data.layout) {
     const existingLayout = state.layouts[localTemplate.id];

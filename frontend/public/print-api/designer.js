@@ -137,8 +137,9 @@ async function init() {
   }));
 
   relocateSharedStyleEditor();
-  await loadServerTemplates();
-  const launched = await applyLaunchTemplate(launchParams.get("templateId"));
+  const templateId = launchParams.get("templateId");
+  if (!templateId) await loadServerTemplates();
+  const launched = await applyLaunchTemplate(templateId);
   if (!launched) applyTemplate();
   if (launched) refreshDesignerBackground();
 }

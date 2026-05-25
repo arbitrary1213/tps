@@ -418,6 +418,7 @@ async function applyLaunchTemplate(templateId) {
       var data = result;
       if (data && data.elements) {
         importServerTemplate(data);
+        rebuildTemplateOptions();
         matchingOption = findMatchingOption();
       }
     } catch (err) {
