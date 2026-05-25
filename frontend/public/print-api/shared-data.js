@@ -293,6 +293,9 @@ async function applyLaunchParams() {
   }
 
   const templateApplied = await applyLaunchTemplate(templateId);
+  if (templateId && !templateApplied) {
+    setTemplateStatus("未找到指定模板", "将使用默认模板，请手动切换");
+  }
   const group = templateApplied ? currentDataGroup() : dataGroupForPlaqueType(type);
   const targetMode = launchMode === "summary" ? "summary" : "single";
   if (state.mode !== targetMode) setMode(targetMode);
@@ -402,7 +405,7 @@ function applyManualInput() {
 }
 
 async function applyLaunchTemplate(templateId) {
-  if (!templateId) return false;
+  if (!templateId) { console.warn("applyLaunchTemplate: 未提供 templateId"); return false; }
   const select = $("templateSelect");
 
   function findMatchingOption() {
@@ -415,6 +418,14 @@ async function applyLaunchTemplate(templateId) {
   var matchingOption = findMatchingOption();
 
   if (!matchingOption) {
+    var directMatch = templates.find(function (t) { return t.id === templateId; });
+    if (directMatch) {
+      console.warn("模板在列表中但不在下拉选项中，重新构建选项:", templateId);
+      rebuildTemplateOptions(templateId);
+      select.value = templateId;
+      applyTemplate();
+      return true;
+    }
     console.warn("模板未在本地缓存中，尝试从服务器获取:", templateId);
     try {
       var result = await fetchJson(
@@ -433,11 +444,12 @@ async function applyLaunchTemplate(templateId) {
   }
 
   if (!matchingOption) {
-    console.warn("未找到指定打印模板:", templateId);
+    console.warn("未找到指定打印模板，将为所有牌位使用默认模板:", templateId);
     return false;
   }
   select.value = matchingOption.value;
   applyTemplate();
+  console.log("已应用启动模板:", matchingOption.value, matchingOption.textContent);
   return true;
 }
 
