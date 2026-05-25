@@ -698,6 +698,8 @@ export default function PlaquesPage() {
   ]
 
   const printableTemplates = templates.filter((template: any) => {
+    const isPrintFormat = template.elements && !Array.isArray(template.elements) && template.elements.source === 'tablet-print'
+    if (!isPrintFormat) return false
     if (!printTargetType) return true
     const templateType = template.type || template.elements?.template?.dataGroup
     if (templateType === 'ALL') return true
