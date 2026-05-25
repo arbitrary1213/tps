@@ -569,7 +569,7 @@ export default function PlaquesPage() {
 
   const openPrintTool = (params?: Record<string, string>) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : ''
-    window.open(`/print-api/index.html${query}`, '_blank')
+    window.location.href = `/print-api/index.html${query}`
   }
 
   const handlePreview = (plaque: Plaque) => {
