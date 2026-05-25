@@ -1186,7 +1186,7 @@ function value(row, field) {
 }
 
 function currentRows() {
-  const rows = allCurrentRows();
+  const rows = allCurrentRows() || [];
   const selected = state.selectedRowIds[currentDataGroup()];
   if (!selected.size) return rows;
   return rows.filter((row) => selected.has(row.__rowId));

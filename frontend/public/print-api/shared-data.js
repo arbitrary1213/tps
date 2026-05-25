@@ -322,11 +322,14 @@ async function applyLaunchParams() {
         queryParams.pageSize = "200";
       }
       var query = new URLSearchParams(queryParams);
+      console.log("[applyLaunchParams] query:", query.toString(), "selectedIds:", Array.from(selectedIds));
       plaques = await fetchJson(`/api/plaques?${query.toString()}`, { headers: authHeaders(), timeout: 10000 });
+      console.log("[applyLaunchParams] plaques count:", plaques?.length, plaques?.length ? plaques[0]?.id : "empty");
     }
     const rows = plaques
       .map(plaqueToRow)
       .map((row, index) => normalizeRow(row, group, index));
+    console.log("[applyLaunchParams] rows count:", rows.length, "group:", group, "mode:", state.mode);
     state.datasets[group] = rows;
     state.selectedRowIds[group].clear();
     selectedIds.forEach((id) => state.selectedRowIds[group].add(id));
@@ -397,6 +400,7 @@ function applyManualInput() {
 }
 
 async function applyLaunchTemplate(templateId) {
+  console.log("[applyLaunchTemplate] templateId:", templateId);
   if (!templateId) return false;
   const select = $("templateSelect");
 
