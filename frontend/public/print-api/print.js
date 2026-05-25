@@ -80,6 +80,7 @@ async function init() {
 function render() {
   syncPrintSize();
   syncPrintSettingsPanel();
+  console.log("[render] mode:", state.mode, "template:", currentTemplate()?.id, "dataGroup:", currentDataGroup(), "datasets:", Object.keys(state.datasets).map(k => k + ":" + (state.datasets[k]?.length || 0)).join(", "));
   if (!state.isDesignerPage && (!$("templateSelect") || !$("templateSelect").options.length)) {
     $("preview").innerHTML = '<div class="empty">未读取到已同步模板，请先在主窗口同步服务器模板。</div>';
     $("statusText").textContent = "未读取到已同步模板";
@@ -95,6 +96,7 @@ function render() {
 function renderSingle() {
   const rows = currentRows();
   const row = rows[state.pageIndex] || {};
+  console.log("[renderSingle] rows:", rows.length, "pageIndex:", state.pageIndex, "row keys:", Object.keys(row).length, "row id:", row.__rowId);
   const total = Math.max(rows.length, 1);
   state.pageIndex = clamp(state.pageIndex, 0, total - 1);
   $("preview").innerHTML = singleSheet(row, state.editSide);
