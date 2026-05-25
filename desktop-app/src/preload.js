@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld('templeDesktop', {
   openTemplateDesigner: () => ipcRenderer.invoke('desktop:open-template-designer'),
   openWebAdmin: () => ipcRenderer.invoke('desktop:open-web-admin'),
   reloadAdmin: () => ipcRenderer.invoke('desktop:reload-admin'),
+  getAppMode: () => ipcRenderer.invoke('app:mode'),
+  seedSampleData: () => ipcRenderer.invoke('local-db:seed-sample-data'),
   checkServer: (serverUrl) => ipcRenderer.invoke('desktop:check-server', serverUrl),
   listPrinters: () => ipcRenderer.invoke('printers:list'),
   listPrinterPaperSizes: (printerName) => ipcRenderer.invoke('printers:paper-sizes', printerName),

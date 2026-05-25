@@ -7,7 +7,9 @@
   "scripts": {
     "start": "electron .",
     "check": "node --check src/main.js && node --check src/main/printers.js && node --check src/main/localStore.js && node --check src/main/frontendRuntime.js && node --check src/main/windows.js && node --check src/main/ipc.js && node --check src/preload.js && node --check src/renderer.js && node --check src/setup.js && node --check src/loading.js",
-    "rebuild:native": "electron-rebuild -f -w better-sqlite3"
+    "rebuild:native": "electron-rebuild -f -w better-sqlite3",
+    "pack:standalone": "electron-builder --config electron-builder.standalone.yml",
+    "pack:networked": "electron-builder --config electron-builder.networked.yml"
   },
   "dependencies": {
     "better-sqlite3": "^12.9.0",
@@ -15,6 +17,7 @@
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.4",
-    "electron": "^31.7.7"
+    "electron": "^31.7.7",
+    "electron-builder": "^26.8.1"
   }
 }

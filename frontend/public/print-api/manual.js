@@ -6,7 +6,6 @@ async function init() {
   templates.forEach((template, index) => {
     templates[index] = normalizeCatalogTemplate(template);
   });
-  ensureBuiltinSingleTemplates();
   migrateStoredLayouts();
   rebuildTemplateOptions();
   loadCustomTemplatesFromStorage();

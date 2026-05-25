@@ -1,6 +1,7 @@
 const path = require('path')
 
-function createWindowManager({ BrowserWindow, Menu, screen, frontendPort, getStore, frontendRuntime, showStartupError, loadSetupRef }) {
+function createWindowManager({ BrowserWindow, Menu, screen, frontendPort, getStore, frontendRuntime, showStartupError, loadSetupRef, appMode }) {
+  const isStandalone = appMode === 'standalone'
   let mainWindow = null
   let templateWindow = null
   let printPreviewWindow = null
@@ -97,8 +98,8 @@ function createWindowManager({ BrowserWindow, Menu, screen, frontendPort, getSto
   async function openTemplateDesigner(loadUrl) {
     const s = await getStore()
     const serverUrl = String(s.get('serverUrl') || '').replace(/\/+$/, '')
-    if (!serverUrl) throw new Error('请先配置服务器地址')
-    await frontendRuntime.installApiRedirect(serverUrl)
+    if (!isStandalone && !serverUrl) throw new Error('请先配置服务器地址')
+    if (!isStandalone) await frontendRuntime.installApiRedirect(serverUrl)
     await frontendRuntime.startFrontend(serverUrl)
 
     const target = loadUrl || `http://127.0.0.1:${frontendPort}/print-api/designer.html`
@@ -129,8 +130,8 @@ function createWindowManager({ BrowserWindow, Menu, screen, frontendPort, getSto
   async function openWebAdmin() {
     const s = await getStore()
     const serverUrl = String(s.get('serverUrl') || '').replace(/\/+$/, '')
-    if (!serverUrl) throw new Error('请先配置服务器地址')
-    await frontendRuntime.installApiRedirect(serverUrl)
+    if (!isStandalone && !serverUrl) throw new Error('请先配置服务器地址')
+    if (!isStandalone) await frontendRuntime.installApiRedirect(serverUrl)
     await frontendRuntime.startFrontend(serverUrl)
 
     if (adminWindow && !adminWindow.isDestroyed()) {
@@ -159,12 +160,15 @@ function createWindowManager({ BrowserWindow, Menu, screen, frontendPort, getSto
     await loadLoading()
     const s = await getStore()
     const serverUrl = String(s.get('serverUrl') || '').replace(/\/+$/, '')
-    if (!serverUrl) {
-      await loadSetupRef()
-      return
+
+    if (!isStandalone) {
+      if (!serverUrl) {
+        await loadSetupRef()
+        return
+      }
+      await frontendRuntime.installApiRedirect(serverUrl)
     }
 
-    await frontendRuntime.installApiRedirect(serverUrl)
     await frontendRuntime.startFrontend(serverUrl)
     sendStatus('正在打开桌面化后台...', 90)
     await mainWindow.loadURL(`http://127.0.0.1:${frontendPort}/admin`)

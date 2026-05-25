@@ -52,6 +52,7 @@ function registerIpcHandlers({
   openTemplateDesigner,
   openWebAdmin,
   loadSetup,
+  appMode,
 }) {
   ipcMain.handle('config:get', async () => {
     const s = await getStore()
@@ -214,6 +215,37 @@ function registerIpcHandlers({
         resolve({ success, failureReason: failureReason || '' })
       })
     })
+  })
+
+  ipcMain.handle('app:mode', async () => appMode || 'networked')
+
+  // Seed sample data for standalone mode (first run)
+  ipcMain.handle('local-db:seed-sample-data', async () => {
+    if (appMode !== 'standalone') return { skipped: true }
+    const db = getLocalDb(app, Database)
+    const existing = db.prepare('SELECT COUNT(*) as c FROM local_entities WHERE entity_type = ?').get('plaques')
+    if (existing && existing.c > 0) return { skipped: true, reason: 'already has data' }
+
+    const now = new Date().toISOString()
+    const samplePlaques = [
+      { id: 'sample_blessing_1', plaqueType: 'LONGEVITY', holderName: '张三', yangShang: '张三', age: '四十八岁', zodiac: '属龙', birthDate: '1978年正月初三', address: '本市东街一号', message: '消灾延寿 福慧增长', status: 'ACTIVE', size: '中', updatedAt: now },
+      { id: 'sample_blessing_2', plaqueType: 'LONGEVITY', holderName: '谢释迦摩尼佛', yangShang: '王五', address: '本市南街二号', message: '身体康泰 所求如意', status: 'ACTIVE', size: '中', updatedAt: now },
+      { id: 'sample_deliverance_1', plaqueType: 'DELIVERANCE', dedicationType: '地基主', deceasedName: '', yangShang: '陈氏家人', address: '本市东街一号', status: 'ACTIVE', size: '大', updatedAt: now },
+      { id: 'sample_deliverance_2', plaqueType: 'DELIVERANCE', dedicationType: 'custom', customDedicationType: '冤亲债主', deceasedName: '李四', yinGeng: '戊午年正月初三日建生', birthDate: '1978-01-15', deathDate: '2020-03-15', yangShang: '李四家人', message: '蒙佛接引 莲品增上', address: '本市南街五号', status: 'ACTIVE', size: '大', updatedAt: now },
+    ]
+    const sampleDevotees = [
+      { id: 'sample_devotee_1', name: '张三', phone: '13800001111', updatedAt: now },
+      { id: 'sample_devotee_2', name: '王五', phone: '13800002222', updatedAt: now },
+    ]
+    const sampleRituals = [
+      { id: 'sample_ritual_1', name: '2026年水陆法会', startDate: '2026-06-01', endDate: '2026-06-07', updatedAt: now },
+    ]
+
+    for (const p of samplePlaques) upsertLocalEntity(app, Database, 'plaques', p, { remoteId: p.id, dirty: false })
+    for (const d of sampleDevotees) upsertLocalEntity(app, Database, 'devotees', d, { remoteId: d.id, dirty: false })
+    for (const r of sampleRituals) upsertLocalEntity(app, Database, 'rituals', r, { remoteId: r.id, dirty: false })
+
+    return { seeded: samplePlaques.length + sampleDevotees.length + sampleRituals.length }
   })
 }
 

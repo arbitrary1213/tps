@@ -4,7 +4,8 @@ const path = require('path')
 const { spawn } = require('child_process')
 const fs = require('fs')
 
-function createFrontendRuntime({ session, processRef, projectRoot, frontendPort, sendStatus }) {
+function createFrontendRuntime({ session, processRef, projectRoot, frontendPort, sendStatus, appMode }) {
+  const isStandalone = appMode === 'standalone'
   let apiRedirectInstalled = false
   let frontendProcess = null
 
@@ -120,7 +121,8 @@ function createFrontendRuntime({ session, processRef, projectRoot, frontendPort,
     const frontendDir = path.join(projectRoot, 'frontend')
     const standaloneDir = path.join(frontendDir, '.next', 'standalone')
     const standaloneServer = path.join(standaloneDir, 'server.js')
-    const useStandalone = processRef.env.TEMPLE_DESKTOP_USE_STANDALONE === '1' && fs.existsSync(standaloneServer)
+    // Prefer standalone (production build) to avoid Turbopack HMR reload loops in Electron
+    const useStandalone = fs.existsSync(standaloneServer)
 
     frontendProcess = spawn(
       processRef.execPath,
@@ -133,8 +135,8 @@ function createFrontendRuntime({ session, processRef, projectRoot, frontendPort,
           ...processRef.env,
           PORT: String(frontendPort),
           HOSTNAME: '127.0.0.1',
-          NEXT_PUBLIC_API_BASE: serverUrl,
-          API_BASE: serverUrl,
+          NEXT_PUBLIC_API_BASE: isStandalone ? '' : serverUrl,
+          API_BASE: isStandalone ? '' : serverUrl,
           BROWSER: 'none',
         },
         stdio: 'pipe',

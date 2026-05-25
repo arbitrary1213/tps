@@ -14,6 +14,7 @@ const {
   upsertLocalEntity,
 } = require('./main/localStore')
 const FRONTEND_PORT = 3911
+const APP_MODE = process.env.TEMPLE_MODE === 'standalone' ? 'standalone' : 'networked'
 
 function sendStatus(message, progress, level = 'info') {
   const mainWindow = windowManager?.getMainWindow?.()
@@ -32,6 +33,7 @@ const frontendRuntime = createFrontendRuntime({
   projectRoot: path.resolve(__dirname, '..', '..'),
   frontendPort: FRONTEND_PORT,
   sendStatus,
+  appMode: APP_MODE,
 })
 let windowManager
 
@@ -49,6 +51,7 @@ windowManager = createWindowManager({
   frontendRuntime,
   showStartupError,
   loadSetupRef: () => windowManager.loadSetup(),
+  appMode: APP_MODE,
 })
 
 app.whenReady().then(() => {
@@ -93,4 +96,5 @@ registerIpcHandlers({
   openTemplateDesigner: () => windowManager.openTemplateDesigner(),
   openWebAdmin: () => windowManager.openWebAdmin(),
   loadSetup: () => windowManager.loadSetup(),
+  appMode: APP_MODE,
 })

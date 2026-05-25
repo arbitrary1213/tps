@@ -1,9 +1,9 @@
 const templates = [
   { id: "cmp6uyyk10003bjnjsqkn2uwn", name: "延生通名", width: 297, height: 420, vertical: true, mode: "summary", dataGroup: "blessing" },
-  { id: "cmowl79v5000a2rdgs4czs9bo", name: "往生通名", width: 297, height: 420, vertical: true, mode: "summary", dataGroup: "blessing" },
-  { id: "cmoz9dtgc015wcyyxjcwqcumq", name: "红牒", width: 420, height: 297, vertical: true, mode: "summary", dataGroup: "blessing" },
-  { id: "cmp6vaj3l000gbjnjoak9q9wx", name: "延生禄位", width: 125, height: 360, vertical: true, mode: "summary", dataGroup: "blessing" },
-  { id: "92171e1d-e697-46df-bfcc-4cb8f9a29661", name: "红壳", width: 125, height: 360, vertical: true, mode: "summary", dataGroup: "blessing" },
+  { id: "cmowl79v5000a2rdgs4czs9bo", name: "往生通名", width: 297, height: 420, vertical: true, mode: "summary", dataGroup: "deliverance" },
+  { id: "cmoz9dtgc015wcyyxjcwqcumq", name: "红牒", width: 420, height: 297, vertical: true, mode: "single", dataGroup: "blessing" },
+  { id: "cmp6vaj3l000gbjnjoak9q9wx", name: "延生禄位", width: 125, height: 360, vertical: true, mode: "single", dataGroup: "blessing" },
+  { id: "92171e1d-e697-46df-bfcc-4cb8f9a29661", name: "红壳", width: 125, height: 360, vertical: true, mode: "single", dataGroup: "blessing" },
   { id: "cmp15pgnz000op0s9vkqcx9wt", name: "黄壳", width: 125, height: 360, vertical: true, mode: "single", dataGroup: "deliverance" },
   { id: "cmozm19an001ahmbwqm8nmi1q", name: "超度牌位", width: 125, height: 360, vertical: true, mode: "single", dataGroup: "deliverance" },
   { id: "cmoy8qpet023lp6guzs8mne81", name: "黄牒", width: 420, height: 297, vertical: true, mode: "single", dataGroup: "deliverance" },
@@ -271,8 +271,6 @@ const singleVariantLayoutDefaults = {
     },
   },
 };
-
-const BUILTIN_SINGLE_TEMPLATES = [];
 
 const SUMMARY_TEMPLATE_IDS = new Set(["cmp6uyyk10003bjnjsqkn2uwn", "cmowl79v5000a2rdgs4czs9bo"]);
 

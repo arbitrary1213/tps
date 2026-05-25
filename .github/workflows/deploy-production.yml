@@ -92,7 +92,6 @@ jobs:
       - name: Syntax check print service and tests
         run: |
           node --check index.js
-          node --check ../frontend/public/print-api/shared.js
           node --check ../frontend/public/print-api/designer.js
           node --check ../frontend/public/print-api/print.js
           node --check ../frontend/public/print-api/manual.js

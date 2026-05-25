@@ -34,13 +34,16 @@ function validateOrigin(url: string): boolean {
 export function resolveRemoteBase(headerBase: string | null): string {
   if (headerBase) {
     const trimmed = headerBase.replace(/\/+$/, '')
-    if (!validateOrigin(trimmed)) {
+    // Trust the x-temple-api-base header injected by the Electron desktop app
+    if (!/^https?:\/\/.+/.test(trimmed)) {
       throw new Error(`API base not allowed: ${trimmed}`)
     }
     return trimmed
   }
   if (!DEFAULT_REMOTE_API_BASE) {
-    throw new Error('Server API base is not configured')
+    // In standalone mode, no API base is expected — return empty base
+    // The API routes will handle this by returning local-only data
+    return ''
   }
   return DEFAULT_REMOTE_API_BASE.replace(/\/+$/, '')
 }

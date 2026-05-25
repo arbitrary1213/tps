@@ -47,7 +47,7 @@ function isAllowedSingleTemplate(template) {
   if (!template || isSummaryTemplate(template)) return true;
   if (CATALOG_SINGLE_TEMPLATE_IDS.has(template.id)) return true;
   if (isBuiltinSingleTemplate(template)) return true;
-	  if (state.remoteTemplateIds[template.id]) return true;
+	if (state.remoteTemplateIds[template.id]) return true;
   return Boolean(template?.id?.startsWith("custom_"));
 }
 
@@ -61,20 +61,6 @@ function normalizeCatalogTemplate(template) {
     dataGroup: catalog.dataGroup,
     tabletType: catalog.mode === "summary" ? undefined : catalog.dataGroup,
   };
-}
-
-function ensureBuiltinSingleTemplates() {
-  BUILTIN_SINGLE_TEMPLATES.forEach((builtinTemplate) => {
-    const existingIndex = templates.findIndex((item) => item.id === builtinTemplate.id);
-    if (existingIndex >= 0) {
-      templates[existingIndex] = {
-        ...templates[existingIndex],
-        ...builtinTemplate,
-      };
-    } else {
-      templates.push({ ...builtinTemplate });
-    }
-  });
 }
 
 function pruneObsoleteSingleTemplates() {

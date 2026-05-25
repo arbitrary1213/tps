@@ -1,0 +1,21 @@
+appId: cn.xiandingsi.temple-os
+productName: TempleOS-联网版
+directories:
+  output: ../releases
+files:
+  - src/**/*
+  - "!src/**/*.bak"
+extraResources:
+  - from: ../frontend/.next/standalone
+    to: frontend-standalone
+  - from: ../frontend/public
+    to: frontend-public
+  - from: ../frontend/.next/static
+    to: frontend-static
+win:
+  target: nsis
+  icon: ../frontend/public/favicon.ico
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  language: "2052"

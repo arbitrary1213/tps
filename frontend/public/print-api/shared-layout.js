@@ -449,14 +449,18 @@ async function syncCurrentTemplateToServer(skipRemoteSync = false) {
     }
 
     const localId = remoteId || payload.template.id;
-    await upsertDesktopRows("plaque_template", [{
-      id: localId,
-      name: body.name,
-      type: body.type,
-      backgroundImage: body.backgroundImage,
-      elements: payload,
-      updatedAt: new Date().toISOString(),
-    }]);
+    try {
+      await upsertDesktopRows("plaque_template", [{
+        id: localId,
+        name: body.name,
+        type: body.type,
+        backgroundImage: body.backgroundImage,
+        elements: payload,
+        updatedAt: new Date().toISOString(),
+      }]);
+    } catch (localError) {
+      console.warn("本地数据库保存失败（模板已存至浏览器配置）:", localError);
+    }
     return;
   }
 
@@ -485,8 +489,6 @@ async function syncCurrentTemplateToServer(skipRemoteSync = false) {
 
 function migrateStoredLayouts() {
   let changed = false;
-
-  ensureBuiltinSingleTemplates();
 
   HIDDEN_LEGACY_TEMPLATE_IDS.forEach((id) => {
     if (state.layouts[id]) {

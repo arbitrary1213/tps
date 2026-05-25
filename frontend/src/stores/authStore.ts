@@ -52,6 +52,22 @@ export const useAuthStore = create<AuthState>((set) => ({
           return
         }
       }
+      // Standalone mode: auto-create local admin user
+      const w = window as any
+      if (w.templeDesktop?.getAppMode) {
+        w.templeDesktop.getAppMode().then((mode: string) => {
+          if (mode === 'standalone') {
+            const localUser = { id: 'local-admin', username: '本地管理员', name: '本地管理员', role: 'admin' }
+            const localToken = 'local-standalone-token'
+            localStorage.setItem('token', localToken)
+            localStorage.setItem('user', JSON.stringify(localUser))
+            set({ token: localToken, user: localUser, _hasHydrated: state })
+          } else {
+            set({ _hasHydrated: state })
+          }
+        }).catch(() => set({ _hasHydrated: state }))
+        return
+      }
     }
     set({ _hasHydrated: state })
   },

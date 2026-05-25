@@ -4,6 +4,8 @@ const isDev = process.env.NODE_ENV !== 'production'
 const nextConfig = {
   output: 'standalone',
 
+  allowedDevOrigins: ['127.0.0.1', 'localhost'],
+
   images: {
     unoptimized: true,
     minimumCacheTTL: 60 * 60 * 24 * 30,

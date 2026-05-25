@@ -234,15 +234,21 @@ async function loadSystemPlaques(group) {
         const firstJson = await firstResp.json();
         if (!firstResp.ok || firstJson.success === false) throw new Error(firstJson.error || `请求失败：${firstResp.status}`);
         const all = firstJson.data || [];
-        const total = firstJson.total || all.length;
-        if (total > PAGE_SIZE) {
-          const totalPages = Math.ceil(total / PAGE_SIZE);
-          const remaining = await Promise.all(
-            Array.from({ length: totalPages - 1 }, (_, i) =>
-              fetchJson(`/api/plaques?${new URLSearchParams({ ...baseParams, page: String(i + 2) }).toString()}`, { headers: authHeaders(), timeout: 10000 })
-            )
-          );
-          all.push(...remaining.flat());
+        // Keep fetching while page is full (may have more data)
+        if (all.length >= PAGE_SIZE) {
+          const total = firstJson.total || 0;
+          const totalPages = total > 0 ? Math.ceil(total / PAGE_SIZE) : Infinity;
+          let page = 2;
+          while (page <= totalPages) {
+            const chunk = await fetchJson(
+              `/api/plaques?${new URLSearchParams({ ...baseParams, page: String(page) }).toString()}`,
+              { headers: authHeaders(), timeout: 10000 }
+            );
+            if (!Array.isArray(chunk) || chunk.length === 0) break;
+            all.push(...chunk);
+            if (chunk.length < PAGE_SIZE) break;
+            page += 1;
+          }
         }
         return all;
       }
@@ -324,8 +330,27 @@ async function applyLaunchParams() {
         if (statusValue) queryParams.status = statusValue;
         queryParams.pageSize = "200";
       }
-      var query = new URLSearchParams(queryParams);
-      plaques = await fetchJson(`/api/plaques?${query.toString()}`, { headers: authHeaders(), timeout: 10000 });
+      if (selectedIds.size) {
+        // Specific IDs — single request is fine
+        var query = new URLSearchParams(queryParams);
+        plaques = await fetchJson(`/api/plaques?${query.toString()}`, { headers: authHeaders(), timeout: 10000 });
+      } else {
+        // Filtered query — paginate through all results
+        let allPlaques = [];
+        let page = 1;
+        while (true) {
+          var pageQuery = new URLSearchParams({ ...queryParams, page: String(page) });
+          var chunk = await fetchJson(`/api/plaques?${pageQuery.toString()}`, { headers: authHeaders(), timeout: 10000 });
+          if (!Array.isArray(chunk) || chunk.length === 0) break;
+          allPlaques.push(...chunk);
+          if (chunk.length < 200) break;
+          page += 1;
+        }
+        plaques = allPlaques;
+      }
+    }
+    if (!Array.isArray(plaques)) {
+      throw new Error(plaques && plaques.error ? plaques.error : "读取牌位数据失败，请检查后端服务是否启动");
     }
     const rows = plaques
       .map(plaqueToRow)

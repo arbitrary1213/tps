@@ -25,6 +25,11 @@ app.use(express.static(publicDir, {
   etag: false,
 }))
 
+// Return proper 404 for /api/* calls so fetchJson throws instead of returning HTML
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ success: false, error: 'API not available on print service' })
+})
+
 app.get('*', (req, res) => {
   res.set('Cache-Control', 'no-store')
   res.sendFile(path.join(publicDir, 'index.html'))

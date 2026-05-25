@@ -59,7 +59,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   })
 
   const isDesktop = typeof window !== 'undefined' && Boolean(window.templeDesktop)
+  const [standaloneReady, setStandaloneReady] = useState(false)
 
+  // Standalone mode: seed sample data on first run
+  useEffect(() => {
+    if (!_hasHydrated || !token || !isDesktop) return
+    window.templeDesktop?.getAppMode?.().then(async (mode: string) => {
+      if (mode === 'standalone') {
+        await window.templeDesktop?.seedSampleData?.()
+        setStandaloneReady(true)
+      }
+    }).catch(() => {})
+  }, [_hasHydrated, token, isDesktop])
+
+  // Regular sync effect (networked mode)
   useEffect(() => {
     if (_hasHydrated && !token) router.push('/login')
   }, [_hasHydrated, token, router])

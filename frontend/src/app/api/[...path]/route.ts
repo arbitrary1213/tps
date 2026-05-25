@@ -9,6 +9,14 @@ async function proxy(req: NextRequest, context: { params: Promise<{ path: string
     return NextResponse.json({ success: false, error: err.message }, { status: 403 })
   }
 
+  // Standalone mode: no remote server configured, return local-only response
+  if (!remoteBase) {
+    if (req.method === 'GET') {
+      return NextResponse.json({ success: true, data: [] })
+    }
+    return NextResponse.json({ success: true, data: { id: `local_${Date.now()}`, _local: true } })
+  }
+
   const { path } = await context.params
   const url = new URL(req.url)
   const targetUrl = `${remoteBase}/api/${path.join('/')}${url.search}`

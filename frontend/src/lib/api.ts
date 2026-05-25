@@ -64,6 +64,8 @@ declare global {
       getLocalDbInfo?: () => Promise<{ path: string; entityCount: number; pendingCount: number }>
       openTemplateDesigner?: () => Promise<boolean>
       printHtml?: (options: { html: string; deviceName?: string; silent?: boolean }) => Promise<{ success: boolean; failureReason?: string }>
+      getAppMode?: () => Promise<string>
+      seedSampleData?: () => Promise<{ seeded?: number; skipped?: boolean }>
     }
   }
 }
@@ -99,6 +101,23 @@ function isDesktopRuntime() {
   return typeof window !== 'undefined' && Boolean(window.templeDesktop)
 }
 
+let _standaloneMode: boolean | null = null
+async function isStandaloneMode(): Promise<boolean> {
+  if (_standaloneMode !== null) return _standaloneMode
+  try {
+    const w = window as any
+    if (w.templeDesktop?.getAppMode) {
+      const mode = await w.templeDesktop.getAppMode()
+      _standaloneMode = mode === 'standalone'
+    } else {
+      _standaloneMode = false
+    }
+  } catch {
+    _standaloneMode = false
+  }
+  return _standaloneMode
+}
+
 function attachCacheMeta(value: unknown, meta: Record<string, unknown>) {
   if (value && typeof value === 'object') {
     Object.defineProperty(value, '__desktopCache', { value: meta, enumerable: false, configurable: true })
@@ -124,6 +143,17 @@ async function writeLocalFromGet(endpoint: string, method: string, data: any) {
   if (entityType && rows.length) {
     await window.templeDesktop?.upsertLocalRows?.(entityType, rows).catch(() => ({ count: 0 }))
   }
+}
+
+// Convert a single data object from a POST/PUT body into rows for local DB storage
+function normalizeDataRows(data: any, endpoint: string, method: string): any[] {
+  if (!data) return []
+  if (Array.isArray(data)) return data
+  // Wrap single object into an array, using a timestamp-based local ID
+  const row = { ...data }
+  if (!row.id) row.id = `local_${Date.now()}`
+  row.updatedAt = row.updatedAt || new Date().toISOString()
+  return [row]
 }
 
 async function request<T = any>(endpoint: string, options: FetchOptions = {}): Promise<T> {
@@ -156,6 +186,31 @@ async function request<T = any>(endpoint: string, options: FetchOptions = {}): P
   }
 
   const url = API_BASE ? `${API_BASE}${endpoint}` : endpoint
+
+  // Standalone mode: all data operations are local-only
+  if (isDesktopRuntime() && await isStandaloneMode()) {
+    if (method === 'GET') {
+      const localValue = await readLocalFirst<T>(endpoint, method)
+      if (localValue) return localValue
+      // Return empty array/list for collection endpoints
+      const entityType = entityTypeForEndpoint(endpoint)
+      return (entityType ? [] : null) as unknown as T
+    }
+    // For writes in standalone mode, save to local DB directly
+    const entityType = entityTypeForEndpoint(endpoint)
+    if (entityType && fetchOptions.body) {
+      try {
+        const data = JSON.parse(fetchOptions.body as string)
+        const rows = normalizeDataRows(data, endpoint, method)
+        await (window as any).templeDesktop?.upsertLocalRows?.(entityType, rows)
+        return { success: true } as unknown as T
+      } catch {
+        return { success: true } as unknown as T
+      }
+    }
+    return { success: true } as unknown as T
+  }
+
   const shouldUseLocalFirst = method === 'GET' && isDesktopRuntime() && !skipLocalFallback && !preferRemote
   if (shouldUseLocalFirst) {
     const localValue = await readLocalFirst<T>(endpoint, method)
