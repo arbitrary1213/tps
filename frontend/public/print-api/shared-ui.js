@@ -529,6 +529,7 @@ async function deleteCurrentTemplate() {
   delete templateDefaults[template.id];
   delete state.layouts[template.id];
   const remoteId = state.remoteTemplateIds[template.id];
+  let serverDeleteFailed = false;
   if (remoteId && canSyncServerTemplates()) {
     try {
       await fetchJson(`/api/plaque-templates/${remoteId}`, {
@@ -537,11 +538,14 @@ async function deleteCurrentTemplate() {
         timeout: 8000,
       });
     } catch (error) {
+      serverDeleteFailed = true;
       console.warn("删除服务器模板失败:", error);
     }
   }
-  delete state.remoteTemplateIds[template.id];
-  saveRemoteTemplateIds();
+  if (!serverDeleteFailed) {
+    delete state.remoteTemplateIds[template.id];
+    saveRemoteTemplateIds();
+  }
 
   const option = Array.from($("templateSelect").options).find((item) => item.value === template.id);
   option?.remove();

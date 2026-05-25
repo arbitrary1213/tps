@@ -187,4 +187,8 @@ function renderSummary() {
   syncJumpPageInput(totalPages);
 }
 
-init();
+init().catch((err) => {
+  console.error("模板设计器初始化失败:", err);
+  setBusy("初始化失败，请刷新页面重试");
+  if ($("statusText")) $("statusText").textContent = "初始化失败，请刷新页面重试";
+});
