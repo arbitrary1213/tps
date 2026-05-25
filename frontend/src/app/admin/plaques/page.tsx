@@ -598,10 +598,12 @@ export default function PlaquesPage() {
 
   const confirmPrintWithTemplate = () => {
     if (!printTargetIds.length) return
+    const validSelection = printableTemplates.some(t => t.id === selectedTemplateId)
+    const templateId = validSelection ? selectedTemplateId : ''
     const params: Record<string, string> = {
       type: printTargetType || '',
       preview: '1',
-      ...(selectedTemplateId ? { templateId: selectedTemplateId } : {}),
+      ...(templateId ? { templateId } : {}),
     }
     if (printTargetIds.length === 1) params.plaqueId = printTargetIds[0]
     else params.plaqueIds = printTargetIds.join(',')
