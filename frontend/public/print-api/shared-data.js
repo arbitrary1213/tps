@@ -298,7 +298,7 @@ async function applyLaunchParams() {
   }
   const group = templateApplied ? currentDataGroup() : dataGroupForPlaqueType(type);
   const targetMode = launchMode === "summary" ? "summary" : "single";
-  if (state.mode !== targetMode) setMode(targetMode);
+  if (state.mode !== targetMode && !templateApplied) setMode(targetMode);
   setDataSourceStatus("牌位管理选中数据");
 
   try {
