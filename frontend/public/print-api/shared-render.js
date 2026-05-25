@@ -926,7 +926,7 @@ function singleSheet(row, side = state.editSide, forPrint = false) {
   state.renderSingleVariant = previousSingleVariant;
   console.log("[singleSheet] html length:", html.length, "background:", !!background, "subject:", subjectContent?.substring(0, 20), "details:", fields.length - 1, "type:", type);
   console.log("[singleSheet] subjectContent type:", typeof subjectContent, "value:", JSON.stringify(subjectContent));
-  console.log("[singleSheet] firstFields:", fields.slice(0,3).map(f => f.key +"="+ fieldValue(row, f.key)));
+  console.log("[singleSheet] firstFields:", JSON.stringify(fields.slice(0,3).map(f => ({key: f.key, aliases: f.aliases, label: f.label}))));
   return html;
 }
 
@@ -1278,7 +1278,10 @@ function resolveFieldNameForKey(key) {
     return resolveFieldNameForKey(dynamicField.sourceKey);
   }
   const select = document.querySelector(`[data-field-key="${key}"]`);
-  if (select) return select.value || "";
+  if (select) {
+    console.log("[resolveFieldNameForKey] select matched for key:", key, "tag:", select.tagName, "value:", JSON.stringify(select.value));
+    return select.value || "";
+  }
   const layout = ensureLayout(currentLayoutKey());
   const variantKey = state.renderSingleVariant || currentSingleVariantKey();
   const savedMapping = mappingValueForField(layout, key, variantKey);
@@ -1294,14 +1297,18 @@ function resolveFieldNameForKey(key) {
 function fieldValue(row, key) {
   if (isSummaryFieldKey(key)) {
     const definition = summaryFieldDefinitions().find((field) => field.key === key) || dynamicFieldDefinitionByKey(key, currentSummaryVariantKey());
+    console.log("[fieldValue] summary path key:", key, "definition:", definition?.key, "sourceKey:", definition?.sourceKey);
     return definition ? fieldValue(row, definition.sourceKey) : "";
   }
   const dynamicField = dynamicFieldDefinitionByKey(key, state.renderSingleVariant || currentSingleVariantKey());
   if (dynamicField?.sourceKey) {
+    console.log("[fieldValue] dynamic sourceKey redirect:", key, "→", dynamicField.sourceKey);
     return fieldValue(row, dynamicField.sourceKey);
   }
   const fieldName = resolveFieldNameForKey(key);
-  return fieldName ? value(row, fieldName) : "";
+  const val = fieldName ? value(row, fieldName) : "";
+  console.log("[fieldValue]", key, "→ fieldName:", fieldName, "→ value:", JSON.stringify(val));
+  return val;
 }
 
 function currentFieldMappings() {
