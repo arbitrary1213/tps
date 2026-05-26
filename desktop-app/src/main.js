@@ -15,17 +15,12 @@ const {
 } = require('./main/localStore')
 const FRONTEND_PORT = 3911
 
-// Detect standalone mode by marker file (only present in standalone build)
-function detectAppMode() {
+const APP_MODE = (() => {
   if (process.env.TEMPLE_MODE === 'standalone') return 'standalone'
   if (process.env.TEMPLE_MODE === 'networked') return 'networked'
-  // In packaged app, check for standalone marker file
-  const fs = require('fs')
-  const markerPath = path.join(__dirname, '..', '..', 'standalone.marker')
-  if (fs.existsSync(markerPath)) return 'standalone'
-  return 'networked'
-}
-const APP_MODE = detectAppMode()
+  try { return require('./app-mode.js') } catch (_) { return 'networked' }
+})()
+console.log('[TempleOS] App mode:', APP_MODE)
 
 function sendStatus(message, progress, level = 'info') {
   const mainWindow = windowManager?.getMainWindow?.()

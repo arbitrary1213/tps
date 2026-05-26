@@ -5,6 +5,10 @@ directories:
 files:
   - src/**/*
   - "!src/**/*.bak"
+files:
+  - "**/*"
+  - "!node_modules"
+  - "!nsis-cache/**"
 extraResources:
   - from: ../frontend/.next/standalone
     to: frontend-standalone
