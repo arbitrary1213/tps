@@ -192,18 +192,24 @@ async function request<T = any>(endpoint: string, options: FetchOptions = {}): P
     if (method === 'GET') {
       const localValue = await readLocalFirst<T>(endpoint, method)
       if (localValue) return localValue
-      // Return empty array/list for collection endpoints
       const entityType = entityTypeForEndpoint(endpoint)
-      return (entityType ? [] : null) as unknown as T
+      if (entityType) return ([] as unknown as T)
+      // For unknown endpoints, return safe defaults based on path
+      if (endpoint.includes('stats')) return ({ totalPlaques: 0, totalDevotees: 0 } as unknown as T)
+      if (endpoint.includes('settings')) return ({} as unknown as T)
+      return ([] as unknown as T)
     }
     // For writes in standalone mode, save to local DB directly
     const entityType = entityTypeForEndpoint(endpoint)
     if (entityType && fetchOptions.body) {
       try {
-        const data = JSON.parse(fetchOptions.body as string)
+        const data = typeof fetchOptions.body === 'string' ? JSON.parse(fetchOptions.body as string) : fetchOptions.body
         const rows = normalizeDataRows(data, endpoint, method)
-        await (window as any).templeDesktop?.upsertLocalRows?.(entityType, rows)
-        return { success: true } as unknown as T
+        if (rows.length > 0) {
+          await (window as any).templeDesktop?.upsertLocalRows?.(entityType, rows)
+        }
+        // Return the created/updated entity for the UI
+        return (rows.length === 1 ? { ...rows[0], success: true } : { success: true, data: rows }) as unknown as T
       } catch {
         return { success: true } as unknown as T
       }

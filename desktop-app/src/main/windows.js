@@ -1,6 +1,6 @@
 const path = require('path')
 
-function createWindowManager({ BrowserWindow, Menu, screen, frontendPort, getStore, frontendRuntime, showStartupError, loadSetupRef, appMode }) {
+function createWindowManager({ BrowserWindow, Menu, screen, frontendPort, getStore, frontendRuntime, showStartupError, loadSetupRef, appMode, seedStandaloneData }) {
   const isStandalone = appMode === 'standalone'
   let mainWindow = null
   let templateWindow = null
@@ -169,9 +169,18 @@ function createWindowManager({ BrowserWindow, Menu, screen, frontendPort, getSto
       await frontendRuntime.installApiRedirect(serverUrl)
     }
 
+    // In standalone mode, seed sample data before starting frontend
+    if (isStandalone && typeof seedStandaloneData === 'function') {
+      try { await seedStandaloneData() } catch (e) { console.error('[TempleOS] Seed error:', e.message) }
+    }
+
     await frontendRuntime.startFrontend(serverUrl)
     sendStatus('正在打开桌面化后台...', 90)
     await mainWindow.loadURL(`http://127.0.0.1:${frontendPort}/admin`)
+    // Inject mode flag so frontend can detect standalone synchronously
+    mainWindow.webContents.executeJavaScript(
+      `localStorage.setItem('temple_mode', '${isStandalone ? 'standalone' : 'networked'}')`
+    )
   }
 
   function installMenu(loadAdminFn) {
