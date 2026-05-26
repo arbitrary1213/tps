@@ -90,14 +90,27 @@ windowManager = createWindowManager({
 app.whenReady().then(() => {
   windowManager.createMainWindow(loadAdmin)
   loadAdmin().catch((error) => {
-    console.error(error)
-    windowManager.loadSetup()
+    console.error('[TempleOS] loadAdmin failed:', error.message || error)
+    if (APP_MODE === 'standalone') {
+      // In standalone mode, never fall back to setup — retry once then show error
+      sendStatus('启动失败，正在重试...', 50, 'error')
+      setTimeout(() => {
+        loadAdmin().catch((e) => {
+          console.error('[TempleOS] Retry also failed:', e.message || e)
+          sendStatus('启动失败：' + (e.message || '未知错误'), 100, 'error')
+        })
+      }, 3000)
+    } else {
+      windowManager.loadSetup()
+    }
   })
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       windowManager.createMainWindow(loadAdmin)
-      loadAdmin().catch(() => windowManager.loadSetup())
+      loadAdmin().catch(() => {
+        if (APP_MODE !== 'standalone') windowManager.loadSetup()
+      })
     }
   })
 })

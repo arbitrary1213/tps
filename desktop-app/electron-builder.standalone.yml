@@ -7,8 +7,6 @@ extraResources:
     to: frontend-standalone
   - from: ../frontend/.next/standalone/standalone_deps
     to: standalone_deps
-  - from: standalone.marker
-    to: standalone.marker
 win:
   target: nsis
   signAndEditExecutable: false

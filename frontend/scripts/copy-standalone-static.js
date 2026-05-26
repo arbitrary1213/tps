@@ -22,3 +22,12 @@ if (fs.existsSync(publicSource)) {
   fs.cpSync(publicSource, publicTarget, { recursive: true })
   console.log(`Copied ${publicSource} -> ${publicTarget}`)
 }
+
+// Copy node_modules for standalone packaging (electron-builder filters "node_modules" name)
+const nmSource = path.join(root, '.next', 'standalone', 'node_modules')
+const nmBackup = path.join(root, '.next', 'standalone', 'standalone_deps')
+if (fs.existsSync(nmSource)) {
+  fs.rmSync(nmBackup, { recursive: true, force: true })
+  fs.cpSync(nmSource, nmBackup, { recursive: true })
+  console.log(`Copied node_modules -> standalone_deps for packaging`)
+}
