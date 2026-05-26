@@ -125,6 +125,17 @@ function createFrontendRuntime({ session, processRef, projectRoot, frontendPort,
       ? path.join(process.resourcesPath, 'frontend-standalone')
       : path.join(projectRoot, 'frontend', '.next', 'standalone')
     const standaloneServer = path.join(standaloneDir, 'server.js')
+
+    // In packaged app, electron-builder filters out node_modules from extraResources,
+    // so we copy them from a renamed directory into place before starting the server
+    if (isPackaged && fs.existsSync(standaloneServer)) {
+      const nmSource = path.join(process.resourcesPath, 'frontend_node_modules')
+      const nmTarget = path.join(standaloneDir, 'node_modules')
+      if (fs.existsSync(nmSource) && !fs.existsSync(nmTarget)) {
+        fs.cpSync(nmSource, nmTarget, { recursive: true })
+      }
+    }
+
     // Prefer standalone (production build) to avoid Turbopack HMR reload loops in Electron
     const useStandalone = fs.existsSync(standaloneServer)
 

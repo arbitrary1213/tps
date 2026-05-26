@@ -9,6 +9,8 @@ files:
 extraResources:
   - from: ../frontend/.next/standalone
     to: frontend-standalone
+  - from: ../frontend/.next/standalone/node_modules
+    to: frontend_node_modules
 win:
   target: nsis
   signAndEditExecutable: false

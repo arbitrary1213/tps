@@ -8,6 +8,8 @@ files:
 extraResources:
   - from: ../frontend/.next/standalone
     to: frontend-standalone
+    filter:
+      - "**/*"
 win:
   target: nsis
   signAndEditExecutable: false
