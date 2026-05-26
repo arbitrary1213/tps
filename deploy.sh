@@ -196,13 +196,12 @@ if has_target print; then verify_frontend; fi
 # ---- Cleanup ----
 echo ""
 echo "Cleaning up..."
-docker image prune -af --filter "until=24h" >/dev/null 2>&1 || true
-docker container prune -f --filter "until=1h" >/dev/null 2>&1 || true
-docker builder prune -af --filter "until=24h" >/dev/null 2>&1 || true
+docker builder prune -af >/dev/null 2>&1 || true
+docker image prune -af >/dev/null 2>&1 || true
+docker container prune -f >/dev/null 2>&1 || true
 find "$BACKUP_DIR" -name "db_backup_*.sql" -type f -printf '%T@ %p\n' \
-  | sort -rn | tail -n +8 | awk '{print $2}' | xargs -r rm -f
-journalctl --vacuum-time=7d >/dev/null 2>&1 || true
-apt-get clean >/dev/null 2>&1 || true
+  | sort -rn | tail -n +6 | awk '{print $2}' | xargs -r rm -f
+df -h / | tail -1 | awk '{print "  Disk: " $3 "/" $2 " used (" $5 ")"}'
 echo "  ✓ cleanup done"
 
 echo ""
