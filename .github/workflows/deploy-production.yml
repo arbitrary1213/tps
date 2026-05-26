@@ -154,3 +154,4 @@ jobs:
 
             chmod +x ./deploy.sh
             ./deploy.sh --password "$DEPLOY_PASSWORD" "${{ github.event.inputs.target || 'all' }}"
+
