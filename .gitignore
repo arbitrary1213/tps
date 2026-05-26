@@ -25,6 +25,8 @@ frontend-deploy/
 frontend-runtime/
 releases/
 test-results/
+desktop-app/nsis-cache/
+test/output/
 
 # Debug
 npm-debug.log*
