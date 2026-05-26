@@ -142,5 +142,15 @@ jobs:
             for c in temple-backend temple-print temple-frontend temple-nginx; do
               docker rm -f "$c" 2>/dev/null && echo "Migrated $c to Compose" || true
             done
+            # Emergency disk cleanup before deploy (avoid "No space left on device")
+            echo "Freeing disk space..."
+            docker builder prune -af 2>/dev/null || true
+            docker image prune -af 2>/dev/null || true
+            docker container prune -f 2>/dev/null || true
+            find docker/backup -name "db_backup_*.sql" -type f -mtime +1 -delete 2>/dev/null || true
+            find /tmp -name "temple_*" -delete 2>/dev/null || true
+            echo "Disk status:"
+            df -h / | tail -1
+
             chmod +x ./deploy.sh
             ./deploy.sh --password "$DEPLOY_PASSWORD" "${{ github.event.inputs.target || 'all' }}"
