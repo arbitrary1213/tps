@@ -21,7 +21,7 @@ function detectAppMode() {
   if (process.env.TEMPLE_MODE === 'networked') return 'networked'
   // In packaged app, check for standalone marker file
   const fs = require('fs')
-  const markerPath = path.join(__dirname, '..', 'standalone.marker')
+  const markerPath = path.join(__dirname, '..', '..', 'standalone.marker')
   if (fs.existsSync(markerPath)) return 'standalone'
   return 'networked'
 }
