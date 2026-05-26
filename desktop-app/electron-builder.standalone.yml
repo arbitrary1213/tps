@@ -2,10 +2,6 @@ appId: cn.xiandingsi.temple-os
 productName: TempleOS-单机版
 directories:
   output: ../releases
-files:
-  - "**/*"
-  - "!node_modules"
-  - "!nsis-cache/**"
 extraResources:
   - from: ../frontend/.next/standalone
     to: frontend-standalone
