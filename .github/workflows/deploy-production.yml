@@ -145,7 +145,6 @@ jobs:
             # Emergency disk cleanup before deploy (avoid "No space left on device")
             echo "Freeing disk space..."
             docker builder prune -af 2>/dev/null || true
-            docker image prune -af 2>/dev/null || true
             docker container prune -f 2>/dev/null || true
             find docker/backup -name "db_backup_*.sql" -type f -mtime +1 -delete 2>/dev/null || true
             find /tmp -name "temple_*" -delete 2>/dev/null || true

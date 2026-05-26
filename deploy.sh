@@ -94,7 +94,6 @@ echo "Targets: ${TARGETS[*]}"
 # ---- Emergency disk cleanup (before anything else) ----
 echo "[0/5] Freeing disk space..."
 docker builder prune -af >/dev/null 2>&1 || true
-docker image prune -af >/dev/null 2>&1 || true
 docker container prune -f >/dev/null 2>&1 || true
 find "$BACKUP_DIR" -name "db_backup_*.sql" -type f -printf '%T@ %p\n' 2>/dev/null \
   | sort -rn | tail -n +4 | awk '{print $2}' | xargs -r rm -f
@@ -153,19 +152,28 @@ done
 echo "  Container cleanup done"
 
 if has_target all; then
-	  missing_base_images=0
-	  for img in node:20-slim node:22-slim node:22-alpine postgres:15-alpine nginx:alpine; do
-	    if ! docker image inspect "$img" >/dev/null 2>&1; then
-	      missing_base_images=1
-	      echo "  Missing base image $img, will pull"
-	      break
-	    fi
-	  done
-	  if [ "$missing_base_images" -eq 1 ]; then
-	    $COMPOSE build --pull
-	  else
-	    $COMPOSE build
-	  fi
+  # Pre-pull base images that compose needs at up time (not built by us)
+  for img in nginx:alpine postgres:15-alpine; do
+    if ! docker image inspect "$img" >/dev/null 2>&1; then
+      echo "  Pulling $img..."
+      docker pull "$img" || {
+        echo "  WARNING: failed to pull $img (will retry at compose up)"
+      }
+    fi
+  done
+  missing_base_images=0
+  for img in node:20-slim node:22-slim node:22-alpine postgres:15-alpine nginx:alpine; do
+    if ! docker image inspect "$img" >/dev/null 2>&1; then
+      missing_base_images=1
+      echo "  Missing base image $img, will pull"
+      break
+    fi
+  done
+  if [ "$missing_base_images" -eq 1 ]; then
+    $COMPOSE build --pull
+  else
+    $COMPOSE build
+  fi
   $COMPOSE up -d
 else
   if has_target print; then
@@ -208,7 +216,6 @@ if has_target print; then verify_frontend; fi
 echo ""
 echo "Cleaning up..."
 docker builder prune -af >/dev/null 2>&1 || true
-docker image prune -af >/dev/null 2>&1 || true
 docker container prune -f >/dev/null 2>&1 || true
 find "$BACKUP_DIR" -name "db_backup_*.sql" -type f -printf '%T@ %p\n' \
   | sort -rn | tail -n +6 | awk '{print $2}' | xargs -r rm -f
