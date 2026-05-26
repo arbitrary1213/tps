@@ -21,4 +21,3 @@ wechat-platform
 .env.*
 Dockerfile
 docker-compose.yml
-# deploy trigger Tue May 26 18:47:55     2026
