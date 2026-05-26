@@ -5,6 +5,7 @@ directories:
 files:
   - src/**/*
   - "!src/**/*.bak"
+  - standalone.marker
 extraResources:
   - from: ../frontend/.next/standalone
     to: frontend-standalone

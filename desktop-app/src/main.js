@@ -14,7 +14,18 @@ const {
   upsertLocalEntity,
 } = require('./main/localStore')
 const FRONTEND_PORT = 3911
-const APP_MODE = process.env.TEMPLE_MODE === 'standalone' ? 'standalone' : 'networked'
+
+// Detect standalone mode by marker file (only present in standalone build)
+function detectAppMode() {
+  if (process.env.TEMPLE_MODE === 'standalone') return 'standalone'
+  if (process.env.TEMPLE_MODE === 'networked') return 'networked'
+  // In packaged app, check for standalone marker file
+  const fs = require('fs')
+  const markerPath = path.join(__dirname, '..', 'standalone.marker')
+  if (fs.existsSync(markerPath)) return 'standalone'
+  return 'networked'
+}
+const APP_MODE = detectAppMode()
 
 function sendStatus(message, progress, level = 'info') {
   const mainWindow = windowManager?.getMainWindow?.()
