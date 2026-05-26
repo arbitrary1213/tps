@@ -13,9 +13,5 @@ extraResources:
   - from: ../frontend/.next/static
     to: frontend-static
 win:
-  target: nsis
-  icon: ../frontend/public/favicon.ico
-nsis:
-  oneClick: false
-  allowToChangeInstallationDirectory: true
-  language: "2052"
+  target: zip
+  signAndEditExecutable: false
