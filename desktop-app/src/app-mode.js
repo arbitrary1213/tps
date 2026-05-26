@@ -1,1 +1,1 @@
-module.exports = 'standalone'
+module.exports = 'networked'
