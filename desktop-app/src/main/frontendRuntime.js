@@ -127,15 +127,21 @@ function createFrontendRuntime({ session, processRef, projectRoot, frontendPort,
     const standaloneServer = path.join(standaloneDir, 'server.js')
 
     // In packaged app, electron-builder filters out node_modules from extraResources.
-    // We renamed it to standalone_deps to bypass the filter, now copy it into place.
+    // Copy standalone_deps -> node_modules on first launch (one-time cost ~3s).
     if (isPackaged && fs.existsSync(standaloneServer)) {
       const nmSource = path.join(process.resourcesPath, 'standalone_deps')
       const nmTarget = path.join(standaloneDir, 'node_modules')
-      if (fs.existsSync(nmSource) && !fs.existsSync(nmTarget)) {
-        fs.cpSync(nmSource, nmTarget, { recursive: true })
-        console.log('[TempleOS] Copied standalone deps to node_modules')
-      } else if (!fs.existsSync(nmSource)) {
-        console.error('[TempleOS] standalone_deps not found at', nmSource)
+      if (fs.existsSync(nmSource) && !fs.existsSync(path.join(nmTarget, 'next', 'package.json'))) {
+        sendStatus('正在准备运行环境...', 40)
+        fs.mkdirSync(nmTarget, { recursive: true })
+        // Use async copy to not block the event loop
+        const { execSync } = require('child_process')
+        try {
+          execSync(`xcopy /E /I /Q "${nmSource}" "${nmTarget}"`, { timeout: 30000, windowsHide: true })
+        } catch {
+          // Fallback to sync copy if xcopy fails
+          fs.cpSync(nmSource, nmTarget, { recursive: true })
+        }
       }
     }
 
