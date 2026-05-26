@@ -8,10 +8,10 @@ files:
 extraResources:
   - from: ../frontend/.next/standalone
     to: frontend-standalone
-  - from: ../frontend/public
-    to: frontend-public
-  - from: ../frontend/.next/static
-    to: frontend-static
 win:
-  target: zip
+  target: nsis
   signAndEditExecutable: false
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  language: "2052"

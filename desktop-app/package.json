@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Temple OS local desktop client",
+  "author": "Temple OS",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",

@@ -118,11 +118,23 @@ function createFrontendRuntime({ session, processRef, projectRoot, frontendPort,
     if (frontendProcess) return
 
     sendStatus('Starting local frontend...', 35)
-    const frontendDir = path.join(projectRoot, 'frontend')
-    const standaloneDir = path.join(frontendDir, '.next', 'standalone')
+
+    // In packaged app, resources are in process.resourcesPath; in dev, use project paths
+    const isPackaged = typeof process.resourcesPath === 'string' && process.resourcesPath.length > 0
+    const standaloneDir = isPackaged
+      ? path.join(process.resourcesPath, 'frontend-standalone')
+      : path.join(projectRoot, 'frontend', '.next', 'standalone')
     const standaloneServer = path.join(standaloneDir, 'server.js')
     // Prefer standalone (production build) to avoid Turbopack HMR reload loops in Electron
     const useStandalone = fs.existsSync(standaloneServer)
+
+    if (!useStandalone && isPackaged) {
+      throw new Error('Packaged app requires standalone frontend build. Run "npm run build" in frontend/ before packaging.')
+    }
+
+    const frontendDir = isPackaged
+      ? standaloneDir
+      : path.join(projectRoot, 'frontend')
 
     frontendProcess = spawn(
       processRef.execPath,
