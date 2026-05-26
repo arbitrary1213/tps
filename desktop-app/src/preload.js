@@ -1,5 +1,13 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
+// Set standalone mode in localStorage SYNCHRONOUSLY before any page JS runs
+try {
+  const mode = ipcRenderer.sendSync('app:mode-sync')
+  if (mode === 'standalone') {
+    window.localStorage.setItem('temple_mode', 'standalone')
+  }
+} catch (_) {}
+
 contextBridge.exposeInMainWorld('templeDesktop', {
   getConfig: () => ipcRenderer.invoke('config:get'),
   setConfig: (patch) => ipcRenderer.invoke('config:set', patch),

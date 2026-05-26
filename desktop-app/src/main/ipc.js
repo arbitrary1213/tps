@@ -218,6 +218,7 @@ function registerIpcHandlers({
   })
 
   ipcMain.handle('app:mode', async () => appMode || 'networked')
+  ipcMain.on('app:mode-sync', (event) => { event.returnValue = appMode || 'networked' })
 
   // Seed sample data for standalone mode (first run)
   ipcMain.handle('local-db:seed-sample-data', async () => {
