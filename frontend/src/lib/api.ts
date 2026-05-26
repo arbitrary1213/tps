@@ -101,21 +101,9 @@ function isDesktopRuntime() {
   return typeof window !== 'undefined' && Boolean(window.templeDesktop)
 }
 
-let _standaloneMode: boolean | null = null
-async function isStandaloneMode(): Promise<boolean> {
-  if (_standaloneMode !== null) return _standaloneMode
-  try {
-    const w = window as any
-    if (w.templeDesktop?.getAppMode) {
-      const mode = await w.templeDesktop.getAppMode()
-      _standaloneMode = mode === 'standalone'
-    } else {
-      _standaloneMode = false
-    }
-  } catch {
-    _standaloneMode = false
-  }
-  return _standaloneMode
+function isStandaloneMode(): boolean {
+  if (typeof window === 'undefined') return false
+  return localStorage.getItem('temple_mode') === 'standalone'
 }
 
 function attachCacheMeta(value: unknown, meta: Record<string, unknown>) {
@@ -187,8 +175,8 @@ async function request<T = any>(endpoint: string, options: FetchOptions = {}): P
 
   const url = API_BASE ? `${API_BASE}${endpoint}` : endpoint
 
-  // Standalone mode: all data operations are local-only
-  if (isDesktopRuntime() && await isStandaloneMode()) {
+  // Standalone mode: all data operations are local-only (sync check via localStorage)
+  if (isDesktopRuntime() && isStandaloneMode()) {
     if (method === 'GET') {
       const localValue = await readLocalFirst<T>(endpoint, method)
       if (localValue) return localValue

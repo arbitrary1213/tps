@@ -61,18 +61,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const isDesktop = typeof window !== 'undefined' && Boolean(window.templeDesktop)
   const [standaloneReady, setStandaloneReady] = useState(false)
 
-  // Standalone mode: seed sample data on first run
+  // Standalone mode: seed sample data on first run (sync check via localStorage)
   useEffect(() => {
     if (!_hasHydrated || !token || !isDesktop) return
-    window.templeDesktop?.getAppMode?.().then(async (mode: string) => {
-      if (mode === 'standalone') {
-        await window.templeDesktop?.seedSampleData?.()
-        setStandaloneReady(true)
-      }
-    }).catch(() => {})
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('temple_mode') === 'standalone') {
+      window.templeDesktop?.seedSampleData?.().then(() => setStandaloneReady(true)).catch(() => {})
+    }
   }, [_hasHydrated, token, isDesktop])
 
-  // Regular sync effect (networked mode)
   useEffect(() => {
     if (_hasHydrated && !token) router.push('/login')
   }, [_hasHydrated, token, router])
@@ -80,6 +76,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (!_hasHydrated || !token || !isDesktop) return
     let cancelled = false
+
+    // Standalone: skip server sync
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('temple_mode') === 'standalone') {
+      setSyncState({ status: 'done', message: '单机模式', ok: 0, failed: 0, localDb: null })
+      return
+    }
 
     const coreSyncTasks = [
       { label: '牌位', run: () => businessAPI.getPlaques(token, undefined, { preferRemote: true }) },
