@@ -161,11 +161,12 @@ if has_target all; then
       }
     fi
   done
+  # Only --pull when BUILD base images are missing (not runtime images like nginx)
   missing_base_images=0
-  for img in node:20-slim node:22-slim node:22-alpine postgres:15-alpine nginx:alpine; do
+  for img in node:20-slim node:22-slim node:22-alpine; do
     if ! docker image inspect "$img" >/dev/null 2>&1; then
       missing_base_images=1
-      echo "  Missing base image $img, will pull"
+      echo "  Missing build base image $img, will --pull"
       break
     fi
   done
