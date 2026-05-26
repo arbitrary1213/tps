@@ -91,6 +91,17 @@ verify_frontend() {
 echo "===== Temple OS Deploy ====="
 echo "Targets: ${TARGETS[*]}"
 
+# ---- Emergency disk cleanup (before anything else) ----
+echo "[0/5] Freeing disk space..."
+docker builder prune -af >/dev/null 2>&1 || true
+docker image prune -af >/dev/null 2>&1 || true
+docker container prune -f >/dev/null 2>&1 || true
+find "$BACKUP_DIR" -name "db_backup_*.sql" -type f -printf '%T@ %p\n' 2>/dev/null \
+  | sort -rn | tail -n +4 | awk '{print $2}' | xargs -r rm -f
+# Also clean /tmp
+find /tmp -name "temple_*" -mtime +0 -delete 2>/dev/null || true
+df -h / | tail -1 | awk '{print "  Disk: " $3 "/" $2 " used (" $5 ")"}'
+
 # ---- Backup DB ----
 if has_target backend; then
   echo "[1/5] Backing up database..."
