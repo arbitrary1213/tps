@@ -32,16 +32,15 @@ export default function HomePage() {
     }
   }
 
-  // 两种牌位入口：延生禄位 / 超度牌位（含往生莲位和超度）
+  // 三种牌位入口：延生禄位 / 不记名牌位 / 记名牌位
   const plaqueTypes = new Set(tasks.map(t => t.taskType))
   const hasPlaqueGroup = plaqueTypes.has('PLAQUE') || plaqueTypes.has('LONGEVITY') || plaqueTypes.has('REBIRTH') || plaqueTypes.has('DELIVERANCE')
-  const hasLongevity = hasPlaqueGroup
-  const hasDeliverance = hasPlaqueGroup
   const otherTasks = tasks.filter(t => !['PLAQUE', 'LONGEVITY', 'REBIRTH', 'DELIVERANCE'].includes(t.taskType))
 
   const displayTasks = [
-    ...(hasLongevity ? [{ id: 'PLAQUE_LONGEVITY', name: '延生禄位', href: '/register?taskType=PLAQUE&plaqueType=LONGEVITY' }] : []),
-    ...(hasDeliverance ? [{ id: 'PLAQUE_DELIVERANCE', name: '超度牌位', href: '/register?taskType=PLAQUE&plaqueType=DELIVERANCE' }] : []),
+    ...(hasPlaqueGroup ? [{ id: 'PLAQUE_LONGEVITY', name: '延生禄位', href: '/register?taskType=PLAQUE&plaqueType=LONGEVITY' }] : []),
+    ...(hasPlaqueGroup ? [{ id: 'PLAQUE_DELIVERANCE_GENERAL', name: '超度牌位（不记名）', href: '/register?taskType=PLAQUE&plaqueType=DELIVERANCE&deceasedType=general' }] : []),
+    ...(hasPlaqueGroup ? [{ id: 'PLAQUE_DELIVERANCE_SPECIFIC', name: '超度牌位（记名）', href: '/register?taskType=PLAQUE&plaqueType=DELIVERANCE&deceasedType=specific' }] : []),
     ...otherTasks.map(t => ({ id: t.id, name: t.name, href: `/register?taskId=${t.id}` })),
   ]
 

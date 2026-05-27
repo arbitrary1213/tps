@@ -212,6 +212,7 @@ export default function RegisterPage() {
   const taskIdFromUrl = searchParams.get('taskId')
   const taskTypeFromUrl = searchParams.get('taskType')
   const plaqueTypeFromUrl = searchParams.get('plaqueType')
+  const deceasedTypeFromUrl = searchParams.get('deceasedType')
 
   const [tasks, setTasks] = useState<Task[]>([])
   const [activeTask, setActiveTask] = useState<Task | null>(null)
@@ -254,7 +255,9 @@ export default function RegisterPage() {
         const task = enabledTasks.find(t => t.id === taskIdFromUrl)
         if (task) {
           setActiveTask(task)
-          setFormData({})
+          const initData: Record<string, any> = {}
+          if (deceasedTypeFromUrl) initData.deceasedType = deceasedTypeFromUrl
+          setFormData(initData)
           return
         }
       }
@@ -264,8 +267,11 @@ export default function RegisterPage() {
         if (['LONGEVITY', 'REBIRTH', 'DELIVERANCE'].includes(plaqueTypeFromUrl || '')) {
           setPlaqueType(plaqueTypeFromUrl as any)
         }
-        const plaqueName = plaqueTypeFromUrl === 'LONGEVITY' ? '延生禄位' : plaqueTypeFromUrl === 'REBIRTH' ? '往生莲位' : plaqueTypeFromUrl === 'DELIVERANCE' ? '超度牌位' : '牌位登记'
-        const plaqueDesc = plaqueTypeFromUrl === 'LONGEVITY' ? '祈福消灾、延年益寿' : plaqueTypeFromUrl === 'REBIRTH' ? '超荐亡者、往生极乐' : plaqueTypeFromUrl === 'DELIVERANCE' ? '超度冤亲、普利十方' : '延生禄位、往生莲位、超度牌位'
+        const initData: Record<string, any> = {}
+        if (deceasedTypeFromUrl) initData.deceasedType = deceasedTypeFromUrl
+        setFormData(initData)
+        const plaqueName = plaqueTypeFromUrl === 'LONGEVITY' ? '延生禄位' : plaqueTypeFromUrl === 'DELIVERANCE' ? (deceasedTypeFromUrl === 'specific' ? '超度牌位（记名）' : '超度牌位（不记名）') : plaqueTypeFromUrl === 'REBIRTH' ? '往生莲位' : '牌位登记'
+        const plaqueDesc = plaqueTypeFromUrl === 'LONGEVITY' ? '祈福消灾、延年益寿' : plaqueTypeFromUrl === 'DELIVERANCE' ? (deceasedTypeFromUrl === 'specific' ? '指定亡者，超荐往生' : '普利十方，超度冤亲') : plaqueTypeFromUrl === 'REBIRTH' ? '超荐亡者、往生极乐' : '延生禄位、往生莲位、超度牌位'
         setActiveTask({
           id: 'PLAQUE',
           name: plaqueName,
@@ -273,7 +279,7 @@ export default function RegisterPage() {
           description: plaqueDesc,
           formConfig: ['holderName', 'longevitySubtype', 'size', 'gender', 'birthDate', 'birthLunar', 'deceasedName', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'blessingText', 'startDate', 'endDate', 'dedicationType', 'customDedicationType', 'deceasedType', 'deceasedName2', 'birthDate2', 'birthLunar2', 'deathDate2', 'deathLunar2'],
         })
-        setFormData({})
+        setFormData(initData)
         return
       }
 
