@@ -277,7 +277,7 @@ export default function RegisterPage() {
           name: plaqueName,
           taskType: 'PLAQUE',
           description: plaqueDesc,
-          formConfig: ['holderName', 'longevitySubtype', 'size', 'gender', 'birthDate', 'birthLunar', 'deceasedName', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'blessingText', 'startDate', 'endDate', 'dedicationType', 'customDedicationType', 'deceasedType', 'deceasedName2', 'birthDate2', 'birthLunar2', 'deathDate2', 'deathLunar2'],
+          formConfig: ['holderName', 'longevitySubtype', 'size', 'gender', 'birthDate', 'birthLunar', 'deceasedName', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'blessingText', 'startDate', 'endDate', 'dedicationType', 'customDedicationType', 'deceasedName2', 'birthDate2', 'birthLunar2', 'deathDate2', 'deathLunar2'],
         })
         setFormData(initData)
         return
@@ -810,18 +810,34 @@ export default function RegisterPage() {
           </div>
 
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
-            {/* 牌位类型切换（仅在牌位模式下显示） */}
+            {/* 牌位类型选择（仅在牌位模式下显示） */}
             {isPlaqueMode && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-tea mb-2">牌位类型</label>
-                <div className="flex flex-wrap gap-3">
-                  {[{ value: 'LONGEVITY', label: '延生禄位' }, { value: 'DELIVERANCE', label: '超度牌位' }].map(o => (
-                    <label key={o.value} className={`flex items-center gap-2 text-sm cursor-pointer py-2 px-4 border rounded transition-all ${plaqueType === o.value ? 'border-vermilion bg-white text-ink font-medium' : 'border-[#E8E0D0] bg-paper-dark text-tea hover:border-vermilion/50'}`}>
-                      <input type="radio" name="plaqueType" value={o.value} checked={plaqueType === o.value} onChange={() => { setPlaqueType(o.value as any); setFormData({}) }} className="sr-only" />
-                      {o.label}
-                    </label>
-                  ))}
+              <div className="space-y-3 mb-4 p-4 bg-paper-dark rounded-lg border border-[#E8E0D0]">
+                <div>
+                  <label className="block text-sm font-medium text-tea mb-2">牌位类型</label>
+                  <div className="flex flex-wrap gap-3">
+                    {[{ value: 'LONGEVITY', label: '延生禄位' }, { value: 'DELIVERANCE', label: '超度牌位' }].map(o => (
+                      <label key={o.value} className={`flex items-center gap-2 text-sm cursor-pointer py-2 px-4 border rounded transition-all ${plaqueType === o.value ? 'border-vermilion bg-white text-ink font-medium' : 'border-[#E8E0D0] bg-white/50 text-tea hover:border-vermilion/50'}`}>
+                        <input type="radio" name="plaqueType" value={o.value} checked={plaqueType === o.value} onChange={() => { setPlaqueType(o.value as any); setFormData(prev => ({ ...prev, deceasedType: '' })) }} className="sr-only" />
+                        {o.label}
+                      </label>
+                    ))}
+                  </div>
                 </div>
+                {/* 超度牌位子选择：记名 / 不记名 */}
+                {plaqueType === 'DELIVERANCE' && (
+                  <div className="pt-3 border-t border-[#E8E0D0]">
+                    <label className="block text-sm font-medium text-tea mb-2">超度方式</label>
+                    <div className="flex flex-wrap gap-3">
+                      {[{ value: 'general', label: '不记名（冤亲债主、地基主等）' }, { value: 'specific', label: '记名（指定亡者）' }].map(o => (
+                        <label key={o.value} className={`flex items-center gap-2 text-sm cursor-pointer py-2 px-4 border rounded transition-all ${formData.deceasedType === o.value ? 'border-vermilion bg-white text-ink font-medium' : 'border-[#E8E0D0] bg-white/50 text-tea hover:border-vermilion/50'}`}>
+                          <input type="radio" name="deceasedType" value={o.value} checked={formData.deceasedType === o.value} onChange={(e) => setFormData(prev => ({ ...prev, deceasedType: e.target.value }))} className="sr-only" />
+                          {o.label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             {renderFormByTaskType()}
