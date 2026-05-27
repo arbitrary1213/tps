@@ -44,7 +44,7 @@ export default function SettingsPage() {
     try {
       const data = await systemAPI.getSettings()
       if (data) {
-        setSettings(data)
+        setSettings(data as Settings)
         if (data.dedicationTypes) {
           setDedicationTypes(data.dedicationTypes.split(',').filter(Boolean))
         } else {
