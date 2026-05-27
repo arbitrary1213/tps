@@ -33,9 +33,11 @@ export default function HomePage() {
   }
 
   // 两种牌位入口：延生禄位 / 超度牌位（含往生莲位和超度）
-  const hasLongevity = tasks.some(t => t.taskType === 'LONGEVITY')
-  const hasDeliverance = tasks.some(t => ['REBIRTH', 'DELIVERANCE'].includes(t.taskType))
-  const otherTasks = tasks.filter(t => !['LONGEVITY', 'REBIRTH', 'DELIVERANCE'].includes(t.taskType))
+  const plaqueTypes = new Set(tasks.map(t => t.taskType))
+  const hasPlaqueGroup = plaqueTypes.has('PLAQUE') || plaqueTypes.has('LONGEVITY') || plaqueTypes.has('REBIRTH') || plaqueTypes.has('DELIVERANCE')
+  const hasLongevity = hasPlaqueGroup
+  const hasDeliverance = hasPlaqueGroup
+  const otherTasks = tasks.filter(t => !['PLAQUE', 'LONGEVITY', 'REBIRTH', 'DELIVERANCE'].includes(t.taskType))
 
   const displayTasks = [
     ...(hasLongevity ? [{ id: 'PLAQUE_LONGEVITY', name: '延生禄位', href: '/register?taskType=PLAQUE&plaqueType=LONGEVITY' }] : []),
