@@ -98,6 +98,10 @@ const fieldDefs: Record<string, FieldDef> = {
     { label:'自定义',value:'custom' },
   ]},
   customDedicationType: { type: 'text', label: '新增牌位主体', placeholder:'请输入新的牌位主体名称' },
+  deceasedType: { type: 'select', label: '超度方式', options:[
+    { label:'不记名（如：冤亲债主、地基主）',value:'general' },
+    { label:'记名（指定亡者）',value:'specific' },
+  ]},
   deceasedName2: { type: 'text', label: '亡者二姓名' },
   birthDate2: { type: 'date', label: '亡者二出生日期' },
   birthLunar2: { type: 'checkbox', label: '农历', options:[{ label:'农历',value:'1' }] },
@@ -276,7 +280,7 @@ export default function RegisterPage() {
           name: plaqueName,
           taskType: 'PLAQUE',
           description: plaqueDesc,
-          formConfig: ['holderName', 'longevitySubtype', 'size', 'gender', 'birthDate', 'birthLunar', 'deceasedName', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'blessingText', 'startDate', 'endDate', 'dedicationType', 'customDedicationType', 'deceasedName2', 'birthDate2', 'birthLunar2', 'deathDate2', 'deathLunar2'],
+          formConfig: ['holderName', 'longevitySubtype', 'size', 'gender', 'birthDate', 'birthLunar', 'deceasedName', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'blessingText', 'startDate', 'endDate', 'dedicationType', 'customDedicationType', 'deceasedType', 'deceasedName2', 'birthDate2', 'birthLunar2', 'deathDate2', 'deathLunar2'],
         })
         setFormData({})
         return
@@ -663,8 +667,12 @@ export default function RegisterPage() {
           // 往生莲位：隐藏延生和超度专属字段
           for (const f of ['holderName','longevitySubtype','blessingText','dedicationType','customDedicationType','birthDate','birthLunar']) hiddenByPlaqueType.add(f)
         } else if (plaqueType === 'DELIVERANCE') {
-          // 超度牌位：隐藏延生和往生专属字段
-          for (const f of ['holderName','longevitySubtype','blessingText','deceasedName','deathDate','deathLunar','gender','birthDate','birthLunar']) hiddenByPlaqueType.add(f)
+          // 超度牌位：隐藏延生专属字段
+          for (const f of ['holderName','longevitySubtype','blessingText','gender']) hiddenByPlaqueType.add(f)
+          // 不记名时隐藏亡者详细信息
+          if (formData.deceasedType !== 'specific') {
+            for (const f of ['deceasedName','birthDate','birthLunar','deathDate','deathLunar','deceasedName2','birthDate2','birthLunar2','deathDate2','deathLunar2']) hiddenByPlaqueType.add(f)
+          }
         }
       }
       return <div className="space-y-4">{fields.filter(f => !hiddenByPlaqueType.has(f)).map(f => renderField(f))}</div>
@@ -810,7 +818,7 @@ export default function RegisterPage() {
               <div className="mb-4">
                 <label className="block text-sm font-medium text-tea mb-2">牌位类型</label>
                 <div className="flex flex-wrap gap-3">
-                  {[{ value: 'LONGEVITY', label: '延生禄位' }, { value: 'REBIRTH', label: '往生莲位' }, { value: 'DELIVERANCE', label: '超度牌位' }].map(o => (
+                  {[{ value: 'LONGEVITY', label: '延生禄位' }, { value: 'DELIVERANCE', label: '超度牌位' }].map(o => (
                     <label key={o.value} className={`flex items-center gap-2 text-sm cursor-pointer py-2 px-4 border rounded transition-all ${plaqueType === o.value ? 'border-vermilion bg-white text-ink font-medium' : 'border-[#E8E0D0] bg-paper-dark text-tea hover:border-vermilion/50'}`}>
                       <input type="radio" name="plaqueType" value={o.value} checked={plaqueType === o.value} onChange={() => { setPlaqueType(o.value as any); setFormData({}) }} className="sr-only" />
                       {o.label}

@@ -44,18 +44,15 @@ export default function HomePage() {
     }
   }
 
-  // 三种牌位各自独立入口
-  const plaqueTypeEntries = [
-    { taskType: 'LONGEVITY', id: 'PLAQUE_LONGEVITY', name: '延生禄位' },
-    { taskType: 'REBIRTH', id: 'PLAQUE_REBIRTH', name: '往生莲位' },
-    { taskType: 'DELIVERANCE', id: 'PLAQUE_DELIVERANCE', name: '超度牌位' },
-  ].filter(e => tasks.some(t => t.taskType === e.taskType))
-
+  // 两种牌位入口：延生禄位 / 超度牌位（含往生莲位和超度）
+  const hasLongevity = tasks.some(t => t.taskType === 'LONGEVITY')
+  const hasDeliverance = tasks.some(t => ['REBIRTH', 'DELIVERANCE'].includes(t.taskType))
   const otherTasks = tasks.filter(t => !['LONGEVITY', 'REBIRTH', 'DELIVERANCE'].includes(t.taskType))
 
   const displayTasks = [
-    ...plaqueTypeEntries,
-    ...otherTasks,
+    ...(hasLongevity ? [{ id: 'PLAQUE_LONGEVITY', name: '延生禄位', href: '/register?taskType=PLAQUE&plaqueType=LONGEVITY' }] : []),
+    ...(hasDeliverance ? [{ id: 'PLAQUE_DELIVERANCE', name: '超度牌位', href: '/register?taskType=PLAQUE&plaqueType=DELIVERANCE' }] : []),
+    ...otherTasks.map(t => ({ id: t.id, name: t.name, href: `/register?taskId=${t.id}` })),
   ]
 
   return (
@@ -76,28 +73,21 @@ export default function HomePage() {
             <p className="text-gray-400">加载中...</p>
           ) : displayTasks.length > 0 ? (
             <div className="grid grid-cols-2 gap-5 max-w-md mx-auto">
-              {displayTasks.map(task => {
-                // 牌位入口：带上 plaqueType 参数
-                const plaqueMatch = plaqueTypeEntries.find(e => e.id === task.id)
-                const href = plaqueMatch
-                  ? `/register?taskType=PLAQUE&plaqueType=${plaqueMatch.taskType}`
-                  : `/register?taskId=${task.id}`
-                return (
-                  <Link
-                    key={task.id}
-                    href={href}
-                    className="flex items-center justify-center px-6 py-5 rounded-xl text-sm sm:text-base font-medium transition-all hover:-translate-y-0.5"
-                    style={{
-                      backgroundColor: '#FFFFFF',
-                      color: '#5C5C5C',
-                      border: '1px solid #E8E0D0',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                    }}
-                  >
-                    {task.name}
-                  </Link>
-                )
-              })}
+              {displayTasks.map(task => (
+                <Link
+                  key={task.id}
+                  href={task.href}
+                  className="flex items-center justify-center px-6 py-5 rounded-xl text-sm sm:text-base font-medium transition-all hover:-translate-y-0.5"
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    color: '#5C5C5C',
+                    border: '1px solid #E8E0D0',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                  }}
+                >
+                  {task.name}
+                </Link>
+              ))}
             </div>
           ) : (
             <p className="text-gray-400">暂无可用登记服务</p>
