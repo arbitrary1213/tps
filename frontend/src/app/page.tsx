@@ -44,9 +44,16 @@ export default function HomePage() {
     }
   }
 
-  const plaqueTasks = tasks.filter(t => ['LONGEVITY', 'REBIRTH', 'DELIVERANCE', 'PLAQUE'].includes(t.taskType))
-  const otherTasks = tasks.filter(t => !['LONGEVITY', 'REBIRTH', 'DELIVERANCE', 'PLAQUE'].includes(t.taskType))
-  const displayTasks = plaqueTasks.length > 0 ? [{ id: 'PLAQUE', name: '牌位登记', taskType: 'PLAQUE' }, ...otherTasks] : otherTasks
+  // 分开两种牌位：延生禄位（活人祈福）、往生/超度（亡者牌位）
+  const longevityTasks = tasks.filter(t => t.taskType === 'LONGEVITY')
+  const rebirthDeliveranceTasks = tasks.filter(t => ['REBIRTH', 'DELIVERANCE'].includes(t.taskType))
+  const otherTasks = tasks.filter(t => !['LONGEVITY', 'REBIRTH', 'DELIVERANCE'].includes(t.taskType))
+
+  const displayTasks = [
+    ...(longevityTasks.length > 0 ? [{ id: 'LONGEVITY_PLAQUE', name: '延生禄位', taskType: 'LONGEVITY' as const }] : []),
+    ...(rebirthDeliveranceTasks.length > 0 ? [{ id: 'REBIRTH_DELIVERANCE', name: '往生/超度牌位', taskType: 'DELIVERANCE' as const }] : []),
+    ...otherTasks,
+  ]
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#FAFAF8' }}>
@@ -69,7 +76,7 @@ export default function HomePage() {
               {displayTasks.map(task => (
                 <Link
                   key={task.id}
-                  href={task.taskType === 'PLAQUE' ? '/register?taskType=PLAQUE' : `/register?taskId=${task.id}`}
+                  href={task.id === 'LONGEVITY_PLAQUE' ? '/register?taskType=PLAQUE&plaqueType=LONGEVITY' : task.id === 'REBIRTH_DELIVERANCE' ? '/register?taskType=PLAQUE&plaqueType=DELIVERANCE' : `/register?taskId=${task.id}`}
                   className="flex items-center justify-center px-6 py-5 rounded-xl text-sm sm:text-base font-medium transition-all hover:-translate-y-0.5"
                   style={{
                     backgroundColor: '#FFFFFF',

@@ -207,6 +207,7 @@ export default function RegisterPage() {
   const searchParams = useSearchParams()
   const taskIdFromUrl = searchParams.get('taskId')
   const taskTypeFromUrl = searchParams.get('taskType')
+  const plaqueTypeFromUrl = searchParams.get('plaqueType')
 
   const [tasks, setTasks] = useState<Task[]>([])
   const [activeTask, setActiveTask] = useState<Task | null>(null)
@@ -256,11 +257,14 @@ export default function RegisterPage() {
 
       if (taskTypeFromUrl === 'PLAQUE') {
         setIsPlaqueMode(true)
+        if (plaqueTypeFromUrl === 'LONGEVITY' || plaqueTypeFromUrl === 'DELIVERANCE') {
+          setPlaqueType(plaqueTypeFromUrl)
+        }
         setActiveTask({
           id: 'PLAQUE',
-          name: '牌位登记',
+          name: plaqueTypeFromUrl === 'LONGEVITY' ? '延生禄位' : plaqueTypeFromUrl === 'DELIVERANCE' ? '超度/往生牌位' : '牌位登记',
           taskType: 'PLAQUE',
-          description: '延生禄位、往生莲位、超度牌位',
+          description: plaqueTypeFromUrl === 'LONGEVITY' ? '祈福消灾、延年益寿' : plaqueTypeFromUrl === 'DELIVERANCE' ? '超度亡灵、往生极乐' : '延生禄位、往生莲位、超度牌位',
           formConfig: ['holderName', 'longevitySubtype', 'size', 'gender', 'birthDate', 'birthLunar', 'deceasedName', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'blessingText', 'startDate', 'endDate', 'dedicationType', 'customDedicationType', 'deceasedName2', 'birthDate2', 'birthLunar2', 'deathDate2', 'deathLunar2'],
         })
         setFormData({})
@@ -639,7 +643,20 @@ export default function RegisterPage() {
     }
 
     if (isPlaqueMode || ['LONGEVITY', 'REBIRTH', 'DELIVERANCE'].includes(taskType)) {
-      return <div className="space-y-4">{fields.map(f => renderField(f))}</div>
+      const hiddenByPlaqueType = new Set<string>()
+      if (isPlaqueMode) {
+        if (plaqueType === 'LONGEVITY') {
+          // 延生禄位：隐藏亡者相关字段
+          for (const f of ['deceasedName','deathDate','deathLunar','dedicationType','customDedicationType','deceasedName2','birthDate2','birthLunar2','deathDate2','deathLunar2','yangShang']) hiddenByPlaqueType.add(f)
+        } else if (plaqueType === 'REBIRTH') {
+          // 往生莲位：隐藏延生和超度专属字段
+          for (const f of ['holderName','longevitySubtype','blessingText','dedicationType','customDedicationType','birthDate','birthLunar']) hiddenByPlaqueType.add(f)
+        } else if (plaqueType === 'DELIVERANCE') {
+          // 超度牌位：隐藏延生和往生专属字段
+          for (const f of ['holderName','longevitySubtype','blessingText','deceasedName','deathDate','deathLunar','gender','birthDate','birthLunar']) hiddenByPlaqueType.add(f)
+        }
+      }
+      return <div className="space-y-4">{fields.filter(f => !hiddenByPlaqueType.has(f)).map(f => renderField(f))}</div>
     }
 
     if (taskType === 'LAMP') {
@@ -777,6 +794,20 @@ export default function RegisterPage() {
           </div>
 
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
+            {/* 牌位类型切换（仅在牌位模式下显示） */}
+            {isPlaqueMode && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-tea mb-2">牌位类型</label>
+                <div className="flex flex-wrap gap-3">
+                  {[{ value: 'LONGEVITY', label: '延生禄位' }, { value: 'DELIVERANCE', label: '超度/往生牌位' }].map(o => (
+                    <label key={o.value} className={`flex items-center gap-2 text-sm cursor-pointer py-2 px-4 border rounded transition-all ${plaqueType === o.value ? 'border-vermilion bg-white text-ink font-medium' : 'border-[#E8E0D0] bg-paper-dark text-tea hover:border-vermilion/50'}`}>
+                      <input type="radio" name="plaqueType" value={o.value} checked={plaqueType === o.value} onChange={() => { setPlaqueType(o.value as any); setFormData({}) }} className="sr-only" />
+                      {o.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
             {renderFormByTaskType()}
 
             {/* 提交按钮 */}
