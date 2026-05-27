@@ -255,15 +255,6 @@ export default function RegisterPage() {
         if (task) {
           setActiveTask(task)
           setFormData({})
-          // PLAQUE/LONGEVITY/REBIRTH/DELIVERANCE tasks should enter plaque mode
-          if (['PLAQUE','LONGEVITY','REBIRTH','DELIVERANCE'].includes(task.taskType)) {
-            setIsPlaqueMode(true)
-            if (task.taskType === 'REBIRTH') {
-              setPlaqueType('REBIRTH')
-            } else if (task.taskType === 'DELIVERANCE') {
-              setPlaqueType('DELIVERANCE')
-            }
-          }
           return
         }
       }
@@ -623,14 +614,10 @@ export default function RegisterPage() {
     )
   }
 
-  // PLAQUE 完整字段列表（覆盖 task 自带的 formConfig，确保新增字段始终可用）
-  const PLAQUE_FORM_CONFIG = ['holderName', 'longevitySubtype', 'size', 'gender', 'birthDate', 'birthLunar', 'deceasedName', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'blessingText', 'startDate', 'endDate', 'dedicationType', 'customDedicationType', 'deceasedType', 'deceasedName2', 'birthDate2', 'birthLunar2', 'deathDate2', 'deathLunar2']
-
   const renderFormByTaskType = () => {
     if (!activeTask) return null
     const { taskType, formConfig } = activeTask
-    // 牌位模式始终用完整字段列表，不受数据库 formConfig 限制
-    const fields: string[] = isPlaqueMode ? PLAQUE_FORM_CONFIG : (formConfig || [])
+    const fields: string[] = formConfig || []
 
     if (taskType === 'VOLUNTEER') {
       return (
