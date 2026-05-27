@@ -12,7 +12,7 @@ interface Settings {
   templeLogo: string
   wechatQrcode: string
   dedicationTypes: string
-  accessPassword: string
+  accessPassword: string | null
 }
 
 export default function SettingsPage() {
@@ -24,7 +24,7 @@ export default function SettingsPage() {
     templeLogo: '',
     wechatQrcode: '',
     dedicationTypes: '',
-    accessPassword: '',
+    accessPassword: null,
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
