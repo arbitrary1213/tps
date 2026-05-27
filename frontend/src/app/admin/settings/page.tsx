@@ -12,7 +12,7 @@ interface Settings {
   templeLogo: string
   wechatQrcode: string
   dedicationTypes: string
-  accessPassword: string | null
+  accessPassword: string | null | undefined
 }
 
 export default function SettingsPage() {
