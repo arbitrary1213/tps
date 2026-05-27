@@ -186,6 +186,7 @@ export interface SystemSettingsRecord {
   templeLogo: string
   wechatQrcode: string
   dedicationTypes: string
+  accessPassword?: string | null
 }
 
 // ============================================
