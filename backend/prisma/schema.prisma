@@ -51,6 +51,7 @@ model SystemSettings {
   wechatToken  String?  // 微信公众号Token
   wechatEncodingAESKey String? // 微信公众号EncodingAESKey
   dedicationTypes String? @default("冤亲债主,堕胎婴灵,历代宗亲,无缘殊胜,生日超度,忌日超度,新建地基主,地基主") // 超度类型预设
+  accessPassword String? // 首页访问密码，为空则无需密码
   updatedAt    DateTime @updatedAt
 
   @@map("system_settings")

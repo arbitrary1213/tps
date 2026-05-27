@@ -12,6 +12,7 @@ interface Settings {
   templeLogo: string
   wechatQrcode: string
   dedicationTypes: string
+  accessPassword: string
 }
 
 export default function SettingsPage() {
@@ -23,6 +24,7 @@ export default function SettingsPage() {
     templeLogo: '',
     wechatQrcode: '',
     dedicationTypes: '',
+    accessPassword: '',
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -174,6 +176,19 @@ export default function SettingsPage() {
                   onChange={(e) => setSettings({ ...settings, templeAddress: e.target.value })}
                 />
               </div>
+            </div>
+          </div>
+
+          <div className="border-b border-[#E8E0D0] pb-4">
+            <h3 className="text-lg font-medium text-ink mb-4">访问控制</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="首页访问密码（留空则无需密码）"
+                type="password"
+                value={settings.accessPassword || ''}
+                onChange={(e) => setSettings({ ...settings, accessPassword: e.target.value })}
+                placeholder="设置后访客需输入密码才能登记"
+              />
             </div>
           </div>
 

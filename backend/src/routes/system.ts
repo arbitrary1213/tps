@@ -29,7 +29,7 @@ router.get('/settings', async (req: Request, res: Response) => {
 // 更新系统设置（需认证）
 router.put('/settings', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
-    const { templeName, templeAddress, templePhone, templeEmail, templeLogo, landingLogo, landingBg, wechatQrcode, dedicationTypes } = req.body
+    const { templeName, templeAddress, templePhone, templeEmail, templeLogo, landingLogo, landingBg, wechatQrcode, dedicationTypes, accessPassword } = req.body
 
     const settings = await prisma.systemSettings.upsert({
       where: { id: 'system' },
@@ -42,7 +42,8 @@ router.put('/settings', authMiddleware, asyncHandler(async (req: AuthRequest, re
         landingLogo,
         landingBg,
         wechatQrcode,
-        dedicationTypes
+        dedicationTypes,
+        accessPassword
       },
       create: {
         id: 'system',
@@ -54,7 +55,8 @@ router.put('/settings', authMiddleware, asyncHandler(async (req: AuthRequest, re
         landingLogo,
         landingBg,
         wechatQrcode,
-        dedicationTypes
+        dedicationTypes,
+        accessPassword
       }
     })
 
