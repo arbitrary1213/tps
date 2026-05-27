@@ -4,18 +4,6 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { registrationAPI } from '@/lib/api'
 
-const taskTypeLabels: Record<string, string> = {
-  VOLUNTEER: '义工报名',
-  LONGEVITY: '延生禄位',
-  REBIRTH: '往生莲位',
-  DELIVERANCE: '超度牌位',
-  RITUAL: '法会报名',
-  LAMP: '供灯祈福',
-  ACCOMMODATION: '住宿登记',
-  DINING: '斋堂用餐',
-  PLAQUE: '牌位登记',
-}
-
 interface Task {
   id: string
   name: string
