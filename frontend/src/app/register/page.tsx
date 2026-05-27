@@ -266,14 +266,16 @@ export default function RegisterPage() {
 
       if (taskTypeFromUrl === 'PLAQUE') {
         setIsPlaqueMode(true)
-        if (plaqueTypeFromUrl === 'LONGEVITY' || plaqueTypeFromUrl === 'DELIVERANCE') {
-          setPlaqueType(plaqueTypeFromUrl)
+        if (['LONGEVITY', 'REBIRTH', 'DELIVERANCE'].includes(plaqueTypeFromUrl || '')) {
+          setPlaqueType(plaqueTypeFromUrl as any)
         }
+        const plaqueName = plaqueTypeFromUrl === 'LONGEVITY' ? '延生禄位' : plaqueTypeFromUrl === 'REBIRTH' ? '往生莲位' : plaqueTypeFromUrl === 'DELIVERANCE' ? '超度牌位' : '牌位登记'
+        const plaqueDesc = plaqueTypeFromUrl === 'LONGEVITY' ? '祈福消灾、延年益寿' : plaqueTypeFromUrl === 'REBIRTH' ? '超荐亡者、往生极乐' : plaqueTypeFromUrl === 'DELIVERANCE' ? '超度冤亲、普利十方' : '延生禄位、往生莲位、超度牌位'
         setActiveTask({
           id: 'PLAQUE',
-          name: plaqueTypeFromUrl === 'LONGEVITY' ? '延生禄位' : plaqueTypeFromUrl === 'DELIVERANCE' ? '超度/往生牌位' : '牌位登记',
+          name: plaqueName,
           taskType: 'PLAQUE',
-          description: plaqueTypeFromUrl === 'LONGEVITY' ? '祈福消灾、延年益寿' : plaqueTypeFromUrl === 'DELIVERANCE' ? '超度亡灵、往生极乐' : '延生禄位、往生莲位、超度牌位',
+          description: plaqueDesc,
           formConfig: ['holderName', 'longevitySubtype', 'size', 'gender', 'birthDate', 'birthLunar', 'deceasedName', 'deathDate', 'deathLunar', 'yangShang', 'phone', 'address', 'blessingText', 'startDate', 'endDate', 'dedicationType', 'customDedicationType', 'deceasedName2', 'birthDate2', 'birthLunar2', 'deathDate2', 'deathLunar2'],
         })
         setFormData({})
@@ -808,7 +810,7 @@ export default function RegisterPage() {
               <div className="mb-4">
                 <label className="block text-sm font-medium text-tea mb-2">牌位类型</label>
                 <div className="flex flex-wrap gap-3">
-                  {[{ value: 'LONGEVITY', label: '延生禄位' }, { value: 'DELIVERANCE', label: '超度/往生牌位' }].map(o => (
+                  {[{ value: 'LONGEVITY', label: '延生禄位' }, { value: 'REBIRTH', label: '往生莲位' }, { value: 'DELIVERANCE', label: '超度牌位' }].map(o => (
                     <label key={o.value} className={`flex items-center gap-2 text-sm cursor-pointer py-2 px-4 border rounded transition-all ${plaqueType === o.value ? 'border-vermilion bg-white text-ink font-medium' : 'border-[#E8E0D0] bg-paper-dark text-tea hover:border-vermilion/50'}`}>
                       <input type="radio" name="plaqueType" value={o.value} checked={plaqueType === o.value} onChange={() => { setPlaqueType(o.value as any); setFormData({}) }} className="sr-only" />
                       {o.label}

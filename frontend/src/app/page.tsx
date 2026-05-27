@@ -44,14 +44,17 @@ export default function HomePage() {
     }
   }
 
-  // 分开两种牌位：延生禄位（活人祈福）、往生/超度（亡者牌位）
-  const longevityTasks = tasks.filter(t => t.taskType === 'LONGEVITY')
-  const rebirthDeliveranceTasks = tasks.filter(t => ['REBIRTH', 'DELIVERANCE'].includes(t.taskType))
+  // 三种牌位各自独立入口
+  const plaqueTypeEntries = [
+    { taskType: 'LONGEVITY', id: 'PLAQUE_LONGEVITY', name: '延生禄位' },
+    { taskType: 'REBIRTH', id: 'PLAQUE_REBIRTH', name: '往生莲位' },
+    { taskType: 'DELIVERANCE', id: 'PLAQUE_DELIVERANCE', name: '超度牌位' },
+  ].filter(e => tasks.some(t => t.taskType === e.taskType))
+
   const otherTasks = tasks.filter(t => !['LONGEVITY', 'REBIRTH', 'DELIVERANCE'].includes(t.taskType))
 
   const displayTasks = [
-    ...(longevityTasks.length > 0 ? [{ id: 'LONGEVITY_PLAQUE', name: '延生禄位', taskType: 'LONGEVITY' as const }] : []),
-    ...(rebirthDeliveranceTasks.length > 0 ? [{ id: 'REBIRTH_DELIVERANCE', name: '往生/超度牌位', taskType: 'DELIVERANCE' as const }] : []),
+    ...plaqueTypeEntries,
     ...otherTasks,
   ]
 
@@ -68,26 +71,33 @@ export default function HomePage() {
             精进行道 · 庄严国土 · 利乐有情
           </p>
 
-          {/* 登记任务按钮 - 2x2 网格 */}
+          {/* 登记任务按钮 */}
           {loading ? (
             <p className="text-gray-400">加载中...</p>
           ) : displayTasks.length > 0 ? (
             <div className="grid grid-cols-2 gap-5 max-w-md mx-auto">
-              {displayTasks.map(task => (
-                <Link
-                  key={task.id}
-                  href={task.id === 'LONGEVITY_PLAQUE' ? '/register?taskType=PLAQUE&plaqueType=LONGEVITY' : task.id === 'REBIRTH_DELIVERANCE' ? '/register?taskType=PLAQUE&plaqueType=DELIVERANCE' : `/register?taskId=${task.id}`}
-                  className="flex items-center justify-center px-6 py-5 rounded-xl text-sm sm:text-base font-medium transition-all hover:-translate-y-0.5"
-                  style={{
-                    backgroundColor: '#FFFFFF',
-                    color: '#5C5C5C',
-                    border: '1px solid #E8E0D0',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                  }}
-                >
-                  {task.name}
-                </Link>
-              ))}
+              {displayTasks.map(task => {
+                // 牌位入口：带上 plaqueType 参数
+                const plaqueMatch = plaqueTypeEntries.find(e => e.id === task.id)
+                const href = plaqueMatch
+                  ? `/register?taskType=PLAQUE&plaqueType=${plaqueMatch.taskType}`
+                  : `/register?taskId=${task.id}`
+                return (
+                  <Link
+                    key={task.id}
+                    href={href}
+                    className="flex items-center justify-center px-6 py-5 rounded-xl text-sm sm:text-base font-medium transition-all hover:-translate-y-0.5"
+                    style={{
+                      backgroundColor: '#FFFFFF',
+                      color: '#5C5C5C',
+                      border: '1px solid #E8E0D0',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                    }}
+                  >
+                    {task.name}
+                  </Link>
+                )
+              })}
             </div>
           ) : (
             <p className="text-gray-400">暂无可用登记服务</p>
