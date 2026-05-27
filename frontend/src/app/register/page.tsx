@@ -251,6 +251,15 @@ export default function RegisterPage() {
         if (task) {
           setActiveTask(task)
           setFormData({})
+          // PLAQUE/LONGEVITY/REBIRTH/DELIVERANCE tasks should enter plaque mode
+          if (['PLAQUE','LONGEVITY','REBIRTH','DELIVERANCE'].includes(task.taskType)) {
+            setIsPlaqueMode(true)
+            if (task.taskType === 'REBIRTH') {
+              setPlaqueType('REBIRTH')
+            } else if (task.taskType === 'DELIVERANCE') {
+              setPlaqueType('DELIVERANCE')
+            }
+          }
           return
         }
       }
@@ -647,7 +656,7 @@ export default function RegisterPage() {
       if (isPlaqueMode) {
         if (plaqueType === 'LONGEVITY') {
           // 延生禄位：隐藏亡者相关字段
-          for (const f of ['deceasedName','deathDate','deathLunar','dedicationType','customDedicationType','deceasedName2','birthDate2','birthLunar2','deathDate2','deathLunar2','yangShang']) hiddenByPlaqueType.add(f)
+          for (const f of ['deceasedName','deathDate','deathLunar','dedicationType','customDedicationType','deceasedName2','birthDate2','birthLunar2','deathDate2','deathLunar2']) hiddenByPlaqueType.add(f)
         } else if (plaqueType === 'REBIRTH') {
           // 往生莲位：隐藏延生和超度专属字段
           for (const f of ['holderName','longevitySubtype','blessingText','dedicationType','customDedicationType','birthDate','birthLunar']) hiddenByPlaqueType.add(f)
