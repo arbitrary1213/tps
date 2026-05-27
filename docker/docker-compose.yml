@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   temple-db:
     image: postgres:15-alpine
