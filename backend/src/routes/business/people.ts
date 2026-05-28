@@ -277,7 +277,7 @@ router.post('/devotees', authMiddleware, asyncHandler(async (req: AuthRequest, r
     const data = {
       ...pickDevoteeWriteData(req.body as Record<string, unknown>),
       createdBy: req.user!.username,
-    }
+    } as any
     const devotee = await prisma.devotee.create({ data })
     await logOperation(req.user, 'CREATE', 'devotee', devotee.id, null, devotee)
     res.json({ success: true, data: devotee })
@@ -293,7 +293,7 @@ router.put('/devotees/:id', authMiddleware, asyncHandler(async (req: AuthRequest
   try {
     const devotee = await prisma.devotee.update({
       where: { id: req.params.id },
-      data: pickDevoteeWriteData(req.body as Record<string, unknown>),
+      data: pickDevoteeWriteData(req.body as Record<string, unknown>) as any,
     })
     await logOperation(req.user, 'UPDATE', 'devotee', devotee.id, null, devotee)
     res.json({ success: true, data: devotee })
