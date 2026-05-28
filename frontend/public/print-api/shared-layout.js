@@ -622,8 +622,13 @@ function layoutValue(bucket, key, variantKey, backDefault, singleDefault, summar
   const layout = ensureLayout(type);
   if (isSingleVariantFieldKey(key)) {
     const sv = state.renderSingleVariant || currentSingleVariantKey();
-    const saved = getLayoutBucketValue(layout, bucket, key, sv);
-    return saved || setLayoutBucketValue(layout, bucket, key, singleVariantDefaultValue(type, sv, bucket, key, singleDefault), sv);
+    const scopedKey = singleVariantStorageKey(key, sv);
+    if (Object.prototype.hasOwnProperty.call(layout[bucket], scopedKey)) return layout[bucket][scopedKey];
+    if (Object.prototype.hasOwnProperty.call(layout[bucket], key)) {
+      layout[bucket][scopedKey] = layout[bucket][key];
+      return layout[bucket][scopedKey];
+    }
+    return setLayoutBucketValue(layout, bucket, key, singleVariantDefaultValue(type, sv, bucket, key, singleDefault), sv);
   }
   const saved = getLayoutBucketValue(layout, bucket, key, variantKey);
   if (saved) return saved;
