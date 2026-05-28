@@ -610,6 +610,7 @@ function layoutSetValue(layout, bucket, key, value) {
   if (isEditingBackSide()) { layout[bucket][key] = value; return; }
   if (isSingleVariantFieldKey(key)) { setLayoutBucketValue(layout, bucket, key, value, currentSingleVariantKey()); return; }
   if (state.mode === "summary" && isSummaryFieldKey(key)) { setLayoutBucketValue(layout, bucket, key, value); return; }
+  if (state.mode === "summary" && isStaticFieldKey(key)) { setLayoutBucketValue(layout, bucket, key, value); return; }
   layout[bucket][key] = value;
 }
 
