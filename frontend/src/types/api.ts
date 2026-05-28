@@ -62,6 +62,7 @@ export interface DevoteeRecord {
   email?: string
   idCard?: string
   birthday?: string
+  birthLunar?: boolean
   zodiac?: string
   address?: string
   tags: string[]

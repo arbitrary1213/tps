@@ -264,7 +264,8 @@ model Devotee {
   wechat         String?
   email          String?
   idCard         String?
-  birthday       DateTime?
+  birthday       String?    // 生日文本（公历或农历）
+  birthLunar     Boolean   @default(false) // 是否为农历生日
   zodiac         String?   // 生肖
   address        String?
   tags           String[]  // 标签

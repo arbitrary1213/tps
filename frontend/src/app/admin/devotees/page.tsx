@@ -22,6 +22,7 @@ export default function DevoteesPage() {
     email: '',
     idCard: '',
     birthday: '',
+    birthLunar: false,
     zodiac: '',
     address: '',
     tags: [] as string[],
@@ -34,10 +35,12 @@ export default function DevoteesPage() {
 
   const loadDevotees = async () => {
     try {
+      setLoading(true)
       const data = await businessAPI.getDevotees(token!)
       setDevotees(data)
     } catch (error) {
       console.error('加载失败:', error)
+      alert(error instanceof Error ? error.message : '加载信众失败')
     } finally {
       setLoading(false)
     }
@@ -48,8 +51,8 @@ export default function DevoteesPage() {
   )
 
   const handleSubmit = async () => {
-    if (!formData.name?.trim()) { alert('请输入姓名'); return; }
-    if (!formData.phone?.trim()) { alert('请输入联系电话'); return; }
+    if (!formData.name?.trim()) { alert('请输入姓名'); return }
+    if (!formData.phone?.trim()) { alert('请输入联系电话'); return }
     try {
       if (editing) {
         await businessAPI.updateDevotee(token!, editing.id, formData)
@@ -62,6 +65,7 @@ export default function DevoteesPage() {
       loadDevotees()
     } catch (error) {
       console.error('保存失败:', error)
+      alert(error instanceof Error ? error.message : '保存信众失败')
     }
   }
 
@@ -74,6 +78,7 @@ export default function DevoteesPage() {
       email: devotee.email || '',
       idCard: devotee.idCard || '',
       birthday: devotee.birthday || '',
+      birthLunar: devotee.birthLunar || false,
       zodiac: devotee.zodiac || '',
       address: devotee.address || '',
       tags: devotee.tags || [],
@@ -90,6 +95,7 @@ export default function DevoteesPage() {
       loadDevotees()
     } catch (error) {
       console.error('删除失败:', error)
+      alert(error instanceof Error ? error.message : '删除信众失败')
     }
   }
 
@@ -109,6 +115,7 @@ export default function DevoteesPage() {
       email: '',
       idCard: '',
       birthday: '',
+      birthLunar: false,
       zodiac: '',
       address: '',
       tags: [],
@@ -121,6 +128,7 @@ export default function DevoteesPage() {
   const columns = [
     { key: 'name', title: '姓名' },
     { key: 'phone', title: '电话' },
+    { key: 'birthday', title: '生日', render: (row: DevoteeRecord) => row.birthday ? (row.birthLunar ? `${row.birthday}（农历）` : row.birthday) : '-' },
     { key: 'wechat', title: '微信' },
     { key: 'tags', title: '标签', render: (row: DevoteeRecord) => (
       <div className="flex flex-wrap gap-1">
@@ -199,13 +207,32 @@ export default function DevoteesPage() {
             value={formData.idCard}
             onChange={(e) => setFormData({ ...formData, idCard: e.target.value })}
           />
-          <Input
-            onClick={(e) => e.stopPropagation()}
-            label="生日"
-            type="date"
-            value={formData.birthday}
-            onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
-          />
+          {formData.birthLunar ? (
+            <Input
+              label="生日"
+              value={formData.birthday}
+              onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
+              placeholder="如：一九九零年正月初一"
+            />
+          ) : (
+            <Input
+              label="生日"
+              type="date"
+              value={formData.birthday}
+              onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
+            />
+          )}
+          <div className="flex items-end pb-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.birthLunar}
+                onChange={(e) => setFormData({ ...formData, birthLunar: e.target.checked })}
+                className="w-4 h-4"
+              />
+              <span className="text-sm text-tea">农历</span>
+            </label>
+          </div>
           <Select
             label="生肖"
             value={formData.zodiac}

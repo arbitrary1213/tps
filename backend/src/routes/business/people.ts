@@ -5,6 +5,45 @@ import { logOperation, normalizeDateFields, prisma } from './shared'
 
 const router = Router()
 
+const DEVOTEE_WRITABLE_STRING_FIELDS = [
+  'name',
+  'phone',
+  'wechat',
+  'email',
+  'idCard',
+  'birthday',
+  'zodiac',
+  'address',
+  'remarks',
+] as const
+
+export function pickDevoteeWriteData(body: Record<string, unknown>) {
+  const data: Record<string, unknown> = {}
+
+  for (const field of DEVOTEE_WRITABLE_STRING_FIELDS) {
+    const value = body[field]
+    if (typeof value === 'string') {
+      const trimmed = value.trim()
+      if (trimmed) data[field] = trimmed
+    }
+  }
+
+  if (typeof body.birthLunar === 'boolean') data.birthLunar = body.birthLunar
+  data.tags = Array.isArray(body.tags)
+    ? body.tags.filter((tag): tag is string => typeof tag === 'string' && tag.trim().length > 0).map(tag => tag.trim())
+    : []
+
+  return data
+}
+
+export function isDevoteePhoneConflict(error: unknown) {
+  if (!error || typeof error !== 'object') return false
+  const candidate = error as { code?: unknown; meta?: { target?: unknown } }
+  return candidate.code === 'P2002'
+    && Array.isArray(candidate.meta?.target)
+    && candidate.meta.target.includes('phone')
+}
+
 router.get('/monks', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
     const { status, position } = req.query
@@ -235,22 +274,33 @@ router.get('/devotees', authMiddleware, asyncHandler(async (req: AuthRequest, re
 
 router.post('/devotees', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
-    const data = { ...req.body, createdBy: req.user!.username }
-    normalizeDateFields(data, ['birthday', 'firstVisitDate', 'lastVisitDate'])
+    const data = {
+      ...pickDevoteeWriteData(req.body as Record<string, unknown>),
+      createdBy: req.user!.username,
+    }
     const devotee = await prisma.devotee.create({ data })
     await logOperation(req.user, 'CREATE', 'devotee', devotee.id, null, devotee)
     res.json({ success: true, data: devotee })
   } catch (error) {
+    if (isDevoteePhoneConflict(error)) {
+      return res.status(409).json({ success: false, error: '该手机号已存在' })
+    }
     res.status(500).json({ success: false, error: '服务器错误' })
   }
 }))
 
 router.put('/devotees/:id', authMiddleware, asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
-    const devotee = await prisma.devotee.update({ where: { id: req.params.id }, data: req.body })
+    const devotee = await prisma.devotee.update({
+      where: { id: req.params.id },
+      data: pickDevoteeWriteData(req.body as Record<string, unknown>),
+    })
     await logOperation(req.user, 'UPDATE', 'devotee', devotee.id, null, devotee)
     res.json({ success: true, data: devotee })
   } catch (error) {
+    if (isDevoteePhoneConflict(error)) {
+      return res.status(409).json({ success: false, error: '该手机号已存在' })
+    }
     res.status(500).json({ success: false, error: '服务器错误' })
   }
 }))
