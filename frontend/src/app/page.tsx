@@ -73,9 +73,15 @@ export default function HomePage() {
   const hasPlaqueGroup = plaqueTypes.has('PLAQUE') || plaqueTypes.has('LONGEVITY') || plaqueTypes.has('REBIRTH') || plaqueTypes.has('DELIVERANCE')
   const otherTasks = tasks.filter(t => !['PLAQUE', 'LONGEVITY', 'REBIRTH', 'DELIVERANCE'].includes(t.taskType))
 
+  const commonEntries = [
+    { id: 'photo-restore', name: '老照片修复', href: '/photo-restore' },
+    { id: 'portrait-compose', name: '人像合成', href: '/portrait-compose' },
+  ]
+
   const displayTasks = [
     ...(hasPlaqueGroup ? [{ id: 'PLAQUE', name: '牌位登记', href: '/register?taskType=PLAQUE' }] : []),
     ...otherTasks.map(t => ({ id: t.id, name: t.name, href: `/register?taskId=${t.id}` })),
+    ...commonEntries,
   ]
 
   // 密码门
@@ -124,7 +130,7 @@ export default function HomePage() {
 
           {loading ? (
             <p className="text-gray-400">加载中...</p>
-          ) : displayTasks.length > 0 ? (
+          ) : (
             <div className="grid grid-cols-2 gap-5 max-w-md mx-auto">
               {displayTasks.map(task => (
                 <Link
@@ -142,8 +148,6 @@ export default function HomePage() {
                 </Link>
               ))}
             </div>
-          ) : (
-            <p className="text-gray-400">暂无可用登记服务</p>
           )}
         </div>
       </main>
